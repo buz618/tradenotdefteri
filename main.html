@@ -2039,11 +2039,16 @@ let currentUser = null;
     const action = btn.getAttribute('data-action');
     if (action === 'view-csv') {
       try {
-        const snap = await getDoc(doc(db, 'csv_storage', uid));
-        if (snap.exists()) {
-          alert('Kullanıcı CSV içeriği:\n\n' + (snap.data().content || '').slice(0, 2000));
-        } else {
+        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        if (filesSnap.empty) {
           alert('Bu kullanıcının CSV verisi yok.');
+        } else {
+          let output = '';
+          filesSnap.forEach(d => {
+            const data = d.data();
+            output += `--- ${data.name || 'isimsiz'} ---\n${(data.content || '').slice(0, 1000)}\n\n`;
+          });
+          alert('Kullanıcı CSV dosyaları:\n\n' + output.slice(0, 5000));
         }
       } catch(e) { alert('CSV yüklenemedi: ' + e.message); }
     } else if (action === 'view-info') {
@@ -2158,6 +2163,14 @@ let currentUser = null;
     chatUnsub = onSnapshot(
       query(collection(db, 'messages'), orderBy('createdAt', 'asc')),
       (snap) => {
+        // Update unread badge BEFORE early return (panel closed while message arrives)
+        if (!chatPanel.classList.contains('open')) {
+          chatToggle.classList.add('has-unread');
+          hasUnreadChat = true;
+        } else {
+          chatToggle.classList.remove('has-unread');
+          hasUnreadChat = false;
+        }
         if (!chatPanel.classList.contains('open')) return;
         chatMessages.innerHTML = '';
         let hasMsg = false;
@@ -2177,14 +2190,6 @@ let currentUser = null;
         });
         if (!hasMsg) chatMessages.innerHTML = '<div class="chat-empty">Henüz mesaj yok.</div>';
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        // Update unread badge
-        if (!chatPanel.classList.contains('open')) {
-          chatToggle.classList.add('has-unread');
-          hasUnreadChat = true;
-        } else {
-          chatToggle.classList.remove('has-unread');
-          hasUnreadChat = false;
-        }
       },
       (err) => { console.error('Chat error:', err); }
     );
@@ -2451,7 +2456,7 @@ let currentUser = null;
         }
         await setDoc(doc(db, 'csv_storage', currentUser.uid), {
           saveCount: saveCount + 1, saveResetAt, updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
       } catch(e) { alert('CSV kaydedilemedi: ' + e.message); return; }
     }
 
