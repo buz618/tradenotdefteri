@@ -384,7 +384,18 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   z-index: 1;
 }
 .csv-resize-handle:hover { opacity: 0.8; }
-.popup-panel#adminPanel { width: 380px; max-height: 480px; }
+.popup-panel#adminPanel { position: fixed; resize: none; overflow: hidden; width: 380px; }
+.popup-panel#adminPanel.open { min-width: 300px; min-height: 200px; }
+.popup-panel#adminPanel .pp-header { cursor: move; user-select: none; }
+.admin-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #22ab94 50%);
+  opacity: 0.4; transition: opacity 0.15s;
+  z-index: 1;
+}
+.admin-resize-handle:hover { opacity: 0.8; }
 .admin-user-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 10px; background: #2a2e39; border-radius: 6px;
@@ -552,6 +563,45 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 @media (max-width: 480px) {
   .popup-panel { width: calc(100vw - 28px); right: 14px; max-height: 60vh; }
 }
+
+/* Custom modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal-box {
+  background: #1e222d; border: 1px solid #2a2e39;
+  border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  width: 360px; max-width: 90vw;
+  display: flex; flex-direction: column;
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+}
+.modal-overlay.open .modal-box { transform: translateY(0); }
+.modal-box .modal-title {
+  padding: 14px 16px 0; font-size: 14px; font-weight: 600; color: #d1d4dc;
+}
+.modal-box .modal-msg {
+  padding: 12px 16px; font-size: 13px; color: #787b86; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+}
+.modal-box .modal-btns {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 10px 16px 14px;
+}
+.modal-box .modal-btns button {
+  padding: 6px 16px; border-radius: 6px; border: 1px solid #363a45;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  background: #2a2e39; color: #d1d4dc;
+}
+.modal-box .modal-btns button:hover { background: #22ab94; color: #fff; border-color: #22ab94; }
+.modal-box .modal-btns .btn-primary { background: #22ab94; color: #fff; border-color: #22ab94; }
+.modal-box .modal-btns .btn-primary:hover { background: #1b8a77; }
+.modal-box .modal-btns .btn-danger { background: #f7525a; color: #fff; border-color: #f7525a; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -1307,6 +1357,11 @@ let currentUser = null;
   async function loadFromFirestore() {
     if (!currentUser) return false;
     try {
+      const localRaw = localStorage.getItem(STORAGE_KEY);
+      if (localRaw) {
+        const localData = JSON.parse(localRaw);
+        if (localData.length > 0) return false; // prefer localStorage data
+      }
       const snap = await getDocs(collection(db, 'trades', currentUser.uid, 'items'));
       const data = snap.docs.map(d => d.data());
       if (data.length > 0) {
@@ -1648,8 +1703,8 @@ let currentUser = null;
     });
   }
 
-  function deleteTrade(id) {
-    if (!confirm('Bu trade kaydını silmek istediğinize emin misiniz?')) return;
+  async function deleteTrade(id) {
+    if (!(await showConfirm('Bu trade kaydını silmek istediğinize emin misiniz?'))) return;
     trades = trades.filter(t => t.id !== id);
     save();
     removeTradeFromFirestore(id);
@@ -1697,13 +1752,13 @@ let currentUser = null;
     );
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (submitBtn.disabled) return;
-    if (isPreviewMode) { alert('Önizleme modunda trade eklenemez.'); return; }
+    if (isPreviewMode) { await showAlert('Önizleme modunda trade eklenemez.'); return; }
     submitBtn.disabled = true;
     const pair = getPairValue();
-    if (!pair) { alert('Parite girin.'); submitBtn.disabled = false; return; }
+    if (!pair) { await showAlert('Parite girin.'); submitBtn.disabled = false; return; }
     const tf = fTf.value;
     const setup = fSetup.value;
     const result = fResult.value;
@@ -1717,7 +1772,7 @@ let currentUser = null;
       return;
     }
     if (!editingId && isDuplicate(pair, tf, setup, result, rr)) {
-      alert('Bu trade zaten mevcut.');
+      await showAlert('Bu trade zaten mevcut.');
       submitBtn.disabled = false;
       return;
     }
@@ -1799,32 +1854,52 @@ let currentUser = null;
     renderTrades();
   });
 
-  $('deleteAllBtn').addEventListener('click', () => {
-    if (isPreviewMode) { alert('Önizleme modunda silme yapılamaz.'); return; }
-    if (!confirm('Tüm trade kayıtlarını silmek istediğinize emin misiniz?')) return;
+  $('deleteAllBtn').addEventListener('click', async () => {
+    if (isPreviewMode) { await showAlert('Önizleme modunda silme yapılamaz.'); return; }
+    if (!(await showConfirm('Tüm trade kayıtlarını silmek istediğinize emin misiniz?'))) return;
     trades = [];
     save();
     syncAllToFirestore();
     renderAll();
   });
 
-  $('importBtn').addEventListener('click', () => {
-    if (isPreviewMode) { alert('Önizleme modunda içe aktarma yapılamaz.'); return; }
+  $('importBtn').addEventListener('click', async () => {
+    if (isPreviewMode) { await showAlert('Önizleme modunda içe aktarma yapılamaz.'); return; }
     $('importInput').click();
   });
   $('importInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const csv = ev.target.result;
+      // Clear all current data before import
+      trades = [];
+      pairList = []; tfList = []; setupList = []; confList = []; linkList = []; confFilterSelection = [];
+      // Restore panel settings from #PANEL header if present
+      const csvPanelData = extractPanelDataFromCsv(csv);
+      if (csvPanelData) {
+        if (csvPanelData.pairList && csvPanelData.pairList.length > 0) pairList = [...csvPanelData.pairList];
+        if (csvPanelData.tfList && csvPanelData.tfList.length > 0) tfList = [...csvPanelData.tfList];
+        if (csvPanelData.setupList && csvPanelData.setupList.length > 0) setupList = [...csvPanelData.setupList];
+        if (csvPanelData.confList && csvPanelData.confList.length > 0) confList = [...csvPanelData.confList];
+        if (csvPanelData.linkList && csvPanelData.linkList.length > 0) linkList = [...csvPanelData.linkList];
+        if (csvPanelData.confFilterSelection) confFilterSelection = [...csvPanelData.confFilterSelection];
+      }
+      saveConfFilterSelection();
+      saveLists();
       const imported = csvContentToTrades(csv);
-      if (imported.length === 0) { alert('Geçersiz CSV veya hiç trade bulunamadı.'); return; }
+      if (imported.length === 0) { await showAlert('Geçersiz CSV veya hiç trade bulunamadı.'); save(); renderAll(); return; }
       for (const t of imported) trades.push(t);
       save();
       syncAllToFirestore();
       renderAll();
-      alert(imported.length + ' trade içe aktarıldı.');
+      buildConfGrid();
+      buildConfFilterDropdown();
+      populateSelectors();
+      renderLinkFields();
+      renderTrades();
+      await showAlert(imported.length + ' trade içe aktarıldı.' + (csvPanelData ? ' Panel ayarları yüklendi.' : ''));
       $('importInput').value = '';
     };
     reader.readAsText(file, 'UTF-8');
@@ -2029,6 +2104,7 @@ let currentUser = null;
   let isAdmin = false;
   let blockedUsers = [];
   let allUsers = [];
+  const nicknameOverrideMap = {};
   const adminPanel = $('adminPanel');
   const adminToggle = $('adminToggle');
 
@@ -2059,6 +2135,28 @@ let currentUser = null;
           });
         } catch(e) { /* skip collection */ }
       }
+      // Fetch email and nickname for each user
+      const emailMap = {};
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        usersSnap.forEach(d => { emailMap[d.id] = d.data().email || ''; });
+      } catch(e) { /* skip */ }
+      const nickMap = {};
+      const nickAdminMap = {};
+      try {
+        const csvSnap = await getDocs(collection(db, 'csv_storage'));
+        csvSnap.forEach(d => {
+          nickMap[d.id] = d.data().nickname || '';
+          nickAdminMap[d.id] = d.data().nickname_admin || '';
+          const override = d.data().nickname_admin || d.data().nickname;
+          if (override) nicknameOverrideMap[d.id] = override;
+        });
+      } catch(e) { /* skip */ }
+      allUsers.forEach(u => {
+        u.email = emailMap[u.uid] || '';
+        u.nickname = nickMap[u.uid] || '';
+        u.nickname_admin = nickAdminMap[u.uid] || '';
+      });
     } catch(e) { console.error('Admin load error:', e); }
     renderAdminUserList();
   }
@@ -2072,9 +2170,14 @@ let currentUser = null;
     }
     container.innerHTML = allUsers.map(u => {
       const isBlocked = blockedUsers.includes(u.uid);
+      const shortUid = u.uid.slice(0, 8) + '...';
+      const displayNick = u.nickname_admin || u.nickname;
+      const info = displayNick ? escapeHtml(displayNick + ':' + u.email + ':' + shortUid) : escapeHtml(u.email + ':' + shortUid);
+      const nickLabel = displayNick ? escapeHtml(displayNick) : 'Nick +';
       return `<div class="admin-user-row">
-        <span title="${escapeHtml(u.uid)}">${escapeHtml(u.uid.slice(0,8)+'...')} ${isBlocked ? '🚫' : ''}</span>
+        <span title="${escapeHtml(u.uid)}">${info} ${isBlocked ? '🚫' : ''}</span>
         <div class="admin-actions">
+          <button data-uid="${u.uid}" data-action="edit-nick">${nickLabel}</button>
           <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
           <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
           <button data-uid="${u.uid}" data-action="${isBlocked ? 'unblock-user' : 'block-user'}" ${isBlocked ? 'style="background:#f7525a;color:#fff"' : ''}>${isBlocked ? 'Aç' : 'Engelle'}</button>
@@ -2092,22 +2195,22 @@ let currentUser = null;
       try {
         const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
         if (filesSnap.empty) {
-          alert('Bu kullanıcının CSV verisi yok.');
+          await showAlert('Bu kullanıcının CSV verisi yok.');
         } else {
           let output = '';
           filesSnap.forEach(d => {
             const data = d.data();
             output += `--- ${data.name || 'isimsiz'} ---\n${(data.content || '').slice(0, 1000)}\n\n`;
           });
-          alert('Kullanıcı CSV dosyaları:\n\n' + output.slice(0, 5000));
+          await showAlert('Kullanıcı CSV dosyaları:\n\n' + output.slice(0, 5000));
         }
-      } catch(e) { alert('CSV yüklenemedi: ' + e.message); }
+      } catch(e) { await showAlert('CSV yüklenemedi: ' + e.message); }
     } else if (action === 'view-info') {
-      alert('UID: ' + uid);
+      await showAlert('UID: ' + uid);
     } else if (action === 'block-user' || action === 'unblock-user') {
       try {
         const snap = await getDoc(doc(db, 'admin', 'config'));
-        if (!snap.exists()) { alert('Admin config bulunamadı.'); return; }
+        if (!snap.exists()) { await showAlert('Admin config bulunamadı.'); return; }
         const data = snap.data();
         let blocked = data.blocked || [];
         if (action === 'block-user') {
@@ -2118,8 +2221,36 @@ let currentUser = null;
         await setDoc(doc(db, 'admin', 'config'), { ...data, blocked });
         blockedUsers = blocked;
         renderAdminUserList();
-        alert(action === 'block-user' ? 'Kullanıcı engellendi.' : 'Kullanıcı engeli kaldırıldı.');
-      } catch(e) { alert('İşlem başarısız: ' + e.message); }
+        await showAlert(action === 'block-user' ? 'Kullanıcı engellendi.' : 'Kullanıcı engeli kaldırıldı.');
+      } catch(e) { await showAlert('İşlem başarısız: ' + e.message); }
+    } else if (action === 'edit-nick') {
+      const currentNick = btn.textContent === 'Nick +' ? '' : btn.textContent;
+      btn.innerHTML = '';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = currentNick;
+      inp.style.cssText = 'width:70px;padding:2px 4px;border-radius:4px;border:1px solid #363a45;background:#1e222d;color:#d1d4dc;font-size:11px;outline:none';
+      btn.appendChild(inp);
+      inp.focus();
+      inp.select();
+      const finish = async (save) => {
+        if (save) {
+          const val = inp.value.trim();
+          if (val) {
+                try {
+              await setDoc(doc(db, 'csv_storage', uid), { nickname_admin: val, nickname: val }, { merge: true });
+              nicknameOverrideMap[uid] = val;
+              if (uid === currentUser.uid) localStorage.setItem('chatNickname', val);
+            } catch(e) { /* skip */ }
+          }
+        }
+        renderAdminUserList();
+      };
+      inp.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+      });
+      inp.addEventListener('blur', () => finish(true));
     }
   });
 
@@ -2199,7 +2330,10 @@ let currentUser = null;
 
     // Load trades from Firestore, fall back to localStorage
     const ok = await loadFromFirestore();
-    if (!ok) load();
+    if (!ok) {
+      load();
+      syncAllToFirestore(); // ensure Firestore matches localStorage
+    }
 
     loadBgPref();
     initBgCanvas();
@@ -2217,6 +2351,18 @@ let currentUser = null;
       renderAllChips();
     }
     checkAdmin();
+    // Read nickname_admin override from Firestore
+    try {
+      const metaSnap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+      if (metaSnap.exists()) {
+        const meta = metaSnap.data();
+        const override = meta.nickname_admin || meta.nickname;
+        if (override) {
+          nicknameOverrideMap[currentUser.uid] = override;
+          localStorage.setItem('chatNickname', override);
+        }
+      }
+    } catch(e) { /* skip */ }
     // Ensure nickname in meta at login
     const savedNick = localStorage.getItem('chatNickname');
     if (savedNick) {
@@ -2229,6 +2375,10 @@ let currentUser = null;
     restoreCsvSize();
     initCsvDrag();
     initCsvResize();
+    restoreAdminPosition();
+    restoreAdminSize();
+    initAdminDrag();
+    initAdminResize();
     if (!chatUnsub) initChat();
     initCsvPublicWatcher();
   });
@@ -2240,6 +2390,45 @@ let currentUser = null;
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  // --- Custom modal ---
+  const modalOverlay = $('modalOverlay');
+  const modalTitle = $('modalTitle');
+  const modalMsg = $('modalMsg');
+  const modalBtns = $('modalBtns');
+
+  function showModal(title, msg, buttons) {
+    return new Promise(resolve => {
+      modalTitle.textContent = title;
+      modalMsg.textContent = msg;
+      modalBtns.innerHTML = '';
+      buttons.forEach((b, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = b.label;
+        if (b.primary) btn.className = 'btn-primary';
+        if (b.danger) btn.className = 'btn-danger';
+        btn.addEventListener('click', () => {
+          closeModal();
+          resolve(b.value);
+        });
+        modalBtns.appendChild(btn);
+      });
+      modalOverlay.classList.add('open');
+    });
+  }
+
+  function closeModal() { modalOverlay.classList.remove('open'); }
+
+  function showAlert(msg) {
+    return showModal('Bilgi', msg, [{ label: 'Tamam', value: undefined, primary: true }]);
+  }
+
+  function showConfirm(msg) {
+    return showModal('Onay', msg, [
+      { label: 'İptal', value: false },
+      { label: 'Tamam', value: true, danger: true }
+    ]);
   }
 
   function initChat() {
@@ -2265,7 +2454,8 @@ let currentUser = null;
           const time = m.createdAt
             ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
             : '';
-          const sender = m.nickname || m.email || 'Anonim';
+          const overriddenNick = nicknameOverrideMap[m.uid];
+          const sender = overriddenNick || m.nickname || m.email || 'Anonim';
           chatMessages.innerHTML +=
             `<div class="chat-msg ${isOwn ? 'own' : 'other'}">` +
             (isOwn ? '' : `<div class="msg-sender">${escapeHtml(sender)}</div>`) +
@@ -2287,7 +2477,7 @@ let currentUser = null;
 
     // /clean command for admins
     if (isAdmin && text === '/clean') {
-      if (!confirm('Tüm chat mesajlarını silmek istediğinize emin misiniz?')) return;
+      if (!(await showConfirm('Tüm chat mesajlarını silmek istediğinize emin misiniz?'))) return;
       try {
         const snap = await getDocs(collection(db, 'messages'));
         let count = 0;
@@ -2295,14 +2485,14 @@ let currentUser = null;
           await deleteDoc(d.ref);
           count++;
         }
-        alert('Chat temizlendi. ' + count + ' mesaj silindi.');
-      } catch(e) { alert('Temizlik başarısız: ' + e.message); }
+        await showAlert('Chat temizlendi. ' + count + ' mesaj silindi.');
+      } catch(e) { await showAlert('Temizlik başarısız: ' + e.message); }
       return;
     }
 
     // Blocked check
     if (blockedUsers.includes(currentUser.uid)) {
-      alert('Sohbet engellenmiş durumdasınız.');
+      await showAlert('Sohbet engellenmiş durumdasınız.');
       return;
     }
 
@@ -2321,10 +2511,10 @@ let currentUser = null;
   $('chatSendBtn').addEventListener('click', sendChatMessage);
   $('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
-  $('chatNicknameBtn').addEventListener('click', () => {
+  $('chatNicknameBtn').addEventListener('click', async () => {
     const inp = $('chatNicknameInput');
     const val = inp.value.trim();
-    if (!val) { alert('Lütfen bir rumuz girin.'); return; }
+    if (!val) { await showAlert('Lütfen bir rumuz girin.'); return; }
     localStorage.setItem('chatNickname', val);
     if (currentUser) {
       setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: val }, { merge: true }).catch(() => {});
@@ -2424,6 +2614,18 @@ let currentUser = null;
       localStorage.setItem('csvPanelLeft', csvPanel.style.left.replace('px',''));
       localStorage.setItem('csvPanelTop', csvPanel.style.top.replace('px',''));
     }
+    // Also clamp admin panel
+    const arect = adminPanel.getBoundingClientRect();
+    let aleft = parseInt(adminPanel.style.left) || arect.left;
+    let atop = parseInt(adminPanel.style.top) || arect.top;
+    const amaxLeft = window.innerWidth - arect.width - pad;
+    const amaxTop = window.innerHeight - arect.height - pad;
+    if (aleft > amaxLeft || atop > amaxTop || aleft < pad || atop < pad) {
+      adminPanel.style.left = Math.max(pad, Math.min(aleft, amaxLeft)) + 'px';
+      adminPanel.style.top = Math.max(pad, Math.min(atop, amaxTop)) + 'px';
+      localStorage.setItem('adminPanelLeft', adminPanel.style.left.replace('px',''));
+      localStorage.setItem('adminPanelTop', adminPanel.style.top.replace('px',''));
+    }
   });
 
   // CSV drag
@@ -2481,6 +2683,61 @@ let currentUser = null;
     }
   }
 
+  // Admin drag
+  let adminDragOffset = { x: 0, y: 0 };
+  let adminIsDragging = false;
+
+  function initAdminDrag() {
+    const header = adminPanel.querySelector('.pp-header');
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.pp-close')) return;
+      adminIsDragging = true;
+      adminPanel.style.bottom = 'auto';
+      adminPanel.style.right = 'auto';
+      const rect = adminPanel.getBoundingClientRect();
+      adminDragOffset.x = e.clientX - rect.left;
+      adminDragOffset.y = e.clientY - rect.top;
+    });
+  }
+
+  // Admin resize
+  let adminIsResizing = false;
+  let adminResizeStart = { w: 0, h: 0, x: 0, y: 0 };
+
+  function initAdminResize() {
+    const handle = document.getElementById('adminResizeHandle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      adminIsResizing = true;
+      const rect = adminPanel.getBoundingClientRect();
+      adminResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
+    });
+  }
+
+  function saveAdminSize() {
+    localStorage.setItem('adminPanelWidth', adminPanel.offsetWidth);
+    localStorage.setItem('adminPanelHeight', adminPanel.offsetHeight);
+  }
+
+  function restoreAdminSize() {
+    const w = localStorage.getItem('adminPanelWidth');
+    const h = localStorage.getItem('adminPanelHeight');
+    if (w) adminPanel.style.width = w + 'px';
+    if (h) adminPanel.style.height = h + 'px';
+  }
+
+  function restoreAdminPosition() {
+    const l = localStorage.getItem('adminPanelLeft');
+    const t = localStorage.getItem('adminPanelTop');
+    if (l && t) {
+      adminPanel.style.bottom = 'auto';
+      adminPanel.style.right = 'auto';
+      adminPanel.style.left = l + 'px';
+      adminPanel.style.top = t + 'px';
+    }
+  }
+
   // Global mousemove: drag/resize with viewport clamping
   document.addEventListener('mousemove', (e) => {
     const pad = 10;
@@ -2512,6 +2769,20 @@ let currentUser = null;
       const newH = Math.max(260, Math.min(csvResizeStart.h + dh, window.innerHeight - ct - pad));
       csvPanel.style.width = newW + 'px';
       csvPanel.style.height = newH + 'px';
+    } else if (adminIsDragging) {
+      const maxLeft = window.innerWidth - adminPanel.offsetWidth - pad;
+      const maxTop = window.innerHeight - adminPanel.offsetHeight - pad;
+      adminPanel.style.left = Math.max(pad, Math.min(e.clientX - adminDragOffset.x, maxLeft)) + 'px';
+      adminPanel.style.top = Math.max(pad, Math.min(e.clientY - adminDragOffset.y, maxTop)) + 'px';
+    } else if (adminIsResizing) {
+      const cl = parseInt(adminPanel.style.left) || pad;
+      const ct = parseInt(adminPanel.style.top) || pad;
+      const dw = e.clientX - adminResizeStart.x;
+      const dh = e.clientY - adminResizeStart.y;
+      const newW = Math.max(300, Math.min(adminResizeStart.w + dw, window.innerWidth - cl - pad));
+      const newH = Math.max(200, Math.min(adminResizeStart.h + dh, window.innerHeight - ct - pad));
+      adminPanel.style.width = newW + 'px';
+      adminPanel.style.height = newH + 'px';
     }
   });
 
@@ -2532,6 +2803,14 @@ let currentUser = null;
     } else if (csvIsResizing) {
       csvIsResizing = false;
       saveCsvSize();
+    } else if (adminIsDragging) {
+      adminIsDragging = false;
+      const rect = adminPanel.getBoundingClientRect();
+      localStorage.setItem('adminPanelLeft', rect.left);
+      localStorage.setItem('adminPanelTop', rect.top);
+    } else if (adminIsResizing) {
+      adminIsResizing = false;
+      saveAdminSize();
     }
   });
 
@@ -2551,7 +2830,7 @@ let currentUser = null;
   let previewBackup = null;
 
   function getDefaultCsvName() {
-    const nick = localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
+    const nick = nicknameOverrideMap[currentUser.uid] || localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
@@ -2617,29 +2896,29 @@ let currentUser = null;
   async function openCsvFile(id) {
     try {
       const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
-      if (!snap.exists()) { alert('CSV bulunamadı.'); return; }
+      if (!snap.exists()) { await showAlert('CSV bulunamadı.'); return; }
       const data = snap.data();
       csvNameInput.value = data.name || '';
       csvCurrentFileId = id;
-    } catch(e) { alert('CSV açılamadı: ' + e.message); }
+    } catch(e) { await showAlert('CSV açılamadı: ' + e.message); }
   }
 
   async function deleteCsvFile(id) {
-    if (!confirm('Bu CSV\'yi silmek istediğinize emin misiniz?')) return;
+    if (!(await showConfirm('Bu CSV\'yi silmek istediğinize emin misiniz?'))) return;
     try {
       await deleteDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
-      alert('CSV silindi.');
+      await showAlert('CSV silindi.');
       await loadMyCsvFiles();
       if (csvCurrentFileId === id) {
         csvNameInput.value = '';
         csvCurrentFileId = null;
       }
-    } catch(e) { alert('CSV silinemedi: ' + e.message); }
+    } catch(e) { await showAlert('CSV silinemedi: ' + e.message); }
   }
 
   async function saveCsvToFirestore() {
     if (!currentUser) return;
-    if (isPreviewMode) { alert('Önizleme modunda kayıt yapılamaz.'); return; }
+    if (isPreviewMode) { await showAlert('Önizleme modunda kayıt yapılamaz.'); return; }
     let name = csvNameInput.value.trim();
     if (!name) {
       name = getDefaultCsvName();
@@ -2649,7 +2928,7 @@ let currentUser = null;
     const content = tradesToCsv();
 
     if (content.length > CSV_MAX_SIZE) {
-      alert('CSV dosyası çok büyük. Maksimum 5MB olabilir. (Şu an: ' + (content.length / 1000000).toFixed(1) + 'MB)');
+      await showAlert('CSV dosyası çok büyük. Maksimum 5MB olabilir. (Şu an: ' + (content.length / 1000000).toFixed(1) + 'MB)');
       return;
     }
 
@@ -2667,7 +2946,7 @@ let currentUser = null;
         if (now > saveResetAt) { saveCount = 0; saveResetAt = now + CSV_SAVE_WINDOW; }
         if (saveCount >= CSV_SAVE_LIMIT) {
           const remaining = Math.ceil((saveResetAt - now) / 60000);
-          alert('15 dakika içinde maksimum 3 kayıt yapabilirsiniz. Kalan süre: ' + remaining + ' dakika.');
+          await showAlert('15 dakika içinde maksimum 3 kayıt yapabilirsiniz. Kalan süre: ' + remaining + ' dakika.');
           return;
         }
         const nickSave = localStorage.getItem('chatNickname') || '';
@@ -2675,7 +2954,7 @@ let currentUser = null;
           saveCount: saveCount + 1, saveResetAt, nickname: nickSave,
           updatedAt: serverTimestamp()
         }, { merge: true });
-      } catch(e) { alert('CSV kaydedilemedi: ' + e.message); return; }
+      } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); return; }
     } else {
       // Admin path: ensure nickname in meta
       const nickSave = localStorage.getItem('chatNickname') || '';
@@ -2702,9 +2981,9 @@ let currentUser = null;
         });
         csvCurrentFileId = newId;
       }
-      alert('CSV kaydedildi.');
+      await showAlert('CSV kaydedildi.');
       await loadMyCsvFiles();
-    } catch(e) { alert('CSV kaydedilemedi: ' + e.message); }
+    } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); }
   }
 
   let csvPublicUnsub = null;
@@ -2742,7 +3021,7 @@ let currentUser = null;
           });
           items.push({
             uid, fileId: fd.id, key,
-            userName: meta.nickname || uid.slice(0, 8),
+            userName: meta.nickname_admin || meta.nickname || uid.slice(0, 8),
             name: d.name || 'isimsiz'
           });
         });
@@ -2888,10 +3167,7 @@ let currentUser = null;
     confList = panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
     linkList = panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
     confFilterSelection = panelSrc.confFilterSelection.length > 0 ? [...panelSrc.confFilterSelection] : [];
-    saveConfFilterSelection();
 
-    save();
-    saveLists();
     renderAll();
     buildConfGrid();
     buildConfFilterDropdown();
@@ -3020,6 +3296,7 @@ let currentUser = null;
     <div class="pp-body" id="adminBody" style="display:flex;flex-direction:column;gap:8px;padding:12px;font-size:12px;min-height:200px">
       <div id="adminUserList" style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
+    <div class="admin-resize-handle" id="adminResizeHandle"></div>
   </div>
 
   <!-- Toggle buttons -->
@@ -3033,6 +3310,15 @@ let currentUser = null;
 <div class="sig-wrap">
   <div class="sig-popup">"Dışa Aktar" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
   <div class="sig-ice"><span class="sig-emoji">🧊</span> <span class="sig-text">BUZ</span></div>
+</div>
+
+<!-- Custom modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
 </div>
 </body>
 </html>
