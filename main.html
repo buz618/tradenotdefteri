@@ -638,7 +638,6 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
     <button class="btn btn-sm" id="clearFilterBtn">Temizle</button>
     <span style="flex:1"></span>
     <input type="file" id="importInput" accept=".csv" style="display:none">
-    <button class="btn btn-sm" id="exitPreviewBtn" style="display:none">Önizlemeyi Bitir 🔄</button>
     <button class="btn btn-sm" id="importBtn">İçe Aktar</button>
     <button class="btn btn-sm" id="exportBtn">Dışa Aktar</button>
     <button class="btn btn-sm btn-danger" id="deleteAllBtn">Tümünü Sil</button>
@@ -1870,7 +1869,7 @@ let currentUser = null;
   }
 
   function csvContentToTrades(csv) {
-    const lines = csv.split('\n').filter(l => l.trim());
+    const lines = csv.replace(/\r\n/g, '\n').split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
     const hdrs = parseCsvLine(lines[0]).map(h => h.trim());
     const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
@@ -2770,17 +2769,13 @@ let currentUser = null;
 
   // Tab switching
   let isWatchingPublic = false;
-  let isCsvPreview = false;
-  let csvPreviewBackup = null;
 
   csvTabMy.addEventListener('click', async () => {
     csvTabMy.classList.add('active');
     csvTabPublic.classList.remove('active');
     document.getElementById('csvMyBody').style.display = 'flex';
     document.getElementById('csvPublicBody').style.display = 'none';
-    if (isCsvPreview) {
-      exitCsvPreview();
-    } else if (isWatchingPublic) {
+    if (isWatchingPublic) {
       isWatchingPublic = false;
       csvEditor.readOnly = false;
       csvEditor.style.opacity = '1';
@@ -2852,22 +2847,11 @@ let currentUser = null;
     const btn = e.target.closest('button');
     if (!btn) return;
     if (btn.classList.contains('csv-pub-view')) {
-      // Full backup on first preview
-      if (!isCsvPreview) {
-        csvPreviewBackup = {
-          value: csvEditor.value,
-          name: csvNameInput.value,
-          fileId: csvCurrentFileId,
-          trades: JSON.parse(JSON.stringify(trades)),
-          pairList: [...pairList], tfList: [...tfList],
-          setupList: [...setupList], confList: [...confList],
-          linkList: [...linkList]
-        };
-      }
       const key = btn.getAttribute('data-key');
       const csvContent = csvPublicContentMap.get(key) || '';
+      if (!csvContent) return;
 
-      // Parse CSV and load trades into main panel (no Firestore write)
+      // Parse CSV and load trades into main panel
       const previewTrades = csvContentToTrades(csvContent);
       if (previewTrades.length > 0) {
         trades = previewTrades;
@@ -2875,63 +2859,10 @@ let currentUser = null;
         renderAll();
       }
 
-      csvEditor.value = csvContent;
-      csvNameInput.value = '';
-      csvCurrentFileId = null;
-      csvDirty = false;
-      csvEditor.readOnly = true;
-      csvEditor.style.opacity = '1';
-      isCsvPreview = true;
-      isWatchingPublic = false;
-      $('csvSaveBtn').disabled = false;
-      // Switch tab to show editor
-      csvTabMy.classList.add('active');
-      csvTabPublic.classList.remove('active');
-      document.getElementById('csvMyBody').style.display = 'flex';
-      document.getElementById('csvPublicBody').style.display = 'none';
-      const exitBtn = $('exitPreviewBtn');
-      if (exitBtn) exitBtn.style.display = 'inline-block';
+      // Close CSV panel
+      csvPanel.classList.remove('open');
+      csvToggle.classList.remove('active');
     }
-  });
-
-  function exitCsvPreview() {
-    if (csvPreviewBackup) {
-      const b = csvPreviewBackup;
-      // Restore trades
-      trades = b.trades;
-      save();
-      // Restore panel settings
-      pairList = b.pairList; tfList = b.tfList;
-      setupList = b.setupList; confList = b.confList;
-      linkList = b.linkList;
-      saveLists();
-      // Rebuild UI
-      renderAll();
-      if (editMode) renderAllChips();
-      buildConfGrid(); buildConfFilterDropdown(); populateSelectors();
-      renderLinkFields(); renderTrades();
-      // Restore CSV editor
-      csvEditor.value = b.value;
-      csvNameInput.value = b.name;
-      csvCurrentFileId = b.fileId;
-      // Re-sync to Firestore (preview didn't write, but ensure consistency)
-      syncAllToFirestore();
-    }
-    csvDirty = false;
-    csvEditor.readOnly = false;
-    csvEditor.style.opacity = '1';
-    isCsvPreview = false;
-    csvPreviewBackup = null;
-    const exitBtn = $('exitPreviewBtn');
-    if (exitBtn) exitBtn.style.display = 'none';
-  }
-
-  $('exitPreviewBtn').addEventListener('click', () => {
-    exitCsvPreview();
-    csvTabPublic.classList.add('active');
-    csvTabMy.classList.remove('active');
-    document.getElementById('csvPublicBody').style.display = 'flex';
-    document.getElementById('csvMyBody').style.display = 'none';
   });
 
   // Tab initial state
