@@ -1,0 +1,2728 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Not Defteri</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: #131722;
+  font-family: -apple-system, system-ui, sans-serif;
+  color: #d1d4dc;
+  padding: 12px;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -2;
+  background: linear-gradient(135deg, #0c0f1a, #161a2a, #0d1b2a, #1a0d20);
+  background-size: 400% 400%;
+  animation: bgShift 20s ease infinite;
+}
+body.bg-static::before {
+  animation: none;
+  background: #131722;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+@keyframes bgShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+h1 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+h1 span { color: #f0c040; }
+h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #787b86; }
+.card {
+  background: #1e222d;
+  border: 1px solid #2a2e39;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row+.row { margin-top: 8px; }
+label { font-size: 11px; color: #787b86; white-space: nowrap; }
+input, select {
+  background: #2a2e39;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+}
+input:focus, select:focus { outline: none; border-color: #22ab94; }
+input[type="text"], input[type="number"] { width: 80px; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+input.pair-input { width: 100px; }
+select { min-width: 70px; cursor: pointer; }
+.btn {
+  background: #2a2e39;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn:hover { background: #363a45; }
+.btn-primary { background: #22ab94; border-color: #22ab94; color: #fff; }
+.btn-primary:hover { background: #1d9a85; }
+.btn-danger { background: #f7525a; border-color: #f7525a; color: #fff; }
+.btn-danger:hover { background: #e0444b; }
+.btn-sm { padding: 3px 10px; font-size: 11px; }
+.conf-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.conf-item { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+.conf-item input { width: 14px; height: 14px; cursor: pointer; accent-color: #22ab94; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.stat-card {
+  background: #2a2e39;
+  border-radius: 4px;
+  padding: 10px;
+  border-left: 3px solid #22ab94;
+}
+.stat-card .stat-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.stat-card .stat-row { font-size: 11px; color: #787b86; }
+.stat-card .stat-row b { color: #d1d4dc; }
+.stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.stat-bar .bar-win { background: #22ab94; }
+.stat-bar .bar-be { background: #f0c040; }
+.stat-bar .bar-lose { background: #f7525a; }
+.stat-conf-row { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 2px; }
+.stat-conf { display: inline-block; background: #2a2e39; color: #787b86; padding: 1px 6px; border-radius: 3px; font-size: 10px; }
+.stat-card[data-setup] { cursor: pointer; transition: border-left-color 0.15s; }
+.stat-card[data-setup]:hover { border-left-color: #2cd4b8; }
+.stat-card-detail { margin-top: 10px; padding-top: 8px; border-top: 1px solid #363a45; cursor: default; }
+.stat-card-detail .stat-sub-title { font-size: 11px; color: #787b86; margin-bottom: 6px; font-weight: 600; }
+.stat-sub-grid { display: flex; flex-direction: column; gap: 4px; }
+.stat-sub-card { background: #1e222d; border-radius: 4px; padding: 7px 10px; border-left: 2px solid #363a45; }
+.stat-sub-card .stat-sub-name { font-size: 11px; font-weight: 600; color: #d1d4dc; margin-bottom: 3px; }
+.stat-sub-card .stat-sub-row { font-size: 10px; color: #787b86; }
+.stat-sub-card .stat-sub-row b { color: #d1d4dc; }
+.stat-sub-card .stat-sub-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin: 4px 0; }
+.pair-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.pair-wrap select { min-width: 100px; }
+.pair-wrap input { min-width: 100px; }
+textarea.note-input { width: 100%; min-height: 36px; resize: vertical; background: #2a2e39; border: 1px solid #363a45; color: #d1d4dc; border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; }
+textarea.note-input:focus { outline: none; border-color: #22ab94; }
+.note-cell { max-width: 160px; min-width: 60px; cursor: pointer; }
+.note-display { font-size: 11px; color: #787b86; }
+.note-display:hover { color: #22ab94; }
+.note-display.has-note { color: #d1d4dc; }
+.note-input-inline { width: 100%; min-width: 60px; background: #2a2e39; border: 1px solid #22ab94; color: #d1d4dc; border-radius: 3px; padding: 2px 6px; font-size: 11px; font-family: inherit; }
+
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 6px 8px; background: #2a2e39; color: #787b86; font-weight: 600; font-size: 11px; border-bottom: 1px solid #363a45; position: sticky; top: 0; white-space: nowrap; }
+td { padding: 6px 8px; border-bottom: 1px solid #2a2e39; vertical-align: middle; }
+tr:hover td { background: #1e222d; }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.badge-win { background: #22ab9440; color: #22ab94; }
+.badge-be { background: #f0c04040; color: #f0c040; }
+.badge-lose { background: #f7525a40; color: #f7525a; }
+.badge-setup { background: #2a2e39; color: #787b86; margin-right: 2px; }
+.conf-chip { display: inline-block; background: #2a2e39; color: #787b86; padding: 0 5px; border-radius: 2px; font-size: 10px; margin: 1px; }
+.actions { white-space: nowrap; }
+.empty { text-align: center; padding: 24px; color: #787b86; font-size: 13px; }
+input.link-input { width: 260px; font-size: 11px; }
+.preview-link { color: #22ab94; cursor: pointer; font-size: 11px; font-weight: 600; }
+.preview-link:hover { color: #2cd4b8; text-decoration: underline; }
+#previewPopup {
+  display: none; position: fixed; z-index: 1000;
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  border: 1px solid #2a2e39;
+  background: #0d0f14;
+  min-width: 120px; min-height: 80px;
+  opacity: 0; transition: opacity 0.2s ease;
+}
+#previewPopup.show { opacity: 1; }
+#previewPopup img {
+  display: block; width: 100%; height: 100%;
+  object-fit: contain; cursor: zoom-in;
+}
+#fullscreenModal { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.95); cursor: pointer; }
+#fullscreenModal img { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); max-width: 95vw; max-height: 95vh; object-fit: contain; }
+#fullscreenModal .close-btn { position: absolute; top: 12px; right: 16px; color: #787b86; font-size: 28px; cursor: pointer; line-height: 1; }
+#fullscreenModal .close-btn:hover { color: #fff; }
+
+@keyframes iceGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(79,195,247,0.15), 0 0 24px rgba(79,195,247,0.03); border-color: rgba(79,195,247,0.3); }
+  50% { box-shadow: 0 0 16px rgba(79,195,247,0.35), 0 0 48px rgba(79,195,247,0.08); border-color: rgba(79,195,247,0.6); }
+}
+@keyframes frostSweep {
+  0% { transform: translateX(-100%) skewX(-20deg); }
+  50% { transform: translateX(200%) skewX(-20deg); }
+  100% { transform: translateX(-100%) skewX(-20deg); }
+}
+.card-ice {
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #171d2e, #1e222d);
+  animation: iceGlow 3s ease-in-out infinite;
+}
+.card-ice::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(79,195,247,0.05), transparent);
+  animation: frostSweep 6s ease-in-out infinite;
+  pointer-events: none;
+}
+.card-ice.edit-active {
+  border-color: #f0c040;
+}
+.card-ice.edit-active::before {
+  background: linear-gradient(90deg, transparent, rgba(240,192,64,0.08), transparent);
+}
+@keyframes newRowGlow {
+  0% { outline: 1px solid rgba(240,192,64,0.5); box-shadow: 0 0 16px rgba(240,192,64,0.25); }
+  100% { outline: 1px solid transparent; box-shadow: 0 0 0 rgba(240,192,64,0); }
+}
+tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
+
+.sig-ice {
+  font-size: 22px; line-height: 1;
+  display: flex; align-items: flex-end; gap: 3px;
+  cursor: pointer; user-select: none;
+}
+.sig-ice .sig-text {
+  color: #7dd8f2; font-weight: 600; font-size: 15px;
+  letter-spacing: 0.5px;
+  animation: sigTextGlow 4s ease-in-out infinite;
+}
+.sig-ice .sig-emoji {
+  display: inline-block;
+  animation: sigEmoji 4s ease-in-out infinite;
+}
+.sig-wrap {
+  position: fixed; bottom: 12px; right: 14px; z-index: 999;
+}
+.sig-popup {
+  position: absolute; bottom: calc(100% + 14px); right: -4px;
+  width: 290px; padding: 14px 16px;
+  background: #1e222d; border: 1px solid #2a2e39;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  font-size: 12px; color: #d1d4dc; line-height: 1.6;
+  text-align: left; pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  border-top: 2px solid #7dd8f2;
+}
+.sig-popup::after {
+  content: ''; position: absolute; top: 100%; right: 20px;
+  border: 6px solid transparent; border-top-color: #2a2e39;
+}
+.sig-wrap:hover .sig-popup {
+  opacity: 1; visibility: visible; pointer-events: auto;
+}
+@keyframes sigTextGlow {
+  0%, 100% { text-shadow: 0 0 4px rgba(125,216,242,0.2); }
+  25% { text-shadow: 0 0 14px rgba(125,216,242,0.5); }
+  50% { text-shadow: 0 0 8px rgba(125,216,242,0.3); }
+  75% { text-shadow: 0 0 18px rgba(125,216,242,0.6); }
+}
+@keyframes sigEmoji {
+  0% { transform: rotate(0deg) scale(0.94); }
+  25% { transform: rotate(6deg) scale(1.04); }
+  50% { transform: rotate(0deg) scale(0.98); }
+  75% { transform: rotate(-6deg) scale(1.06); }
+  100% { transform: rotate(0deg) scale(0.94); }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.card-header h2 { margin-bottom: 0; }
+.gear-wrap { position: relative; }
+.gear-btn {
+  cursor: pointer; font-size: 18px; user-select: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 4px;
+  transition: background 0.15s;
+}
+.gear-btn:hover { background: #2a2e39; }
+.gear-menu {
+  position: absolute; right: 0; top: calc(100% + 4px);
+  background: #1e222d; border: 1px solid #2a2e39;
+  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 220px; z-index: 50;
+  display: none; overflow: hidden;
+}
+.gear-menu.show { display: block; }
+.gear-option {
+  padding: 8px 14px; font-size: 12px; cursor: pointer;
+  color: #d1d4dc; transition: background 0.12s;
+}
+.gear-option:hover { background: #2a2e39; }
+.gear-option.danger { color: #f7525a; }
+.gear-option.success { color: #22ab94; }
+.gear-option + .gear-option { border-top: 1px solid #2a2e39; }
+
+.edit-chips {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+  padding-top: 4px; width: 100%;
+}
+.edit-chips .chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #2a2e39; border: 1px solid #363a45;
+  border-radius: 3px; padding: 2px 6px; font-size: 11px;
+  color: #d1d4dc;
+}
+.edit-chips .chip .chip-x {
+  cursor: pointer; color: #787b86; font-size: 12px;
+  line-height: 1; margin-left: 2px;
+}
+.edit-chips .chip .chip-x:hover { color: #f7525a; }
+.edit-chips .chip-add {
+  display: inline-flex; align-items: center;
+  cursor: pointer; color: #22ab94; font-size: 13px;
+  padding: 2px 6px; border-radius: 3px;
+  background: transparent; border: 1px dashed #363a45;
+}
+.edit-chips .chip-add:hover { background: #2a2e39; border-color: #22ab94; }
+.edit-chips .chip-input-wrap { display: inline-flex; }
+.edit-chips .chip-input-wrap input {
+  width: 90px; padding: 2px 6px; font-size: 11px;
+  background: #2a2e39; border: 1px solid #22ab94;
+  border-radius: 3px; color: #d1d4dc;
+}
+
+.conf-filter-wrap { position: relative; display: inline-block; }
+.conf-filter-trigger {
+  background: #2a2e39; border: 1px solid #363a45;
+  color: #d1d4dc; padding: 5px 22px 5px 8px; border-radius: 4px;
+  font-size: 12px; cursor: pointer; font-family: inherit;
+  min-width: 100px; position: relative; white-space: nowrap;
+}
+.conf-filter-trigger::after {
+  content: '▾'; position: absolute; right: 6px; top: 50%;
+  transform: translateY(-50%); font-size: 10px; color: #787b86;
+}
+.conf-filter-dropdown {
+  display: none; position: absolute; top: 100%; left: 0;
+  margin-top: 2px; background: #1e222d; border: 1px solid #2a2e39;
+  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 200px; max-height: 260px; overflow-y: auto;
+  z-index: 50; padding: 4px 0;
+}
+.conf-filter-dropdown.show { display: block; }
+.conf-filter-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; font-size: 12px; cursor: pointer;
+  color: #d1d4dc;
+}
+.conf-filter-item:hover { background: #2a2e39; }
+.conf-filter-item input[type="checkbox"] {
+  width: 14px; height: 14px; accent-color: #22ab94; cursor: pointer;
+}
+.filter-summary {
+  font-size: 11px; color: #787b86; white-space: nowrap; display: inline-flex; align-items: center;
+}
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .row { flex-direction: column; align-items: stretch; }
+  .row label { margin-top: 4px; }
+  input, select { width: 100% !important; }
+  .filter-row .btn { margin-left: 0; }
+}
+
+#linkFields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+#linkFields label { display: flex; align-items: center; gap: 4px; }
+
+/* Pop-up styles */
+.popup-container {
+  position: fixed; bottom: 60px; right: 14px; z-index: 1000;
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: 8px; pointer-events: none;
+}
+.popup-panel {
+  pointer-events: auto;
+  background: #1e222d; border: 1px solid #2a2e39;
+  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  width: 350px; max-height: 440px;
+  display: flex; flex-direction: column;
+  opacity: 0; visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+.popup-panel#chatPanel { position: fixed; resize: none; overflow: hidden; }
+.popup-panel#chatPanel.open { min-width: 280px; min-height: 200px; }
+.popup-panel#chatPanel .pp-body:first-of-type { min-height: 100px; }
+.popup-panel#chatPanel .pp-header { cursor: move; user-select: none; }
+.chat-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #22ab94 50%);
+  opacity: 0.4; transition: opacity 0.15s;
+  z-index: 1;
+}
+.chat-resize-handle:hover { opacity: 0.8; }
+.popup-panel#adminPanel { width: 380px; max-height: 480px; }
+.admin-user-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: #2a2e39; border-radius: 6px;
+  color: #d1d4dc; font-size: 12px;
+}
+.admin-user-row .admin-actions { display: flex; gap: 4px; }
+.admin-user-row .admin-actions button {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid #363a45;
+  background: #1e222d; color: #d1d4dc; cursor: pointer; font-size: 11px;
+}
+.admin-user-row .admin-actions button:hover { background: #22ab94; color: #fff; }
+
+/* CSV tabs */
+.csv-tabs {
+  display: flex; border-bottom: 1px solid #2a2e39;
+}
+.csv-tab {
+  flex: 1; padding: 8px 12px; font-size: 12px; font-weight: 600;
+  color: #787b86; background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.csv-tab:hover { color: #d1d4dc; }
+.csv-tab.active { color: #22ab94; border-bottom-color: #22ab94; }
+
+.csv-tab-body { padding: 10px; min-height: 200px; }
+.csv-name-row { display: flex; gap: 6px; align-items: center; }
+.csv-list-label { font-size: 11px; color: #787b86; font-weight: 600; }
+
+/* CSV list items */
+.csv-list-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: #2a2e39; border-radius: 6px;
+  color: #d1d4dc; font-size: 12px;
+}
+.csv-list-item .csv-item-info { flex: 1; min-width: 0; }
+.csv-list-item .csv-item-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.csv-list-item .csv-item-date { font-size: 10px; color: #787b86; margin-top: 2px; }
+.csv-list-item .csv-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.csv-list-item .csv-item-actions button {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid #363a45;
+  background: #1e222d; color: #d1d4dc; cursor: pointer; font-size: 11px;
+}
+.csv-list-item .csv-item-actions button:hover { background: #22ab94; color: #fff; }
+.csv-list-item .csv-item-actions button.danger:hover { background: #f7525a; }
+
+.csv-public-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: #2a2e39; border-radius: 6px;
+  color: #d1d4dc; font-size: 12px; margin-bottom: 4px;
+}
+.csv-public-item .csv-pub-user { font-size: 11px; color: #22ab94; font-weight: 600; }
+.csv-public-item .csv-pub-name { font-size: 12px; margin-top: 2px; }
+.csv-public-item .csv-pub-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.csv-public-item .csv-pub-actions button {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid #363a45;
+  background: #1e222d; color: #d1d4dc; cursor: pointer; font-size: 11px;
+}
+.csv-public-item .csv-pub-actions button:hover { background: #22ab94; color: #fff; }
+
+.popup-panel.open {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.popup-panel .pp-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid #2a2e39;
+  font-size: 13px; font-weight: 600; color: #d1d4dc;
+}
+.popup-panel .pp-close {
+  cursor: pointer; color: #787b86; font-size: 17px; line-height: 1;
+}
+.popup-panel .pp-close:hover { color: #f7525a; }
+.popup-panel .pp-body {
+  flex: 1; overflow-y: auto; padding: 8px; min-height: 0;
+}
+.popup-panel .pp-footer {
+  display: flex; gap: 6px; padding: 8px;
+  border-top: 1px solid #2a2e39;
+}
+.popup-panel .pp-footer input {
+  flex: 1; background: #2a2e39; border: 1px solid #363a45;
+  color: #d1d4dc; padding: 6px 8px; border-radius: 4px;
+  font-size: 12px; font-family: inherit;
+}
+.popup-panel .pp-footer input:focus {
+  outline: none; border-color: #22ab94;
+}
+
+.popup-panel .pp-body#chatBody {
+  display: flex; flex-direction: column;
+}
+
+/* Chat messages — WhatsApp-style bubbles */
+.chat-msg {
+  display: flex; flex-direction: column;
+  margin-bottom: 8px; max-width: 85%;
+}
+.chat-msg.own {
+  align-self: flex-end; align-items: flex-end;
+}
+.chat-msg.other {
+  align-self: flex-start; align-items: flex-start;
+}
+.chat-msg .bubble {
+  padding: 8px 12px; border-radius: 16px;
+  font-size: 12px; line-height: 1.4;
+  word-break: break-word; position: relative;
+}
+.chat-msg.own .bubble {
+  background: #22ab94; color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.other .bubble {
+  background: #2a2e39; color: #d1d4dc;
+  border-bottom-left-radius: 4px;
+}
+.chat-msg .msg-sender {
+  font-size: 11px; color: #22ab94;
+  margin-bottom: 2px; font-weight: 600;
+}
+.chat-msg .msg-time {
+  font-size: 10px; color: #787b86;
+  margin-top: 2px;
+}
+.chat-msg.own .msg-time { text-align: right; }
+.chat-empty {
+  text-align: center; color: #787b86; font-size: 12px; padding: 24px;
+}
+
+/* CSV editor */
+.csv-editor {
+  width: 100%; min-height: 260px;
+  background: #2a2e39; border: 1px solid #363a45;
+  color: #d1d4dc; border-radius: 4px; padding: 8px;
+  font-size: 12px; font-family: monospace; resize: vertical;
+}
+.csv-editor:focus { outline: none; border-color: #22ab94; }
+
+/* Toggle buttons row */
+.popup-toggles {
+  pointer-events: auto;
+  display: flex; gap: 8px;
+}
+.popup-tgl {
+  position: relative;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #22ab94; border: none; color: #fff;
+  font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(34,171,148,0.25);
+  transition: transform 0.15s, background 0.15s;
+}
+.popup-tgl.has-unread::after {
+  content: ''; position: absolute; top: 2px; right: 2px;
+  width: 8px; height: 8px; background: #f7525a;
+  border-radius: 50%; border: 2px solid #1e222d;
+}
+.popup-tgl:hover { transform: scale(1.08); background: #1d9a85; }
+.popup-tgl.active { background: #f7525a; box-shadow: 0 4px 14px rgba(247,82,90,0.25); }
+
+@media (max-width: 480px) {
+  .popup-panel { width: calc(100vw - 28px); right: 14px; max-height: 60vh; }
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <h1 style="margin-bottom:0">Trade <span>Not Defteri</span></h1>
+  <div id="userInfo" style="display:none;align-items:center;gap:10px">
+    <span id="userEmail" style="font-size:12px;color:#787b86"></span>
+    <button id="logoutBtn" class="btn btn-sm">Çıkış</button>
+  </div>
+</div>
+
+<div class="card card-ice" id="tradeCard">
+  <div class="card-header">
+    <h2>Yeni Trade</h2>
+    <div class="gear-wrap">
+      <span class="gear-btn" id="gearBtn">⚙</span>
+      <div class="gear-menu" id="gearMenu">
+        <div class="gear-option" data-action="toggle-edit">Düzenle</div>
+        <div class="gear-option" data-action="toggle-bg"><span id="bgIcon">▶️</span> Dinamik Arka Plan</div>
+        <div class="gear-option" data-action="reset">Sıfırla</div>
+        <div class="gear-option success" data-action="save-default">Varsayılan Olarak Kaydet</div>
+      </div>
+    </div>
+  </div>
+  <form id="tradeForm">
+    <div class="row">
+      <label>Parite <span class="pair-wrap"><select id="fPair"></select><input type="text" id="fPairCustom" style="display:none" placeholder="Parite girin"></span></label>
+      <div class="edit-chips" id="editChipsPair" style="display:none"></div>
+      <label>TF <select id="fTf"></select></label>
+      <div class="edit-chips" id="editChipsTf" style="display:none"></div>
+      <label>Setup <select id="fSetup"></select></label>
+      <div class="edit-chips" id="editChipsSetup" style="display:none"></div>
+      <label>Sonuç <select id="fResult"><option value="Win">Win</option><option value="BE">BE</option><option value="Lose">Lose</option></select></label>
+      <label>RR <input type="number" id="fRr" step="0.01" min="0" placeholder="0.00"></label>
+      <div id="linkFields"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span style="font-size:11px;color:#787b86">Konfirmasyonlar:</span>
+    </div>
+    <div class="row">
+      <div class="conf-grid" id="confGrid"></div>
+    </div>
+    <div class="edit-chips" id="editChipsConf" style="display:none"></div>
+    <div class="row" style="margin-top:10px">
+      <span style="font-size:11px;color:#787b86">Link Başlıkları:</span>
+    </div>
+    <div class="edit-chips" id="editChipsLink" style="display:none"></div>
+    <div class="row" style="margin-top:10px">
+      <textarea id="fNote" class="note-input" placeholder="Not..." rows="1"></textarea>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button type="submit" class="btn btn-primary" id="submitBtn">EKLE</button>
+      <button type="button" class="btn" id="cancelEditBtn" style="display:none">İptal</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>En Başarılı Setuplar</h2>
+  <div class="stats-grid" id="statsGrid"></div>
+</div>
+
+<div class="card">
+  <h2>Kayıtlar</h2>
+  <div class="row filter-row">
+    <label>Parite <select id="filterPair"><option value="">Tümü</option></select></label>
+    <label>TF <select id="filterTf"><option value="">Tümü</option></select></label>
+    <label>Setup <select id="filterSetup"><option value="">Tümü</option></select></label>
+    <label>Sonuç <select id="filterResult"><option value="">Tümü</option><option>Win</option><option>BE</option><option>Lose</option></select></label>
+    <label>Konfirmasyonlar</label>
+    <div class="conf-filter-wrap" id="confFilterWrap"><div class="conf-filter-trigger" id="confFilterTrigger">Tümü</div><div class="conf-filter-dropdown" id="confFilterDropdown"></div></div>
+    <span class="filter-summary" id="filterSummary"></span>
+    <button class="btn btn-sm" id="clearFilterBtn">Temizle</button>
+    <span style="flex:1"></span>
+    <input type="file" id="importInput" accept=".csv" style="display:none">
+    <button class="btn btn-sm" id="importBtn">İçe Aktar</button>
+    <button class="btn btn-sm" id="exportBtn">Excel İhracat</button>
+    <button class="btn btn-sm btn-danger" id="deleteAllBtn">Tümünü Sil</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead id="tradesHead"></thead>
+      <tbody id="tradesBody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg">Henüz trade kaydı yok.</div>
+  </div>
+</div>
+
+<div id="previewPopup"><img id="previewImg" alt="preview"></div>
+<div id="fullscreenModal"><img id="fullscreenImg" alt="fullscreen"><span class="close-btn">✕</span></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDaNFZQROCrfiTYcz1kx90YbyMIe4ZouA0",
+  authDomain: "web-chat-csv-app.firebaseapp.com",
+  projectId: "web-chat-csv-app",
+  storageBucket: "web-chat-csv-app.firebasestorage.app",
+  messagingSenderId: "564926359968",
+  appId: "1:564926359968:web:f15d8db01cf8a8f0a31cc5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === 'failed-precondition') {
+    console.warn('Offline persistence: multiple tabs open, skipping.');
+  } else if (err.code === 'unimplemented') {
+    console.warn('Offline persistence not supported in this browser.');
+  }
+});
+
+let currentUser = null;
+
+(function() {
+  const STORAGE_KEY = 'trade_notlari';
+  const SETTINGS_KEY = 'td_lists';
+  const DEFAULTS_KEY = 'td_custom_defaults';
+  const BG_KEY = 'td_bg_animated';
+  const CSV_SAVE_LIMIT = 3;
+  const CSV_SAVE_WINDOW = 15 * 60 * 1000;
+  const CSV_MAX_SIZE = 5000000;
+
+  // === THREE.JS BACKGROUND ENGINE ===
+  let bgEnabled = true;
+  let bgRenderer, bgScene, bgCamera, bgClock;
+  let bgMountain, bgGrid, bgStars1, bgStars2, bgWave;
+
+  function loadBgPref() {
+    try { bgEnabled = localStorage.getItem(BG_KEY) !== 'off'; }
+    catch (e) { bgEnabled = true; }
+    applyBgState();
+  }
+
+  function applyBgState() {
+    document.body.classList.toggle('bg-static', !bgEnabled);
+    const bgIcon = document.getElementById('bgIcon');
+    if (bgIcon) bgIcon.textContent = bgEnabled ? '▶️' : '⏸️';
+    if (bgRenderer) {
+      bgRenderer.domElement.style.display = bgEnabled ? '' : 'none';
+      if (bgEnabled) requestAnimationFrame(renderBg);
+    }
+  }
+
+  function initBgCanvas() {
+    try { THREE; } catch(e) { return; }
+    bgClock = new THREE.Clock();
+    bgScene = new THREE.Scene();
+    bgCamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+    bgCamera.position.set(0, 0.5, 14);
+    bgCamera.lookAt(0, 0, 0);
+    bgRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    bgRenderer.setSize(innerWidth, innerHeight);
+    bgRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    bgRenderer.domElement.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;width:100%;height:100%';
+    document.body.prepend(bgRenderer.domElement);
+    addEventListener('resize', () => {
+      bgCamera.aspect = innerWidth / innerHeight;
+      bgCamera.updateProjectionMatrix();
+      bgRenderer.setSize(innerWidth, innerHeight);
+    });
+    buildBgGrid();
+    buildBgMountain();
+    buildBgStars();
+    buildBgWave();
+    if (bgEnabled) requestAnimationFrame(renderBg);
+  }
+
+  function buildBgGrid() {
+    const size = 20, div = 20, step = size / div, half = size / 2, p = [];
+    for (let i = 0; i <= div; i++) { const x = -half + i * step; p.push(x, 0, -half, x, 0, half); }
+    for (let i = 0; i <= div; i++) { const z = -half + i * step; p.push(-half, 0, z, half, 0, z); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+    const m = new THREE.LineBasicMaterial({ color: 0x22ab94, transparent: true, opacity: 0.035, depthWrite: false });
+    bgGrid = new THREE.LineSegments(g, m);
+    bgGrid.rotation.x = -Math.PI / 3.5;
+    bgGrid.position.y = -3.5;
+    bgScene.add(bgGrid);
+  }
+
+  function buildBgMountain() {
+    const n = 2048, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { p[i * 3] = (i / n - 0.5) * 22; p[i * 3 + 1] = 0; p[i * 3 + 2] = (Math.random() - 0.5) * 0.6; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    const u = { uTime: { value: 0 }, uMorph: { value: 0 }, uAmp: { value: 1 }, uShift: { value: 0 }, uColor: { value: new THREE.Color(0xf0c040) }, uOpacity: { value: 0.055 } };
+    const vs = `
+      uniform float uTime; uniform float uMorph; uniform float uAmp; uniform float uShift;
+      varying float vA;
+      float hsh(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+      float nse(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hsh(i+vec2(0,0)),hsh(i+vec2(1,0)),f.x),
+                   mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x),f.y); }
+      float fbm(vec2 p) { float v=0.,a=.5; for(int i=0;i<3;i++){v+=a*nse(p);p*=2.;a*=.5;} return v; }
+      void main() {
+        vec3 pos=position; float x=pos.x;
+        float mt=fbm(vec2(x*.1+uTime*.012,0))*3.5+fbm(vec2(x*.22+uTime*.02,2.))*1.2-1.5;
+        float zg=sin(x*.4+uTime*.25)*1.8+sin(x*.9+uTime*.55)*.9+sin(x*1.8+uTime*1.1)*.4+sin(x*3.6+uTime*1.8)*.2;
+        float baseY=mix(mt,zg,uMorph); pos.y=baseY*uAmp+uShift; vA=1.-abs(baseY)*.12;
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1);
+      }`;
+    const fs = 'uniform vec3 uColor;uniform float uOpacity;varying float vA;void main(){gl_FragColor=vec4(uColor,uOpacity*vA);}';
+    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    bgMountain = new THREE.Line(g, mat);
+    bgScene.add(bgMountain);
+  }
+
+  function makeCircleTexture() {
+    const c = document.createElement('canvas'); c.width = 32; c.height = 32;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(255,255,255,0.8)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function buildBgStars() {
+    const tex = makeCircleTexture();
+    function mk(cnt, col, sz, op) {
+      const p = new Float32Array(cnt * 3);
+      for (let i = 0; i < cnt; i++) {
+        const t = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 8 + Math.random() * 12;
+        p[i * 3] = r * Math.sin(ph) * Math.cos(t);
+        p[i * 3 + 1] = r * Math.cos(ph) * 0.6;
+        p[i * 3 + 2] = r * Math.sin(ph) * Math.sin(t) - 6;
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      const m = new THREE.PointsMaterial({ color: col, size: sz, map: tex, transparent: true, opacity: op, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending });
+      return new THREE.Points(g, m);
+    }
+    bgStars1 = mk(200, 0xffffff, 0.12, 0.05);
+    bgStars2 = mk(60, 0x22ab94, 0.18, 0.035);
+    bgScene.add(bgStars1); bgScene.add(bgStars2);
+  }
+
+  function buildBgWave() {
+    const n = 1024, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { p[i * 3] = (i / n - 0.5) * 18; p[i * 3 + 1] = 0; p[i * 3 + 2] = 0; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    const u = { uTime: { value: 0 }, uColor: { value: new THREE.Color(0x22ab94) }, uOpacity: { value: 0.035 } };
+    const vs = 'uniform float uTime;void main(){vec3 p=position;float x=p.x;float y=sin(x*.25+uTime*.18)*.7+sin(x*.6+uTime*.35+1.)*.35+sin(x*1.4+uTime*.6+2.)*.15;p.y=y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1);}';
+    const fs = 'uniform vec3 uColor;uniform float uOpacity;void main(){gl_FragColor=vec4(uColor,uOpacity);}';
+    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    bgWave = new THREE.Line(g, mat);
+    bgWave.position.y = -1.2;
+    bgScene.add(bgWave);
+  }
+
+  let bgShiftTarget = 0;
+
+  function renderBg() {
+    if (!bgEnabled || !bgRenderer) return;
+    requestAnimationFrame(renderBg);
+    const dt = Math.min(bgClock.getDelta(), 0.05);
+    const t = bgClock.getElapsedTime();
+    if (bgMountain) {
+      bgMountain.material.uniforms.uTime.value = t;
+      bgMountain.material.uniforms.uMorph.value = (Math.sin(t * 0.06) + 1) * 0.5;
+      bgMountain.material.uniforms.uAmp.value = 1 + Math.sin(t * 0.008) * 0.5 + Math.sin(t * 0.019) * 0.4 + Math.sin(t * 0.003) * 0.3;
+      const shiftLvls = [-3,-2,-1,1,2,3];
+      if (t % 14 < dt || t < 0.1) {
+        let prev = bgShiftTarget;
+        do { bgShiftTarget = shiftLvls[Math.floor(Math.random() * shiftLvls.length)]; }
+        while (bgShiftTarget === prev && shiftLvls.length > 1);
+      }
+      const cur = bgMountain.material.uniforms.uShift.value;
+      bgMountain.material.uniforms.uShift.value += (bgShiftTarget - cur) * dt * 0.25;
+    }
+    if (bgWave) bgWave.material.uniforms.uTime.value = t;
+    if (bgStars1) { bgStars1.rotation.y += dt * 0.008; bgStars2.rotation.y += dt * 0.006; }
+
+    // Cinematic camera orbit — zooms in/out around the golden line from every angle
+    const spd = 0.032;
+    const a = t * spd;
+    const r = 4 + Math.sin(t * 0.015) * 2.8;
+    const y = Math.sin(t * 0.022) * 1.8 + 0.3;
+    bgCamera.position.x = Math.cos(a) * r;
+    bgCamera.position.z = Math.sin(a) * r;
+    bgCamera.position.y = y;
+
+    // gaze drifts slowly along the line for a cinematic pan feel
+    const lx = Math.sin(t * 0.007) * 1.8;
+    bgCamera.lookAt(lx, 0.2, 0);
+
+    // Grid rotates in 3D with the same energy as the camera
+    if (bgGrid) {
+      bgGrid.rotation.x = -Math.PI / 3.5 + Math.sin(t * 0.012) * 0.06;
+      bgGrid.rotation.z += dt * 0.003;
+    }
+
+    bgRenderer.render(bgScene, bgCamera);
+  }
+
+  const BUILTIN_DEFAULTS = {
+    pairs: ['XAUUSD','XAGUSD','EURUSD','GBPUSD','AUDUSD','NZDUSD','USDCAD','USDJPY','GBPJPY','EURJPY'],
+    tfs: ['1m','5m','15m','30m','1h','4h','D','W','M'],
+    setups: ['Senkron','Fx Devam','Fx','Bitiriş'],
+    confs: ['Şimşek','Saat','FVG','Sekans','Ucuz-Pahallı','Eş Pair','K. Market Y. Tepkisi','Bacak 1','Bacak 2','-1'],
+    linkTitles: ['HTF','LTF','Eş Pair']
+  };
+
+  let trades = [];
+  let editingId = null;
+  let expandedSetup = null;
+  let editMode = false;
+  let customDefaults = null;
+
+  let pairList = [];
+  let tfList = [];
+  let setupList = [];
+  let confList = [];
+  let linkList = [];
+
+  let confFilterSelection = [];
+  const CF_STORAGE_KEY = 'td_conf_filter';
+
+  function loadConfFilterSelection() {
+    try {
+      const saved = localStorage.getItem(CF_STORAGE_KEY);
+      if (saved) confFilterSelection = JSON.parse(saved);
+      else confFilterSelection = [];
+    } catch (e) { confFilterSelection = []; }
+  }
+  function saveConfFilterSelection() {
+    localStorage.setItem(CF_STORAGE_KEY, JSON.stringify(confFilterSelection));
+  }
+
+  const $ = id => document.getElementById(id);
+  const form = $('tradeForm');
+  const fPair = $('fPair');
+  const fPairCustom = $('fPairCustom');
+  const fTf = $('fTf');
+  const fSetup = $('fSetup');
+  const fResult = $('fResult');
+  const fRr = $('fRr');
+  const fHtf = $('fHtf');
+  const fLtf = $('fLtf');
+  const fEsPair = $('fEsPair');
+  const fNote = $('fNote');
+  const submitBtn = $('submitBtn');
+  const cancelBtn = $('cancelEditBtn');
+
+  // Settings persistence
+  function loadLists() {
+    try {
+      const data = localStorage.getItem(SETTINGS_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        pairList = parsed.pairs || [...BUILTIN_DEFAULTS.pairs];
+        tfList = parsed.tfs || [...BUILTIN_DEFAULTS.tfs];
+        setupList = parsed.setups || [...BUILTIN_DEFAULTS.setups];
+        confList = parsed.confs || [...BUILTIN_DEFAULTS.confs];
+        linkList = parsed.linkTitles || [...BUILTIN_DEFAULTS.linkTitles];
+        return;
+      }
+    } catch(e) {}
+    pairList = [...BUILTIN_DEFAULTS.pairs];
+    tfList = [...BUILTIN_DEFAULTS.tfs];
+    setupList = [...BUILTIN_DEFAULTS.setups];
+    confList = [...BUILTIN_DEFAULTS.confs];
+    linkList = [...BUILTIN_DEFAULTS.linkTitles];
+  }
+  function saveLists() {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      pairs: pairList, tfs: tfList, setups: setupList, confs: confList, linkTitles: linkList
+    }));
+    if (currentUser) saveUserSettings();
+  }
+  async function loadUserSettings() {
+    if (!currentUser) return;
+    try {
+      const snap = await getDoc(doc(db, 'user_settings', currentUser.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.pairList) pairList = data.pairList;
+        if (data.tfList) tfList = data.tfList;
+        if (data.setupList) setupList = data.setupList;
+        if (data.confList) confList = data.confList;
+        if (data.linkList) linkList = data.linkList;
+        saveLists();
+      }
+    } catch(e) { console.warn('User settings load error:', e); }
+  }
+  async function saveUserSettings() {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'user_settings', currentUser.uid), {
+        pairList, tfList, setupList, confList, linkList,
+        updatedAt: serverTimestamp()
+      });
+    } catch(e) { console.warn('User settings save error:', e); }
+  }
+  function loadCustomDefaults() {
+    try {
+      const data = localStorage.getItem(DEFAULTS_KEY);
+      customDefaults = data ? JSON.parse(data) : null;
+    } catch(e) { customDefaults = null; }
+  }
+  function saveCustomDefaults(lists) {
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify(lists));
+    customDefaults = lists;
+  }
+  function getDefaults() {
+    return customDefaults || BUILTIN_DEFAULTS;
+  }
+
+  // Populate select from a list
+  function populateSelect(sel, list, curVal) {
+    sel.innerHTML = '';
+    list.forEach(v => {
+      sel.innerHTML += `<option value="${v}">${v}</option>`;
+    });
+    if (curVal !== undefined && list.includes(curVal)) {
+      sel.value = curVal;
+    }
+  }
+
+  function populatePairOptions() {
+    const cur = fPair.value;
+    const unique = new Set(pairList);
+    trades.forEach(t => { if (t.pair) unique.add(t.pair); });
+    fPair.innerHTML = '';
+    Array.from(unique).sort().forEach(v => {
+      fPair.innerHTML += `<option value="${v}">${v}</option>`;
+    });
+    if (cur && unique.has(cur)) fPair.value = cur;
+    else fPair.value = pairList[0] || '';
+  }
+
+  function populateSelectors() {
+    const curPair = fPair.value;
+    const curTf = fTf.value;
+    const curSetup = fSetup.value;
+    populateSelect(fTf, tfList, curTf);
+    populateSelect(fSetup, setupList, curSetup);
+    populatePairOptions();
+  }
+
+  // Conf checkboxes
+  function getConfChecks() {
+    return document.querySelectorAll('#confGrid input[type="checkbox"]');
+  }
+  function getConf() {
+    return Array.from(getConfChecks()).filter(c => c.checked).map(c => c.value);
+  }
+  function setConf(arr) {
+    getConfChecks().forEach(c => { c.checked = arr.includes(c.value); });
+  }
+
+  function buildConfGrid() {
+    const grid = $('confGrid');
+    grid.innerHTML = confList.map(v =>
+      `<label class="conf-item"><input type="checkbox" value="${v}"> ${v}</label>`
+    ).join('');
+  }
+
+  // Render link input fields
+  function renderLinkFields() {
+    const container = $('linkFields');
+    if (!container) return;
+    if (linkList.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = linkList.map(title =>
+      `<label>${title} Link <input type="text" class="link-input" data-link-title="${title}" placeholder="tradingview.com/x/..."></label>`
+    ).join('');
+  }
+
+  // Edit mode chips
+  function renderChips(listId, list, containerId) {
+    const container = $(containerId);
+    if (!editMode) { container.style.display = 'none'; return; }
+    container.style.display = 'flex';
+    container.innerHTML = list.map((v, i) =>
+      `<span class="chip">${v}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
+    ).join('') + `<span class="chip-add" data-list="${listId}">+</span>`;
+  }
+
+  function renderAllChips() {
+    renderChips('pairs', pairList, 'editChipsPair');
+    renderChips('tfs', tfList, 'editChipsTf');
+    renderChips('setups', setupList, 'editChipsSetup');
+    renderChips('confs', confList, 'editChipsConf');
+    renderChips('links', linkList, 'editChipsLink');
+  }
+
+  function addChipItem(listId) {
+    const chipAdd = document.querySelector(`.chip-add[data-list="${listId}"]`);
+    if (!chipAdd) return;
+    const wrap = document.createElement('span');
+    wrap.className = 'chip-input-wrap';
+    const inp = document.createElement('input');
+    inp.placeholder = 'Yeni...';
+    wrap.appendChild(inp);
+    chipAdd.replaceWith(wrap);
+    inp.focus();
+
+    function commit() {
+      if (!document.body.contains(inp)) return;
+      const val = inp.value.trim();
+      if (val) {
+        let list;
+        if (listId === 'pairs') { pairList.push(val); list = pairList; }
+        else if (listId === 'tfs') { tfList.push(val); list = tfList; }
+        else if (listId === 'setups') { setupList.push(val); list = setupList; }
+        else if (listId === 'confs') { confList.push(val); list = confList; }
+        else if (listId === 'links') { linkList.push(val); list = linkList; }
+        saveLists();
+        buildConfGrid();
+        buildConfFilterDropdown();
+        populateSelectors();
+        renderAllChips();
+        if (listId === 'links') { renderLinkFields(); }
+      } else {
+        renderAllChips();
+      }
+    }
+
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { renderAllChips(); }
+    });
+    inp.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (document.activeElement !== inp) commit();
+      }, 100);
+    });
+  }
+
+  function removeChipItem(listId, index) {
+    if (listId === 'pairs') pairList.splice(index, 1);
+    else if (listId === 'tfs') tfList.splice(index, 1);
+    else if (listId === 'setups') setupList.splice(index, 1);
+    else if (listId === 'confs') confList.splice(index, 1);
+    else if (listId === 'links') linkList.splice(index, 1);
+    saveLists();
+    buildConfGrid();
+    populateSelectors();
+    renderAllChips();
+    buildConfFilterDropdown();
+    if (listId === 'links') { renderLinkFields(); }
+  }
+
+  // Conf filter — "Tümü" mantığı
+  function buildConfFilterDropdown() {
+    loadConfFilterSelection();
+    // Remove stale entries
+    confFilterSelection = confFilterSelection.filter(v => confList.includes(v));
+    saveConfFilterSelection();
+    const dd = $('confFilterDropdown');
+    const wasOpen = dd.classList.contains('show');
+    dd.innerHTML = `<label class="conf-filter-item"><input type="checkbox" id="confFilterAll"> <b>Tümü</b></label>`
+      + confList.map(v =>
+        `<label class="conf-filter-item"><input type="checkbox" value="${v}"> ${v}</label>`
+      ).join('');
+    dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', onConfFilterChange);
+    });
+    syncConfFilterChecks();
+    updateConfFilterTrigger();
+    if (wasOpen) dd.classList.add('show');
+  }
+
+  function onConfFilterChange(e) {
+    const cb = e.target;
+    const dd = $('confFilterDropdown');
+    if (cb.id === 'confFilterAll') {
+      confFilterSelection = [];
+      dd.querySelectorAll('input[type="checkbox"]:not(#confFilterAll)').forEach(c => c.checked = false);
+      cb.checked = true;
+    } else {
+      if (cb.checked) {
+        if (!confFilterSelection.includes(cb.value)) confFilterSelection.push(cb.value);
+        const allCb = $('confFilterAll');
+        if (allCb) allCb.checked = false;
+      } else {
+        confFilterSelection = confFilterSelection.filter(v => v !== cb.value);
+      }
+    }
+    saveConfFilterSelection();
+    updateConfFilterTrigger();
+    renderTrades();
+  }
+
+  function syncConfFilterChecks() {
+    const dd = $('confFilterDropdown');
+    if (!dd) return;
+    const isAll = confFilterSelection.length === 0;
+    const allCb = $('confFilterAll');
+    if (allCb) allCb.checked = isAll;
+    dd.querySelectorAll('input[type="checkbox"]:not(#confFilterAll)').forEach(c => {
+      c.checked = !isAll && confFilterSelection.includes(c.value);
+    });
+  }
+
+  function updateConfFilterTrigger() {
+    const trigger = $('confFilterTrigger');
+    if (!trigger) return;
+    if (confFilterSelection.length === 0) {
+      trigger.textContent = 'Tümü';
+    } else if (confFilterSelection.length <= 2) {
+      trigger.textContent = confFilterSelection.join(', ');
+    } else {
+      trigger.textContent = confFilterSelection.length + ' seçili';
+    }
+  }
+
+  function showConfFilter(e) {
+    e.stopPropagation();
+    const dd = $('confFilterDropdown');
+    if (dd.classList.contains('show')) {
+      dd.classList.remove('show');
+      return;
+    }
+    loadConfFilterSelection();
+    syncConfFilterChecks();
+    updateConfFilterTrigger();
+    dd.classList.add('show');
+  }
+
+  function hideConfFilter() {
+    $('confFilterDropdown').classList.remove('show');
+  }
+
+  // Close conf filter on outside click
+  document.addEventListener('click', (e) => {
+    const wrap = $('confFilterWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      hideConfFilter();
+    }
+  });
+
+  // Event delegation for chips (add / remove)
+  document.addEventListener('click', (e) => {
+    const chipX = e.target.closest('.chip-x');
+    if (chipX) {
+      const listId = chipX.getAttribute('data-list');
+      const index = parseInt(chipX.getAttribute('data-index'), 10);
+      removeChipItem(listId, index);
+      return;
+    }
+    const chipAdd = e.target.closest('.chip-add');
+    if (chipAdd) {
+      const listId = chipAdd.getAttribute('data-list');
+      addChipItem(listId);
+      return;
+    }
+  });
+
+  // Gear menu
+  const gearBtn = $('gearBtn');
+  const gearMenu = $('gearMenu');
+  const tradeCard = $('tradeCard');
+
+  gearBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    gearMenu.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    gearMenu.classList.remove('show');
+  });
+
+  gearMenu.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const option = e.target.closest('.gear-option');
+    if (!option) return;
+    const action = option.getAttribute('data-action');
+
+    if (action === 'toggle-edit') {
+      editMode = !editMode;
+      option.textContent = editMode ? 'Düzenlemeyi Bitir' : 'Düzenle';
+      tradeCard.classList.toggle('edit-active', editMode);
+      renderAllChips();
+      gearMenu.classList.remove('show');
+    } else if (action === 'toggle-bg') {
+      bgEnabled = !bgEnabled;
+      localStorage.setItem(BG_KEY, bgEnabled ? 'on' : 'off');
+      applyBgState();
+      gearMenu.classList.remove('show');
+    } else if (action === 'reset') {
+      const defs = getDefaults();
+      pairList = [...defs.pairs];
+      tfList = [...defs.tfs];
+      setupList = [...defs.setups];
+      confList = [...defs.confs];
+      linkList = [...(defs.linkTitles || BUILTIN_DEFAULTS.linkTitles)];
+      saveLists();
+      if (editMode) renderAllChips();
+      buildConfGrid();
+      buildConfFilterDropdown();
+      populateSelectors();
+      renderLinkFields();
+      renderTrades();
+      gearMenu.classList.remove('show');
+    } else if (action === 'save-default') {
+      saveCustomDefaults({
+        pairs: [...pairList], tfs: [...tfList], setups: [...setupList],
+        confs: [...confList], linkTitles: [...linkList]
+      });
+      gearMenu.classList.remove('show');
+    }
+  });
+
+  // --- Original code below with modifications ---
+
+  fPair.addEventListener('change', () => {
+    if (fPair.value === '__custom__') {
+      fPair.style.display = 'none';
+      fPairCustom.style.display = 'inline-block';
+      fPairCustom.value = '';
+      fPairCustom.focus();
+    }
+  });
+  fPairCustom.addEventListener('blur', () => {
+    if (!fPairCustom.value.trim()) {
+      fPairCustom.style.display = 'none';
+      fPair.style.display = 'inline-block';
+    }
+  });
+
+  function getPairValue() {
+    if (fPair.style.display === 'none') return fPairCustom.value.trim();
+    return fPair.value === '__custom__' ? '' : fPair.value;
+  }
+
+  function load() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      trades = data ? JSON.parse(data) : [];
+    } catch(e) { trades = []; }
+    // Migrate old format: htf/ltf/esPair → links
+    trades.forEach(t => {
+      if (!t.links && (t.htf || t.ltf || t.esPair)) {
+        t.links = {};
+        if (t.htf) t.links.HTF = t.htf;
+        if (t.ltf) t.links.LTF = t.ltf;
+        if (t.esPair) t.links['Eş Pair'] = t.esPair;
+        delete t.htf; delete t.ltf; delete t.esPair;
+      }
+    });
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+  }
+
+  async function loadFromFirestore() {
+    if (!currentUser) return false;
+    try {
+      const snap = await getDocs(collection(db, 'trades', currentUser.uid, 'items'));
+      const data = snap.docs.map(d => d.data());
+      if (data.length > 0) {
+        trades = data;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+        return true;
+      }
+    } catch(e) { console.warn('Firestore load failed:', e); }
+    return false;
+  }
+
+  async function syncTradeToFirestore(t) {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'trades', currentUser.uid, 'items', String(t.id)), { ...t, updatedAt: serverTimestamp() });
+    } catch(e) { console.error('Firestore sync error:', e); }
+  }
+
+  async function removeTradeFromFirestore(id) {
+    if (!currentUser) return;
+    try {
+      await deleteDoc(doc(db, 'trades', currentUser.uid, 'items', String(id)));
+    } catch(e) { console.error('Firestore delete error:', e); }
+  }
+
+  async function syncAllToFirestore() {
+    if (!currentUser) return;
+    try {
+      const col = collection(db, 'trades', currentUser.uid, 'items');
+      const existing = await getDocs(col);
+      const existingIds = new Set(existing.docs.map(d => d.id));
+      const currentIds = new Set(trades.map(t => String(t.id)));
+      const ops = [];
+      for (const d of existing.docs) { if (!currentIds.has(d.id)) ops.push(deleteDoc(d.ref)); }
+      for (const t of trades) { ops.push(setDoc(doc(col, String(t.id)), { ...t, updatedAt: serverTimestamp() })); }
+      await Promise.all(ops);
+    } catch(e) { console.error('Firestore sync all error:', e); }
+  }
+
+  function resetForm() {
+    form.reset();
+    fPair.style.display = 'inline-block';
+    fPairCustom.style.display = 'none';
+    fPairCustom.value = '';
+    fPair.value = pairList[0] || '';
+    fTf.value = tfList.includes('15m') ? '15m' : (tfList[0] || '');
+    fSetup.value = setupList.includes('Senkron') ? 'Senkron' : (setupList[0] || '');
+    fResult.value = 'Win';
+    fRr.value = '';
+    renderLinkFields();
+    fNote.value = '';
+    setConf([]);
+    editingId = null;
+    submitBtn.textContent = 'EKLE';
+    cancelBtn.style.display = 'none';
+  }
+
+  function getFilterValues() {
+    const v = {};
+    ['Pair','Tf','Setup','Result'].forEach(k => {
+      v[k] = $(`filter${k}`).value;
+    });
+    return v;
+  }
+
+  function populateFilterOptions() {
+    const sets = { Pair: new Set(), Tf: new Set(), Setup: new Set() };
+    trades.forEach(t => {
+      if (t.pair) sets.Pair.add(t.pair);
+      if (t.tf) sets.Tf.add(t.tf);
+      if (t.setup) sets.Setup.add(t.setup);
+    });
+    ['Pair','Tf','Setup'].forEach(k => {
+      const sel = $(`filter${k}`);
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">Tümü</option>';
+      Array.from(sets[k]).sort().forEach(v => {
+        sel.innerHTML += `<option value="${v}">${v}</option>`;
+      });
+      sel.value = cur;
+    });
+  }
+
+  // Winrate: win / (win + lose) * 100, BE excluded
+  function calcWinPct(win, lose) {
+    const denominator = win + lose;
+    if (denominator === 0) return win > 0 ? 100 : 0;
+    return win / denominator * 100;
+  }
+
+  function renderStats() {
+    const grid = $('statsGrid');
+    const confNames = confList;
+    const confColors = {
+      'Şimşek': { t:'#f0d060', b:'rgba(240,208,96,0.12)' },
+      'Saat': { t:'#6ab8e8', b:'rgba(106,184,232,0.12)' },
+      'FVG': { t:'#5cc08a', b:'rgba(92,192,138,0.12)' },
+      'Sekans': { t:'#b088d8', b:'rgba(176,136,216,0.12)' },
+      'Ucuz-Pahallı': { t:'#e8a860', b:'rgba(232,168,96,0.12)' },
+      'Eş Pair': { t:'#60c8c0', b:'rgba(96,200,192,0.12)' },
+      'K. Market Y. Tepkisi': { t:'#e888a8', b:'rgba(232,136,168,0.12)' },
+      'Bacak 1': { t:'#68d0d0', b:'rgba(104,208,208,0.12)' },
+      'Bacak 2': { t:'#c8a0d0', b:'rgba(200,160,208,0.12)' },
+      '-1': { t:'#e87878', b:'rgba(232,120,120,0.12)' }
+    };
+    const setupMap = {};
+    trades.forEach(t => {
+      if (!t.setup) return;
+      if (!setupMap[t.setup]) {
+        setupMap[t.setup] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
+        confNames.forEach(c => setupMap[t.setup].confCounts[c] = 0);
+      }
+      const s = setupMap[t.setup];
+      s.total++;
+      if (t.result === 'Win') s.win++;
+      else if (t.result === 'BE') s.be++;
+      else if (t.result === 'Lose') s.lose++;
+      if (t.rr != null && t.rr !== '') {
+        s.rrSum += Number(t.rr);
+        s.rrCount++;
+      }
+      if (t.confirmations) {
+        t.confirmations.forEach(c => {
+          if (s.confCounts[c] !== undefined) s.confCounts[c]++;
+        });
+      }
+    });
+
+    const arr = Object.entries(setupMap).map(([name, s]) => {
+      const winRate = calcWinPct(s.win, s.lose);
+      const winPct = s.total ? (s.win / s.total * 100) : 0;
+      const bePct = s.total ? (s.be / s.total * 100) : 0;
+      const losePct = s.total ? (s.lose / s.total * 100) : 0;
+      const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
+      return { name, ...s, winRate, winPct, bePct, losePct, avgRr };
+    });
+    arr.sort((a,b) => b.winPct - a.winPct || b.total - a.total);
+
+    if (arr.length === 0) {
+      grid.innerHTML = '<div class="empty">Henüz setup verisi yok.</div>';
+      return;
+    }
+
+    function getPairStats(setupName) {
+      const pairMap = {};
+      const filtered = trades.filter(t => t.setup === setupName && t.pair);
+      filtered.forEach(t => {
+        const p = t.pair;
+        if (!pairMap[p]) {
+          pairMap[p] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
+          confNames.forEach(c => pairMap[p].confCounts[c] = 0);
+        }
+        const s = pairMap[p];
+        s.total++;
+        if (t.result === 'Win') s.win++;
+        else if (t.result === 'BE') s.be++;
+        else if (t.result === 'Lose') s.lose++;
+        if (t.rr != null && t.rr !== '') { s.rrSum += Number(t.rr); s.rrCount++; }
+        if (t.confirmations) {
+          t.confirmations.forEach(c => { if (s.confCounts[c] !== undefined) s.confCounts[c]++; });
+        }
+      });
+      return Object.entries(pairMap).map(([name, s]) => {
+        const winRate = calcWinPct(s.win, s.lose);
+        const winPct = s.total ? (s.win / s.total * 100) : 0;
+        const losePct = s.total ? (s.lose / s.total * 100) : 0;
+        const bePct = s.total ? (s.be / s.total * 100) : 0;
+        const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
+        return { name, ...s, winRate, winPct, losePct, bePct, avgRr };
+      }).sort((a,b) => b.winRate - a.winRate || b.total - a.total);
+    }
+
+    grid.innerHTML = arr.map(s => {
+      const confHtml = confNames
+        .filter(c => s.confCounts[c] > 0)
+        .sort((a,b) => s.confCounts[b] - s.confCounts[a])
+        .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${c} %${(s.confCounts[c] / s.total * 100).toFixed(0)}</span>`)
+        .join('');
+
+      let detailHtml = '';
+      if (expandedSetup === s.name) {
+        const pairs = getPairStats(s.name);
+        detailHtml = pairs.length ? `
+          <div class="stat-card-detail">
+            <div class="stat-sub-title">Parite Bazında</div>
+            <div class="stat-sub-grid">
+              ${pairs.map(p => {
+                const pConf = confNames
+                  .filter(c => p.confCounts[c] > 0)
+                  .sort((a,b) => p.confCounts[b] - p.confCounts[a])
+                  .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${c} %${(p.confCounts[c] / p.total * 100).toFixed(0)}</span>`)
+                  .join('');
+                return `
+                <div class="stat-sub-card">
+                  <div class="stat-sub-name">${p.name}</div>
+                  <div class="stat-sub-row">Winrate <b>${p.winRate.toFixed(1)}%</b> | Ort. RR: <b>${p.avgRr.toFixed(2)}</b></div>
+                  <div class="stat-sub-row"><b>${p.total}</b> trade | Win <b>${p.win}</b> | Lose <b>${p.lose}</b> | BE <b>${p.be}</b></div>
+                  <div class="stat-sub-bar">
+                    <div class="bar-win" style="flex:${p.winPct}"></div>
+                    <div class="bar-be" style="flex:${p.bePct}"></div>
+                    <div class="bar-lose" style="flex:${p.losePct}"></div>
+                  </div>
+                  ${pConf ? `<div class="stat-conf-row">${pConf}</div>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>` : '';
+      }
+
+      return `
+      <div class="stat-card" data-setup="${s.name}">
+        <div class="stat-title">${s.name}</div>
+        <div class="stat-row">Winrate <b>${s.winRate.toFixed(1)}%</b> | Ort. RR: <b>${s.avgRr.toFixed(2)}</b></div>
+        <div class="stat-row"><b>${s.total}</b> trade | Win <b>${s.win}</b> | Lose <b>${s.lose}</b> | BE <b>${s.be}</b></div>
+        <div class="stat-bar">
+          <div class="bar-win" style="flex:${s.winPct}"></div>
+          <div class="bar-be" style="flex:${s.bePct}"></div>
+          <div class="bar-lose" style="flex:${s.losePct}"></div>
+        </div>
+        ${confHtml ? `<div class="stat-conf-row">${confHtml}</div>` : ''}
+        ${detailHtml}
+      </div>`;
+    }).join('');
+  }
+
+  function renderTrades() {
+    const filters = getFilterValues();
+    const tbody = $('tradesBody');
+    const empty = $('emptyMsg');
+
+    let filtered = trades.filter(t => {
+      if (filters.Pair && t.pair !== filters.Pair) return false;
+      if (filters.Tf && t.tf !== filters.Tf) return false;
+      if (filters.Setup && t.setup !== filters.Setup) return false;
+      if (filters.Result && t.result !== filters.Result) return false;
+      // Conf filter: show trades that have ALL selected confirmations
+      if (confFilterSelection.length > 0) {
+        if (!t.confirmations || t.confirmations.length === 0) return false;
+        if (!confFilterSelection.every(c => t.confirmations.includes(c))) return false;
+      }
+      return true;
+    });
+    filtered = [...filtered].reverse();
+
+    const summary = $('filterSummary');
+    const total = filtered.length;
+    const wins = filtered.filter(t => t.result === 'Win').length;
+    const loses = filtered.filter(t => t.result === 'Lose').length;
+    const bes = filtered.filter(t => t.result === 'BE').length;
+    const winDenom = wins + loses;
+    const winPct = winDenom > 0 ? (wins / winDenom * 100) : (wins > 0 ? 100 : 0);
+    const rrVals = filtered.map(t => t.rr).filter(v => v != null && v !== '').map(Number);
+    const avgRr = rrVals.length > 0 ? (rrVals.reduce((a, b) => a + b, 0) / rrVals.length) : 0;
+    summary.textContent =
+      `→ Winrate ${winPct.toFixed(1)}% | Ort. RR: ${avgRr.toFixed(2)} | ${total} trade | Win ${wins} | Lose ${loses} | BE ${bes}`;
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    // Build dynamic thead
+    const thead = $('tradesHead');
+    thead.innerHTML = '<tr>'
+      + ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR']
+        .map(h => `<th>${h}</th>`).join('')
+      + linkList.map(h => `<th>${h}</th>`).join('')
+      + ['Not', ''].map(h => `<th>${h}</th>`).join('')
+      + '</tr>';
+
+    tbody.innerHTML = filtered.map(t => {
+      const confStr = t.confirmations && t.confirmations.length
+        ? t.confirmations.map(c => `<span class="conf-chip">${c}</span>`).join('')
+        : '<span style="color:#787b86;font-size:10px">-</span>';
+      const resultBadge = `badge-${t.result.toLowerCase()}`;
+      const linkCells = linkList.map(title => {
+        const url = t.links && t.links[title];
+        return `<td>${url ? `<span class="preview-link" data-url="${url}">${title}</span>` : '-'}</td>`;
+      }).join('');
+      return `<tr${t._new ? ' class="new-trade"' : ''}>
+        <td style="white-space:nowrap">${t.date || '-'}</td>
+        <td><b>${t.pair || '-'}</b></td>
+        <td>${t.tf || '-'}</td>
+        <td><span class="badge badge-setup">${t.setup || '-'}</span></td>
+        <td>${confStr}</td>
+        <td><span class="badge ${resultBadge}">${t.result || '-'}</span></td>
+        <td>${t.rr != null && t.rr !== '' ? Number(t.rr).toFixed(2) : '-'}</td>
+        ${linkCells}
+        <td class="note-cell"><span class="note-display ${t.not ? 'has-note' : ''}" data-id="${t.id}">${t.not || 'Not...'}</span></td>
+        <td class="actions">
+          <button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
+          <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('[data-edit]').forEach(b => {
+      b.addEventListener('click', () => startEdit(Number(b.getAttribute('data-edit'))));
+    });
+    tbody.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', () => deleteTrade(Number(b.getAttribute('data-del'))));
+    });
+    tbody.querySelectorAll('.preview-link').forEach(el => {
+      el.addEventListener('mouseenter', () => { previewEnter(el); });
+      el.addEventListener('mouseleave', () => { previewLeave(); });
+    });
+    tbody.querySelectorAll('.note-display').forEach(el => {
+      el.addEventListener('click', () => startNoteEdit(el));
+    });
+  }
+
+  function startNoteEdit(el) {
+    const id = Number(el.getAttribute('data-id'));
+    const t = trades.find(x => x.id === id);
+    if (!t) return;
+    const td = el.closest('.note-cell');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'note-input-inline';
+    inp.value = t.not || '';
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+
+    function saveNote() {
+      const val = inp.value.trim();
+      t.not = val || '';
+      save();
+      syncTradeToFirestore(t);
+      renderTrades();
+    }
+    inp.addEventListener('blur', saveNote);
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { inp.blur(); }
+      if (e.key === 'Escape') { renderTrades(); }
+    });
+  }
+
+  function deleteTrade(id) {
+    if (!confirm('Bu trade kaydını silmek istediğinize emin misiniz?')) return;
+    trades = trades.filter(t => t.id !== id);
+    save();
+    removeTradeFromFirestore(id);
+    renderAll();
+  }
+
+  function startEdit(id) {
+    const t = trades.find(x => x.id === id);
+    if (!t) return;
+    editingId = id;
+    fPair.style.display = 'inline-block';
+    fPairCustom.style.display = 'none';
+    fPairCustom.value = '';
+    const pairOpts = Array.from(fPair.options).map(o => o.value);
+    if (pairOpts.includes(t.pair || '')) {
+      fPair.value = t.pair || '';
+    } else {
+      fPair.value = '__custom__';
+      fPair.style.display = 'none';
+      fPairCustom.value = t.pair || '';
+      fPairCustom.style.display = 'inline-block';
+    }
+    fTf.value = t.tf || '';
+    fSetup.value = t.setup || '';
+    fResult.value = t.result || '';
+    fRr.value = t.rr != null ? t.rr : '';
+    renderLinkFields();
+    if (t.links) {
+      $('linkFields').querySelectorAll('.link-input').forEach(inp => {
+        const title = inp.getAttribute('data-link-title');
+        if (title && t.links[title]) inp.value = t.links[title];
+      });
+    }
+    fNote.value = t.not || '';
+    setConf(t.confirmations || []);
+    submitBtn.textContent = 'GÜNCELLE';
+    cancelBtn.style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function isDuplicate(pair, tf, setup, result, rr) {
+    return trades.some(t =>
+      t.pair === pair && t.tf === tf && t.setup === setup &&
+      t.result === result && (t.rr == rr || (t.rr == null && rr == null))
+    );
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    const pair = getPairValue();
+    if (!pair) { alert('Parite girin.'); submitBtn.disabled = false; return; }
+    const tf = fTf.value;
+    const setup = fSetup.value;
+    const result = fResult.value;
+    const rr = fRr.value !== '' ? fRr.value : null;
+    if (result === 'Win' && (rr === null || rr === '')) {
+      fRr.focus();
+      fRr.style.borderColor = '#f7525a';
+      fRr.style.boxShadow = '0 0 0 2px #f7525a40';
+      setTimeout(() => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; }, 2500);
+      submitBtn.disabled = false;
+      return;
+    }
+    if (!editingId && isDuplicate(pair, tf, setup, result, rr)) {
+      alert('Bu trade zaten mevcut.');
+      submitBtn.disabled = false;
+      return;
+    }
+    // Read link fields dynamically
+    const links = {};
+    if ($('linkFields')) {
+      $('linkFields').querySelectorAll('.link-input').forEach(inp => {
+        const title = inp.getAttribute('data-link-title');
+        const val = inp.value.trim();
+        if (title && val) links[title] = val;
+      });
+    }
+    const not = fNote.value.trim() || '';
+    const confirmations = getConf();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    if (editingId) {
+      const idx = trades.findIndex(t => t.id === editingId);
+      if (idx !== -1) {
+        trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations };
+        syncTradeToFirestore(trades[idx]);
+      }
+    } else {
+      const newId = Date.now();
+      const newTrade = {
+        id: newId,
+        _new: true,
+        date: dateStr,
+        pair, tf, setup, result, rr, links, not,
+        confirmations
+      };
+      trades.push(newTrade);
+      syncTradeToFirestore(newTrade);
+      setTimeout(() => {
+        const t = trades.find(x => x.id === newId);
+        if (t) { delete t._new; save(); renderTrades(); }
+      }, 3200);
+    }
+
+    save();
+    resetForm();
+    renderAll();
+    submitBtn.disabled = false;
+  }
+
+  function renderAll() {
+    populateSelectors();
+    populateFilterOptions();
+    renderStats();
+    renderTrades();
+  }
+
+  fRr.addEventListener('input', () => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; });
+  fResult.addEventListener('change', () => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; });
+
+  // Events
+  $('statsGrid').addEventListener('click', (e) => {
+    if (e.target.closest('.stat-card-detail')) return;
+    const card = e.target.closest('.stat-card[data-setup]');
+    if (!card) return;
+    const setup = card.getAttribute('data-setup');
+    expandedSetup = expandedSetup === setup ? null : setup;
+    renderStats();
+  });
+
+  form.addEventListener('submit', handleSubmit);
+  cancelBtn.addEventListener('click', resetForm);
+
+  document.querySelectorAll('#filterPair,#filterTf,#filterSetup,#filterResult').forEach(el => {
+    el.addEventListener('change', renderTrades);
+  });
+
+  $('clearFilterBtn').addEventListener('click', () => {
+    ['filterPair','filterTf','filterSetup','filterResult'].forEach(id => $(id).value = '');
+    confFilterSelection = [];
+    saveConfFilterSelection();
+    buildConfFilterDropdown();
+    renderTrades();
+  });
+
+  $('deleteAllBtn').addEventListener('click', () => {
+    if (!confirm('Tüm trade kayıtlarını silmek istediğinize emin misiniz?')) return;
+    trades = [];
+    save();
+    syncAllToFirestore();
+    renderAll();
+  });
+
+  $('importBtn').addEventListener('click', () => { $('importInput').click(); });
+  $('importInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const csv = ev.target.result;
+      const lines = csv.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { alert('Geçersiz CSV.'); return; }
+
+      function parseCSV(line) {
+        const r = []; let c = ''; let q = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { if (q && i+1 < line.length && line[i+1] === '"') { c += '"'; i++; } else { q = !q; } }
+          else if (ch === ',' && !q) { r.push(c); c = ''; }
+          else { c += ch; }
+        }
+        r.push(c); return r;
+      }
+
+      const hdrs = parseCSV(lines[0]).map(h => h.trim());
+      const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
+      const idx = {};
+      const linkHeaders = [];
+      hdrs.forEach((h, i) => {
+        if (fixedExpected.includes(h)) idx[h] = i;
+        else if (!['','id'].includes(h)) linkHeaders.push(h);
+      });
+      if (!idx['Parite'] || !idx['Setup']) { alert('CSV formatı tanınmadı.'); return; }
+
+      let count = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const f = parseCSV(lines[i]);
+        const get = (n) => f[idx[n]] || '';
+        const rrRaw = get('RR');
+        const rr = rrRaw !== '' ? parseFloat(rrRaw.replace(',','.')) : null;
+        const confRaw = get('Konfirmasyonlar');
+        const links = {};
+        linkHeaders.forEach(h => { const v = f[hdrs.indexOf(h)]; if (v && v.trim()) links[h] = v.trim(); });
+        const trade = {
+          id: Date.now() + count,
+          date: get('Tarih'),
+          pair: get('Parite'),
+          tf: get('TF'),
+          setup: get('Setup'),
+          result: get('Sonuç'),
+          rr: !isNaN(rr) ? rr : null,
+          links: Object.keys(links).length > 0 ? links : undefined,
+          not: get('Not'),
+          confirmations: confRaw ? confRaw.split(',').map(s => s.trim()).filter(Boolean) : []
+        };
+        if (trade.pair && trade.setup && trade.result) { trades.push(trade); count++; }
+      }
+      save();
+      syncAllToFirestore();
+      renderAll();
+      alert(count + ' trade içe aktarıldı.');
+      $('importInput').value = '';
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  $('exportBtn').addEventListener('click', () => {
+    const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
+    const headers = [...fixedHeaders, ...linkList, 'Not'];
+    const rows = trades.map(t => [
+      t.date || '',
+      t.pair || '',
+      t.tf || '',
+      t.setup || '',
+      (t.confirmations || []).join(', '),
+      t.result || '',
+      t.rr != null ? Number(t.rr).toFixed(2) : '',
+      ...linkList.map(title => (t.links && t.links[title]) || ''),
+      t.not || ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'trade_notlari.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // --- Preview / Fullscreen ---
+  const previewPopup = $('previewPopup');
+  const previewImg = $('previewImg');
+  const fullscreenModal = $('fullscreenModal');
+  const fullscreenImg = $('fullscreenImg');
+  let previewHideTimer = null;
+  let previewShowTimer = null;
+
+  function positionPreview(el) {
+    const rect = el.getBoundingClientRect();
+    const gap = 12;
+    const margin = 24;
+    const pw = Math.min(window.innerWidth * 0.5, 800);
+    const ph = Math.min(window.innerHeight * 0.5, 500);
+
+    const fitBelow = rect.bottom + gap + ph <= window.innerHeight - margin;
+    const fitAbove = rect.top - gap - ph >= margin;
+
+    let top;
+    if (fitBelow) top = rect.bottom + gap;
+    else if (fitAbove) top = rect.top - gap - ph;
+    else top = margin + (window.innerHeight - ph - 2 * margin) / 2;
+
+    const fitRight = rect.left + pw <= window.innerWidth - margin;
+    const fitLeft = rect.right - pw >= margin;
+
+    let left;
+    if (fitRight) left = rect.left;
+    else if (fitLeft) left = rect.right - pw;
+    else left = margin + (window.innerWidth - pw - 2 * margin) / 2;
+
+    left = Math.round(Math.max(margin, Math.min(left, window.innerWidth - pw - margin)));
+    top  = Math.round(Math.max(margin, Math.min(top, window.innerHeight - ph - margin)));
+
+    previewPopup.style.left = left + 'px';
+    previewPopup.style.top = top + 'px';
+    previewPopup.style.width = pw + 'px';
+    previewPopup.style.height = ph + 'px';
+  }
+
+  function showPreview(url, el) {
+    positionPreview(el);
+    previewPopup.style.display = 'block';
+    previewPopup.classList.remove('show');
+    void previewPopup.offsetHeight;
+    previewPopup.classList.add('show');
+    previewImg.onload = () => {};
+    previewImg.onerror = () => { hidePreview(); };
+    previewImg.src = url;
+  }
+
+  function hidePreview() {
+    previewPopup.classList.remove('show');
+    previewPopup.style.display = 'none';
+    previewPopup.style.width = '';
+    previewPopup.style.height = '';
+    previewImg.src = '';
+    previewImg.onload = null;
+    previewImg.onerror = null;
+  }
+
+  function previewEnter(el) {
+    clearTimeout(previewHideTimer);
+    const url = el.getAttribute('data-url');
+    if (!url) return;
+    clearTimeout(previewShowTimer);
+    previewShowTimer = setTimeout(() => showPreview(url, el), 200);
+  }
+
+  function previewLeave() {
+    clearTimeout(previewShowTimer);
+    clearTimeout(previewHideTimer);
+    previewHideTimer = setTimeout(hidePreview, 350);
+  }
+
+  previewPopup.addEventListener('mouseenter', () => {
+    clearTimeout(previewHideTimer);
+  });
+  previewPopup.addEventListener('mouseleave', () => {
+    previewLeave();
+  });
+  previewImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const url = previewImg.src;
+    if (url) openFullscreen(url);
+  });
+
+  function openFullscreen(url) {
+    fullscreenImg.src = url;
+    fullscreenModal.style.display = 'block';
+  }
+  function closeFullscreen() {
+    fullscreenModal.style.display = 'none';
+    fullscreenImg.src = '';
+  }
+  fullscreenModal.addEventListener('click', closeFullscreen);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fullscreenModal.style.display === 'block') closeFullscreen();
+  });
+
+  // Conf filter toggle
+  $('confFilterTrigger').addEventListener('click', showConfFilter);
+
+  // Init — chat and CSV panel elements
+  const chatPanel = $('chatPanel');
+  const csvPanel = $('csvPanel');
+  const chatToggle = $('chatToggle');
+  const csvToggle = $('csvToggle');
+  let chatUnsub = null;
+  let hasUnreadChat = false;
+  let isAdmin = false;
+  let allUsers = [];
+  const adminPanel = $('adminPanel');
+  const adminToggle = $('adminToggle');
+
+  async function checkAdmin() {
+    if (!currentUser) return false;
+    try {
+      const snap = await getDoc(doc(db, 'admin', 'config'));
+      const admins = snap.exists() ? (snap.data().uids || []) : [];
+      isAdmin = admins.includes(currentUser.uid);
+      if (adminToggle) adminToggle.style.display = isAdmin ? 'flex' : 'none';
+      return isAdmin;
+    } catch(e) { isAdmin = false; return false; }
+  }
+
+  async function loadAdminUsers() {
+    if (!currentUser) return;
+    try {
+      const groups = await getDocs(collection(db, 'trades'));
+      allUsers = [];
+      groups.forEach(doc => {
+        if (!allUsers.find(u => u.uid === doc.id)) {
+          allUsers.push({ uid: doc.id });
+        }
+      });
+    } catch(e) { console.error('Admin load error:', e); }
+    renderAdminUserList();
+  }
+
+  function renderAdminUserList() {
+    const container = $('adminUserList');
+    if (!container) return;
+    if (allUsers.length === 0) {
+      container.innerHTML = '<div style="color:#787b86;text-align:center;padding:20px">Henüz kullanıcı yok.</div>';
+      return;
+    }
+    container.innerHTML = allUsers.map(u => `
+      <div class="admin-user-row">
+        <span title="${escapeHtml(u.uid)}">${escapeHtml(u.uid.slice(0,8)+'...')}</span>
+        <div class="admin-actions">
+          <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
+          <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  $('adminBody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const uid = btn.getAttribute('data-uid');
+    const action = btn.getAttribute('data-action');
+    if (action === 'view-csv') {
+      try {
+        const snap = await getDoc(doc(db, 'csv_storage', uid));
+        if (snap.exists()) {
+          alert('Kullanıcı CSV içeriği:\n\n' + (snap.data().content || '').slice(0, 2000));
+        } else {
+          alert('Bu kullanıcının CSV verisi yok.');
+        }
+      } catch(e) { alert('CSV yüklenemedi: ' + e.message); }
+    } else if (action === 'view-info') {
+      alert('UID: ' + uid);
+    }
+  });
+
+  function openPopup(type) {
+    const getPanel = (t) => t === 'chat' ? chatPanel : t === 'csv' ? csvPanel : adminPanel;
+    const getToggle = (t) => t === 'chat' ? chatToggle : t === 'csv' ? csvToggle : adminToggle;
+    const openPanel = getPanel(type);
+    const openTgl = getToggle(type);
+    const closePanels = [chatPanel, csvPanel, adminPanel].filter(p => p !== openPanel);
+    const closeTgls = [chatToggle, csvToggle, adminToggle].filter(t => t !== openTgl);
+    const alreadyOpen = openPanel.classList.contains('open');
+    if (alreadyOpen) {
+      openPanel.classList.remove('open');
+      openTgl.classList.remove('active');
+      return;
+    }
+    closePanels.forEach(p => p.classList.remove('open'));
+    closeTgls.forEach(t => t.classList.remove('active'));
+    openPanel.classList.add('open');
+    openTgl.classList.add('active');
+    if (type === 'chat') {
+      const nickname = localStorage.getItem('chatNickname');
+      const nicknameWrap = $('chatNicknameWrap');
+      const chatBody = $('chatBody');
+      const chatFooter = $('chatFooter');
+      if (!nickname) {
+        nicknameWrap.style.display = 'flex';
+        chatBody.style.display = 'none';
+        chatFooter.style.display = 'none';
+      } else {
+        nicknameWrap.style.display = 'none';
+        chatBody.style.display = 'flex';
+        chatFooter.style.display = 'flex';
+        if (!chatUnsub) initChat();
+      }
+      restoreChatSize();
+      chatToggle.classList.remove('has-unread');
+      hasUnreadChat = false;
+    } else if (type === 'csv') {
+      loadCsvMeta();
+      loadMyCsvFiles();
+    } else if (type === 'admin') {
+      loadAdminUsers();
+    }
+  }
+
+  $('popupContainer').addEventListener('click', (e) => {
+    const close = e.target.closest('.pp-close');
+    if (!close) return;
+    const type = close.getAttribute('data-popup');
+    if (type === 'chat') { chatPanel.classList.remove('open'); chatToggle.classList.remove('active'); }
+    else if (type === 'csv') { csvPanel.classList.remove('open'); csvToggle.classList.remove('active'); }
+    else if (type === 'admin') { adminPanel.classList.remove('open'); adminToggle.classList.remove('active'); }
+  });
+  chatToggle.addEventListener('click', () => openPopup('chat'));
+  csvToggle.addEventListener('click', () => openPopup('csv'));
+  adminToggle.addEventListener('click', () => openPopup('admin'));
+
+  // Auth guard and init
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUser = user;
+    const ui = $('userInfo');
+    ui.style.display = 'flex';
+    $('userEmail').textContent = user.email;
+    $('logoutBtn').addEventListener('click', () => {
+      if (chatUnsub) chatUnsub();
+      signOut(auth);
+      window.location.href = 'index.html';
+    });
+
+    // Load trades from Firestore, fall back to localStorage
+    const ok = await loadFromFirestore();
+    if (!ok) load();
+
+    loadBgPref();
+    initBgCanvas();
+    loadLists();
+    loadCustomDefaults();
+    await loadUserSettings();
+    loadConfFilterSelection();
+    buildConfGrid();
+    buildConfFilterDropdown();
+    populateSelectors();
+    renderAll();
+    resetForm();
+    if (editMode) {
+      tradeCard.classList.add('edit-active');
+      renderAllChips();
+    }
+    checkAdmin();
+    restoreChatPosition();
+    initChatDrag();
+    initChatResize();
+  });
+
+  // ====== CHAT ======
+  let chatMessages = null;
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function initChat() {
+    chatMessages = $('chatBody');
+    chatUnsub = onSnapshot(
+      query(collection(db, 'messages'), orderBy('createdAt', 'asc')),
+      (snap) => {
+        if (!chatPanel.classList.contains('open')) return;
+        chatMessages.innerHTML = '';
+        let hasMsg = false;
+        snap.forEach((d) => {
+          hasMsg = true;
+          const m = d.data();
+          const isOwn = m.uid === currentUser.uid;
+          const time = m.createdAt
+            ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+            : '';
+          const sender = m.nickname || m.email || 'Anonim';
+          chatMessages.innerHTML +=
+            `<div class="chat-msg ${isOwn ? 'own' : 'other'}">` +
+            (isOwn ? '' : `<div class="msg-sender">${escapeHtml(sender)}</div>`) +
+            `<div class="bubble">${escapeHtml(m.text || '')}</div>` +
+            `<div class="msg-time">${time}</div></div>`;
+        });
+        if (!hasMsg) chatMessages.innerHTML = '<div class="chat-empty">Henüz mesaj yok.</div>';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Update unread badge
+        if (!chatPanel.classList.contains('open')) {
+          chatToggle.classList.add('has-unread');
+          hasUnreadChat = true;
+        } else {
+          chatToggle.classList.remove('has-unread');
+          hasUnreadChat = false;
+        }
+      },
+      (err) => { console.error('Chat error:', err); }
+    );
+  }
+
+  async function sendChatMessage() {
+    const inp = $('chatInput');
+    const text = inp.value.trim();
+    if (!text || !currentUser) return;
+    inp.value = '';
+    const nickname = localStorage.getItem('chatNickname') || currentUser.email;
+    try {
+      await addDoc(collection(db, 'messages'), {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        nickname: nickname,
+        text: text,
+        createdAt: serverTimestamp()
+      });
+    } catch(e) { console.error('Send error:', e); }
+  }
+
+  $('chatSendBtn').addEventListener('click', sendChatMessage);
+  $('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+  $('chatNicknameBtn').addEventListener('click', () => {
+    const inp = $('chatNicknameInput');
+    const val = inp.value.trim();
+    if (!val) { alert('Lütfen bir rumuz girin.'); return; }
+    localStorage.setItem('chatNickname', val);
+    inp.value = '';
+    const nicknameWrap = $('chatNicknameWrap');
+    const chatBody = $('chatBody');
+    const chatFooter = $('chatFooter');
+    nicknameWrap.style.display = 'none';
+    chatBody.style.display = 'flex';
+    chatFooter.style.display = 'flex';
+    if (!chatUnsub) initChat();
+  });
+
+  $('chatNicknameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('chatNicknameBtn').click();
+  });
+
+  function saveChatSize() {
+    const w = chatPanel.offsetWidth;
+    const h = chatPanel.offsetHeight;
+    localStorage.setItem('chatPanelWidth', w);
+    localStorage.setItem('chatPanelHeight', h);
+  }
+
+  function restoreChatSize() {
+    const w = localStorage.getItem('chatPanelWidth');
+    const h = localStorage.getItem('chatPanelHeight');
+    if (w) chatPanel.style.width = w + 'px';
+    if (h) chatPanel.style.height = h + 'px';
+  }
+
+  function restoreChatPosition() {
+    const l = localStorage.getItem('chatPanelLeft');
+    const t = localStorage.getItem('chatPanelTop');
+    if (l && t) {
+      chatPanel.style.bottom = 'auto';
+      chatPanel.style.right = 'auto';
+      chatPanel.style.left = l + 'px';
+      chatPanel.style.top = t + 'px';
+    }
+  }
+
+  let chatDragOffset = { x: 0, y: 0 };
+  let chatIsDragging = false;
+
+  function initChatDrag() {
+    const header = chatPanel.querySelector('.pp-header');
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.pp-close')) return;
+      chatIsDragging = true;
+      chatPanel.style.bottom = 'auto';
+      chatPanel.style.right = 'auto';
+      const rect = chatPanel.getBoundingClientRect();
+      chatDragOffset.x = e.clientX - rect.left;
+      chatDragOffset.y = e.clientY - rect.top;
+    });
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    if (chatIsDragging) {
+      chatPanel.style.left = (e.clientX - chatDragOffset.x) + 'px';
+      chatPanel.style.top = (e.clientY - chatDragOffset.y) + 'px';
+    } else if (chatIsResizing) {
+      const dw = e.clientX - chatResizeStart.x;
+      const dh = e.clientY - chatResizeStart.y;
+      const newW = Math.max(280, chatResizeStart.w + dw);
+      const newH = Math.max(200, chatResizeStart.h + dh);
+      chatPanel.style.width = newW + 'px';
+      chatPanel.style.height = newH + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (chatIsDragging) {
+      chatIsDragging = false;
+      const rect = chatPanel.getBoundingClientRect();
+      localStorage.setItem('chatPanelLeft', rect.left);
+      localStorage.setItem('chatPanelTop', rect.top);
+    } else if (chatIsResizing) {
+      chatIsResizing = false;
+      saveChatSize();
+    }
+  });
+
+  let chatIsResizing = false;
+  let chatResizeStart = { w: 0, h: 0, x: 0, y: 0 };
+
+  function initChatResize() {
+    const handle = document.getElementById('chatResizeHandle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      chatIsResizing = true;
+      const rect = chatPanel.getBoundingClientRect();
+      chatResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
+    });
+  }
+
+  // ====== CSV ======
+  const csvEditor = $('csvEditor');
+  const csvNameInput = $('csvNameInput');
+  const csvMyList = $('csvMyList');
+  const csvPublicList = $('csvPublicList');
+  const csvTabMy = $('csvTabMy');
+  const csvTabPublic = $('csvTabPublic');
+  let csvDirty = false;
+  let csvCurrentFileId = null;
+  let csvMyFiles = [];
+
+  function getDefaultCsvName() {
+    const nick = localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+    return `${nick}_${ts}`;
+  }
+
+  function sanitizeName(str) {
+    return str.replace(/[\/\\:\*\?"<>\|\.]/g, '_').substring(0, 100);
+  }
+
+  async function loadCsvMeta() {
+    if (!currentUser) return {};
+    try {
+      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+      if (snap.exists()) return snap.data();
+    } catch(e) { console.warn('CSV meta load error:', e); }
+    return {};
+  }
+
+  async function saveCsvMeta(data) {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), data);
+    } catch(e) { console.warn('CSV meta save error:', e); }
+  }
+
+  async function loadMyCsvFiles() {
+    if (!currentUser) return;
+    try {
+      const snap = await getDocs(collection(db, 'csv_storage', currentUser.uid, 'files'));
+      csvMyFiles = [];
+      snap.forEach(d => {
+        const d2 = d.data();
+        csvMyFiles.push({ id: d.id, name: d2.name || 'isimsiz', content: d2.content || '', createdAt: d2.createdAt });
+      });
+      csvMyFiles.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      renderCsvMyList();
+    } catch(e) { console.warn('CSV files load error:', e); }
+  }
+
+  function renderCsvMyList() {
+    if (!csvMyList) return;
+    if (csvMyFiles.length === 0) {
+      csvMyList.innerHTML = '<div style="color:#787b86;text-align:center;padding:10px">Henüz kayıtlı CSV yok.</div>';
+      return;
+    }
+    csvMyList.innerHTML = csvMyFiles.map(f => {
+      const dateStr = f.createdAt ? new Date(f.createdAt.seconds * 1000).toLocaleString('tr-TR') : '';
+      const dispName = sanitizeName(f.name || 'isimsiz');
+      return `<div class="csv-list-item">
+        <div class="csv-item-info">
+          <div class="csv-item-name" title="${escapeHtml(dispName)}">${escapeHtml(dispName)}</div>
+          <div class="csv-item-date">${dateStr}</div>
+        </div>
+        <div class="csv-item-actions">
+          <button class="csv-open" data-id="${f.id}">Aç</button>
+          <button class="csv-delete danger" data-id="${f.id}">Sil</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function openCsvFile(id) {
+    if (csvDirty && !confirm('Kaydedilmemiş değişiklikler var. Devam etmek istiyor musunuz?')) return;
+    try {
+      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
+      if (!snap.exists()) { alert('CSV bulunamadı.'); return; }
+      const data = snap.data();
+      csvEditor.value = data.content || '';
+      csvNameInput.value = data.name || '';
+      csvCurrentFileId = id;
+      csvDirty = false;
+      csvEditor.readOnly = false;
+      csvEditor.style.opacity = '1';
+    } catch(e) { alert('CSV açılamadı: ' + e.message); }
+  }
+
+  async function deleteCsvFile(id) {
+    if (!confirm('Bu CSV\'yi silmek istediğinize emin misiniz?')) return;
+    try {
+      await deleteDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
+      alert('CSV silindi.');
+      await loadMyCsvFiles();
+      if (csvCurrentFileId === id) {
+        csvEditor.value = '';
+        csvNameInput.value = '';
+        csvCurrentFileId = null;
+        csvDirty = false;
+        csvEditor.readOnly = false;
+        csvEditor.style.opacity = '1';
+      }
+    } catch(e) { alert('CSV silinemedi: ' + e.message); }
+  }
+
+  async function saveCsvToFirestore() {
+    if (!currentUser) return;
+    let name = csvNameInput.value.trim();
+    if (!name) {
+      name = getDefaultCsvName();
+      csvNameInput.value = name;
+    }
+    name = sanitizeName(name);
+    const content = csvEditor.value;
+
+    if (content.length > CSV_MAX_SIZE) {
+      alert('CSV dosyası çok büyük. Maksimum 5MB olabilir. (Şu an: ' + (content.length / 1000000).toFixed(1) + 'MB)');
+      return;
+    }
+
+    // Rate limit check
+    if (!isAdmin) {
+      try {
+        const metaSnap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+        const now = Date.now();
+        let saveCount = 0, saveResetAt = 0;
+        if (metaSnap.exists()) {
+          const d = metaSnap.data();
+          saveCount = d.saveCount || 0;
+          saveResetAt = d.saveResetAt || 0;
+        }
+        if (now > saveResetAt) { saveCount = 0; saveResetAt = now + CSV_SAVE_WINDOW; }
+        if (saveCount >= CSV_SAVE_LIMIT) {
+          const remaining = Math.ceil((saveResetAt - now) / 60000);
+          alert('15 dakika içinde maksimum 3 kayıt yapabilirsiniz. Kalan süre: ' + remaining + ' dakika.');
+          return;
+        }
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), {
+          saveCount: saveCount + 1, saveResetAt, updatedAt: serverTimestamp()
+        });
+      } catch(e) { alert('CSV kaydedilemedi: ' + e.message); return; }
+    }
+
+    // Save file
+    try {
+      if (csvCurrentFileId) {
+        // Update existing
+        await updateDoc(doc(db, 'csv_storage', currentUser.uid, 'files', csvCurrentFileId), {
+          name, content, updatedAt: serverTimestamp()
+        });
+      } else {
+        // New file
+        const newId = crypto.randomUUID();
+        await setDoc(doc(db, 'csv_storage', currentUser.uid, 'files', newId), {
+          name, content, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        csvCurrentFileId = newId;
+      }
+      csvDirty = false;
+      alert('CSV kaydedildi.');
+      await loadMyCsvFiles();
+    } catch(e) { alert('CSV kaydedilemedi: ' + e.message); }
+  }
+
+  async function loadPublicCsvs() {
+    if (!currentUser) return;
+    try {
+      // Get all users with public=true or all users for admin
+      const usersSnap = await getDocs(collection(db, 'csv_storage'));
+      let items = [];
+      for (const userDoc of usersSnap) {
+        const uid = userDoc.id;
+        const meta = userDoc.data();
+        const isPublic = meta.public === true;
+        const isAdminUser = isAdmin;
+        if (!isPublic && !isAdminUser) continue;
+        // Get user's email/nickname hint from the path or meta
+        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        filesSnap.forEach(fd => {
+          const d = fd.data();
+          items.push({
+            uid, fileId: fd.id,
+            userName: meta.nickname || uid.slice(0, 8),
+            name: d.name || 'isimsiz',
+            content: d.content || ''
+          });
+        });
+      }
+      renderCsvPublicList(items);
+    } catch(e) { console.warn('Public CSV load error:', e); }
+  }
+
+  function renderCsvPublicList(items) {
+    if (!csvPublicList) return;
+    if (items.length === 0) {
+      csvPublicList.innerHTML = '<div style="color:#787b86;text-align:center;padding:10px">Henüz public CSV bulunamadı.</div>';
+      return;
+    }
+    csvPublicList.innerHTML = items.map(item => `
+      <div class="csv-public-item">
+        <div>
+          <div class="csv-pub-user">${escapeHtml(item.userName)}</div>
+          <div class="csv-pub-name">${escapeHtml(sanitizeName(item.name))}</div>
+        </div>
+        <div class="csv-pub-actions">
+          <button class="csv-pub-view" data-uid="${item.uid}" data-fid="${item.fileId}" data-content="${escapeHtml(item.content)}">Görüntüle</button>
+          <button class="csv-pub-copy" data-uid="${item.uid}" data-fid="${item.fileId}" data-name="${escapeHtml(item.name)}" data-content="${escapeHtml(item.content)}">Yükle</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Tab switching
+  let isWatchingPublic = false;
+
+  csvTabMy.addEventListener('click', async () => {
+    csvTabMy.classList.add('active');
+    csvTabPublic.classList.remove('active');
+    document.getElementById('csvMyBody').style.display = 'flex';
+    document.getElementById('csvPublicBody').style.display = 'none';
+    // If was watching public, restore own mode
+    if (isWatchingPublic) {
+      isWatchingPublic = false;
+      csvEditor.readOnly = false;
+      csvEditor.style.opacity = '1';
+      $('csvSaveBtn').disabled = false;
+      // Restore own settings if backup exists
+      if (window._ownSettingsBackup) {
+        const b = window._ownSettingsBackup;
+        pairList = b.pairList; tfList = b.tfList; setupList = b.setupList;
+        confList = b.confList; linkList = b.linkList;
+        saveLists();
+        if (editMode) renderAllChips();
+        buildConfGrid(); buildConfFilterDropdown(); populateSelectors();
+        renderLinkFields(); renderTrades();
+      } else {
+        await loadUserSettings();
+      }
+    }
+    // Set public=false
+    try {
+      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+      if (snap.exists()) {
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: false });
+      } else {
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: false });
+      }
+    } catch(e) { /* ignore */ }
+  });
+
+  csvTabPublic.addEventListener('click', async () => {
+    csvTabPublic.classList.add('active');
+    csvTabMy.classList.remove('active');
+    document.getElementById('csvMyBody').style.display = 'none';
+    document.getElementById('csvPublicBody').style.display = 'flex';
+    isWatchingPublic = true;
+    csvEditor.readOnly = true;
+    csvEditor.style.opacity = '0.6';
+    $('csvSaveBtn').disabled = true;
+    // Backup own settings
+    window._ownSettingsBackup = {
+      pairList: [...pairList], tfList: [...tfList], setupList: [...setupList],
+      confList: [...confList], linkList: [...linkList]
+    };
+    // Set public=true
+    try {
+      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+      if (snap.exists()) {
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: true });
+      } else {
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: true });
+      }
+    } catch(e) { /* ignore */ }
+    await loadPublicCsvs();
+  });
+
+  // List event delegation
+  csvMyList.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (btn.classList.contains('csv-open')) openCsvFile(id);
+    else if (btn.classList.contains('csv-delete')) deleteCsvFile(id);
+  });
+
+  csvPublicList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.classList.contains('csv-pub-view')) {
+      csvEditor.value = btn.getAttribute('data-content');
+      csvNameInput.value = btn.getAttribute('data-name') || '';
+      csvCurrentFileId = null;
+      csvEditor.readOnly = true;
+    } else if (btn.classList.contains('csv-pub-copy')) {
+      const content = btn.getAttribute('data-content');
+      const origName = btn.getAttribute('data-name') || 'isimsiz';
+      const nick = localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+      csvNameInput.value = `imported_${origName}_${ts}`;
+      csvEditor.value = content;
+      csvCurrentFileId = null;
+      csvEditor.readOnly = false;
+      csvDirty = true;
+      // Switch to My tab
+      csvTabMy.click();
+    }
+  });
+
+  // Tab initial state
+  csvTabMy.classList.add('active');
+  document.getElementById('csvMyBody').style.display = 'flex';
+  document.getElementById('csvPublicBody').style.display = 'none';
+
+  // Dirty tracking
+  csvEditor.addEventListener('input', () => { csvDirty = true; });
+  csvNameInput.addEventListener('input', () => { csvDirty = true; });
+
+  // Save button
+  $('csvSaveBtn').addEventListener('click', saveCsvToFirestore);
+
+  // Override openPopup CSV init
+  // (keep the original function, just add the CSV load)
+
+
+
+})();
+</script>
+
+<!-- Pop-ups -->
+<div class="popup-container" id="popupContainer">
+  <!-- Chat panel -->
+  <div class="popup-panel" id="chatPanel">
+    <div class="pp-header">
+      <span>Canlı Sohbet</span>
+      <span class="pp-close" data-popup="chat">✕</span>
+    </div>
+    <div class="pp-body" id="chatBody">
+      <div class="chat-empty" id="chatEmpty">Henüz mesaj yok.</div>
+    </div>
+    <div class="pp-body" id="chatNicknameWrap" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;font-size:13px">
+      <div style="color:#d1d4dc">Sohbette görünecek rumuzunuzu girin:</div>
+      <div style="color:#f7525a;font-size:11px">Bu rumuz daha sonra <b>değiştirilemez</b>.</div>
+      <input type="text" id="chatNicknameInput" maxlength="20" placeholder="Rumuz..." style="width:100%;max-width:200px;background:#2a2e39;border:1px solid #363a45;color:#d1d4dc;padding:6px 8px;border-radius:4px;font-size:12px;text-align:center">
+      <button class="btn btn-sm btn-primary" id="chatNicknameBtn">Onayla</button>
+    </div>
+    <div class="pp-footer" id="chatFooter">
+      <input type="text" id="chatInput" placeholder="Mesaj yaz..." maxlength="500">
+      <button class="btn btn-sm btn-primary" id="chatSendBtn">Gönder</button>
+    </div>
+    <div class="chat-resize-handle" id="chatResizeHandle"></div>
+  </div>
+
+  <!-- CSV panel -->
+  <div class="popup-panel" id="csvPanel">
+    <div class="pp-header">
+      <span>CSV Yönetimi</span>
+      <span class="pp-close" data-popup="csv">✕</span>
+    </div>
+    
+    <!-- Tab navigation -->
+    <div class="csv-tabs">
+      <button class="csv-tab active" id="csvTabMy">CSV Listem</button>
+      <button class="csv-tab" id="csvTabPublic">Buluttan İzle</button>
+    </div>
+
+    <!-- Tab: My CSV List -->
+    <div class="pp-body csv-tab-body" id="csvMyBody" style="display:flex;flex-direction:column;gap:6px">
+      <div class="csv-name-row">
+        <input type="text" id="csvNameInput" placeholder="CSV adı..." maxlength="100" style="flex:1;background:#2a2e39;border:1px solid #363a45;color:#d1d4dc;padding:6px 8px;border-radius:4px;font-size:12px">
+        <button class="btn btn-sm btn-primary" id="csvSaveBtn">Buluta Kaydet</button>
+      </div>
+      <textarea class="csv-editor" id="csvEditor" placeholder="CSV içeriği..."></textarea>
+      <div class="csv-list-label">Kayıtlı CSV'leriniz:</div>
+      <div id="csvMyList" style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+        <div style="color:#787b86;text-align:center;padding:10px">Henüz kayıtlı CSV yok.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Public CSV List -->
+    <div class="pp-body csv-tab-body" id="csvPublicBody" style="display:none;flex-direction:column;gap:6px">
+      <div class="csv-list-label">Diğer kullanıcıların açık CSV'leri:</div>
+      <div id="csvPublicList" style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+        <div style="color:#787b86;text-align:center;padding:10px">Henüz public CSV bulunamadı.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  <div class="popup-panel" id="adminPanel">
+    <div class="pp-header">
+      <span>Admin Panel</span>
+      <span class="pp-close" data-popup="admin">✕</span>
+    </div>
+    <div class="pp-body" id="adminBody" style="display:flex;flex-direction:column;gap:8px;padding:12px;font-size:12px;min-height:200px">
+      <div id="adminUserList" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+  </div>
+
+  <!-- Toggle buttons -->
+  <div class="popup-toggles">
+    <button class="popup-tgl" id="chatToggle" title="Canlı Sohbet">💬</button>
+    <button class="popup-tgl" id="csvToggle" title="CSV Yönetimi">📋</button>
+    <button class="popup-tgl" id="adminToggle" title="Admin Panel" style="display:none">🔧</button>
+  </div>
+</div>
+
+<div class="sig-wrap">
+  <div class="sig-popup">"Excel İhracat" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
+  <div class="sig-ice"><span class="sig-text">BUZ</span> <span class="sig-emoji">🧊</span></div>
+</div>
+</body>
+</html>
