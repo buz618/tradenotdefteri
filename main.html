@@ -204,7 +204,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   animation: sigEmoji 4s ease-in-out infinite;
 }
 .sig-wrap {
-  position: fixed; bottom: 12px; right: 14px; z-index: 999;
+  position: fixed; bottom: 12px; left: 14px; z-index: 999;
 }
 .sig-popup {
   position: absolute; bottom: calc(100% + 14px); right: -4px;
@@ -345,7 +345,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 
 /* Pop-up styles */
 .popup-container {
-  position: fixed; bottom: 60px; right: 14px; z-index: 1000;
+  position: fixed; bottom: 14px; right: 14px; z-index: 1000;
   display: flex; flex-direction: column; align-items: flex-end;
   gap: 8px; pointer-events: none;
 }
@@ -519,10 +519,13 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   position: relative;
   width: 44px; height: 44px; border-radius: 50%;
   background: #22ab94; border: none; color: #fff;
-  font-size: 18px; cursor: pointer;
+  font-size: 24px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 14px rgba(34,171,148,0.25);
   transition: transform 0.15s, background 0.15s;
+}
+.popup-tgl.has-unread {
+  animation: unreadGlow 1.5s ease-in-out infinite;
 }
 .popup-tgl.has-unread::after {
   content: ''; position: absolute; top: 2px; right: 2px;
@@ -531,6 +534,11 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 }
 .popup-tgl:hover { transform: scale(1.08); background: #1d9a85; }
 .popup-tgl.active { background: #f7525a; box-shadow: 0 4px 14px rgba(247,82,90,0.25); }
+
+@keyframes unreadGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247,82,90,0); }
+  50% { box-shadow: 0 0 16px 4px rgba(247,82,90,0.5); }
+}
 
 @media (max-width: 480px) {
   .popup-panel { width: calc(100vw - 28px); right: 14px; max-height: 60vh; }
@@ -1985,6 +1993,7 @@ let currentUser = null;
   let chatUnsub = null;
   let hasUnreadChat = false;
   let isAdmin = false;
+  let blockedUsers = [];
   let allUsers = [];
   const adminPanel = $('adminPanel');
   const adminToggle = $('adminToggle');
@@ -1995,6 +2004,7 @@ let currentUser = null;
       const snap = await getDoc(doc(db, 'admin', 'config'));
       const admins = snap.exists() ? (snap.data().uids || []) : [];
       isAdmin = admins.includes(currentUser.uid);
+      blockedUsers = snap.exists() ? (snap.data().blocked || []) : [];
       if (adminToggle) adminToggle.style.display = isAdmin ? 'flex' : 'none';
       return isAdmin;
     } catch(e) { isAdmin = false; return false; }
@@ -2003,13 +2013,18 @@ let currentUser = null;
   async function loadAdminUsers() {
     if (!currentUser) return;
     try {
-      const groups = await getDocs(collection(db, 'trades'));
       allUsers = [];
-      groups.forEach(doc => {
-        if (!allUsers.find(u => u.uid === doc.id)) {
-          allUsers.push({ uid: doc.id });
-        }
-      });
+      const collections = ['users', 'trades', 'csv_storage', 'user_settings'];
+      for (const col of collections) {
+        try {
+          const snap = await getDocs(collection(db, col));
+          snap.forEach(doc => {
+            if (!allUsers.find(u => u.uid === doc.id)) {
+              allUsers.push({ uid: doc.id });
+            }
+          });
+        } catch(e) { /* skip collection */ }
+      }
     } catch(e) { console.error('Admin load error:', e); }
     renderAdminUserList();
   }
@@ -2021,15 +2036,17 @@ let currentUser = null;
       container.innerHTML = '<div style="color:#787b86;text-align:center;padding:20px">Henüz kullanıcı yok.</div>';
       return;
     }
-    container.innerHTML = allUsers.map(u => `
-      <div class="admin-user-row">
-        <span title="${escapeHtml(u.uid)}">${escapeHtml(u.uid.slice(0,8)+'...')}</span>
+    container.innerHTML = allUsers.map(u => {
+      const isBlocked = blockedUsers.includes(u.uid);
+      return `<div class="admin-user-row">
+        <span title="${escapeHtml(u.uid)}">${escapeHtml(u.uid.slice(0,8)+'...')} ${isBlocked ? '🚫' : ''}</span>
         <div class="admin-actions">
           <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
           <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
+          <button data-uid="${u.uid}" data-action="${isBlocked ? 'unblock-user' : 'block-user'}" ${isBlocked ? 'style="background:#f7525a;color:#fff"' : ''}>${isBlocked ? 'Aç' : 'Engelle'}</button>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
   $('adminBody').addEventListener('click', async (e) => {
@@ -2053,6 +2070,22 @@ let currentUser = null;
       } catch(e) { alert('CSV yüklenemedi: ' + e.message); }
     } else if (action === 'view-info') {
       alert('UID: ' + uid);
+    } else if (action === 'block-user' || action === 'unblock-user') {
+      try {
+        const snap = await getDoc(doc(db, 'admin', 'config'));
+        if (!snap.exists()) { alert('Admin config bulunamadı.'); return; }
+        const data = snap.data();
+        let blocked = data.blocked || [];
+        if (action === 'block-user') {
+          if (!blocked.includes(uid)) blocked.push(uid);
+        } else {
+          blocked = blocked.filter(id => id !== uid);
+        }
+        await setDoc(doc(db, 'admin', 'config'), { ...data, blocked });
+        blockedUsers = blocked;
+        renderAdminUserList();
+        alert(action === 'block-user' ? 'Kullanıcı engellendi.' : 'Kullanıcı engeli kaldırıldı.');
+      } catch(e) { alert('İşlem başarısız: ' + e.message); }
     }
   });
 
@@ -2093,6 +2126,7 @@ let currentUser = null;
       chatToggle.classList.remove('has-unread');
       hasUnreadChat = false;
     } else if (type === 'csv') {
+      csvToggle.classList.remove('has-unread');
       loadCsvMeta();
       loadMyCsvFiles();
     } else if (type === 'admin') {
@@ -2105,7 +2139,7 @@ let currentUser = null;
     if (!close) return;
     const type = close.getAttribute('data-popup');
     if (type === 'chat') { chatPanel.classList.remove('open'); chatToggle.classList.remove('active'); }
-    else if (type === 'csv') { csvPanel.classList.remove('open'); csvToggle.classList.remove('active'); }
+    else if (type === 'csv') { csvPanel.classList.remove('open'); csvToggle.classList.remove('active'); isWatchingPublic = false; }
     else if (type === 'admin') { adminPanel.classList.remove('open'); adminToggle.classList.remove('active'); }
   });
   chatToggle.addEventListener('click', () => openPopup('chat'));
@@ -2116,6 +2150,10 @@ let currentUser = null;
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
     currentUser = user;
+    // Register user doc for admin panel visibility
+    setDoc(doc(db, 'users', user.uid), {
+      email: user.email, uid: user.uid, lastSeen: serverTimestamp()
+    }).catch(() => {});
     const ui = $('userInfo');
     ui.style.display = 'flex';
     $('userEmail').textContent = user.email;
@@ -2149,6 +2187,7 @@ let currentUser = null;
     initChatDrag();
     initChatResize();
     if (!chatUnsub) initChat();
+    initCsvPublicWatcher();
   });
 
   // ====== CHAT ======
@@ -2202,6 +2241,28 @@ let currentUser = null;
     const text = inp.value.trim();
     if (!text || !currentUser) return;
     inp.value = '';
+
+    // /clean command for admins
+    if (isAdmin && text === '/clean') {
+      if (!confirm('Tüm chat mesajlarını silmek istediğinize emin misiniz?')) return;
+      try {
+        const snap = await getDocs(collection(db, 'messages'));
+        let count = 0;
+        for (const d of snap.docs) {
+          await deleteDoc(d.ref);
+          count++;
+        }
+        alert('Chat temizlendi. ' + count + ' mesaj silindi.');
+      } catch(e) { alert('Temizlik başarısız: ' + e.message); }
+      return;
+    }
+
+    // Blocked check
+    if (blockedUsers.includes(currentUser.uid)) {
+      alert('Sohbet engellenmiş durumdasınız.');
+      return;
+    }
+
     const nickname = localStorage.getItem('chatNickname') || currentUser.email;
     try {
       await addDoc(collection(db, 'messages'), {
@@ -2499,21 +2560,25 @@ let currentUser = null;
     } catch(e) { alert('CSV kaydedilemedi: ' + e.message); }
   }
 
-  async function loadPublicCsvs() {
-    if (!currentUser) return;
-    try {
-      const usersSnap = await getDocs(collection(db, 'csv_storage'));
-      console.log('[loadPublicCsvs] total users in csv_storage:', usersSnap.size);
-      let items = [];
-      for (const userDoc of usersSnap) {
-        const uid = userDoc.id;
-        const meta = userDoc.data();
-        const isPublic = meta.public === true;
-        const isAdminUser = isAdmin;
-        console.log('[loadPublicCsvs] uid:', uid, 'public:', meta.public, 'isAdmin:', isAdminUser);
-        if (!isPublic && !isAdminUser) continue;
+  let csvPublicUnsub = null;
+  let csvPublicCache = [];
+
+  function initCsvPublicWatcher() {
+    if (csvPublicUnsub || !currentUser) return;
+    csvPublicUnsub = onSnapshot(collection(db, 'csv_storage'), (snap) => {
+      const publicUsers = [];
+      snap.forEach(doc => {
+        if (doc.data().public === true || isAdmin) publicUsers.push({ uid: doc.id, meta: doc.data() });
+      });
+      fetchPublicCsvFiles(publicUsers);
+    });
+  }
+
+  async function fetchPublicCsvFiles(publicUsers) {
+    let items = [];
+    for (const { uid, meta } of publicUsers) {
+      try {
         const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
-        console.log('[loadPublicCsvs] files for', uid, ':', filesSnap.size);
         filesSnap.forEach(fd => {
           const d = fd.data();
           items.push({
@@ -2523,10 +2588,22 @@ let currentUser = null;
             content: d.content || ''
           });
         });
-      }
-      console.log('[loadPublicCsvs] total items:', items.length);
+      } catch(e) { /* skip */ }
+    }
+    const seen = new Set();
+    items = items.filter(item => {
+      const key = item.uid + '_' + item.fileId;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    csvPublicCache = items;
+    if (isWatchingPublic) {
       renderCsvPublicList(items);
-    } catch(e) { console.warn('Public CSV load error:', e); }
+      csvToggle.classList.remove('has-unread');
+    } else if (items.length > 0) {
+      csvToggle.classList.add('has-unread');
+    }
   }
 
   function renderCsvPublicList(items) {
@@ -2610,7 +2687,11 @@ let currentUser = null;
         await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: true });
       }
     } catch(e) { /* ignore */ }
-    await loadPublicCsvs();
+    // Render from cache immediately, watcher updates in background
+    if (csvPublicCache.length > 0) {
+      renderCsvPublicList(csvPublicCache);
+      csvToggle.classList.remove('has-unread');
+    }
   });
 
   // List event delegation
@@ -2747,7 +2828,7 @@ let currentUser = null;
 
 <div class="sig-wrap">
   <div class="sig-popup">"Excel İhracat" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
-  <div class="sig-ice"><span class="sig-text">BUZ</span> <span class="sig-emoji">🧊</span></div>
+  <div class="sig-ice"><span class="sig-emoji">🧊</span> <span class="sig-text">BUZ</span></div>
 </div>
 </body>
 </html>
