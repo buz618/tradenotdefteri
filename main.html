@@ -1822,57 +1822,13 @@ let currentUser = null;
     const reader = new FileReader();
     reader.onload = (ev) => {
       const csv = ev.target.result;
-      const lines = csv.split('\n').filter(l => l.trim());
-      if (lines.length < 2) { alert('Geçersiz CSV.'); return; }
-
-      function parseCSV(line) {
-        const r = []; let c = ''; let q = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') { if (q && i+1 < line.length && line[i+1] === '"') { c += '"'; i++; } else { q = !q; } }
-          else if (ch === ',' && !q) { r.push(c); c = ''; }
-          else { c += ch; }
-        }
-        r.push(c); return r;
-      }
-
-      const hdrs = parseCSV(lines[0]).map(h => h.trim());
-      const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
-      const idx = {};
-      const linkHeaders = [];
-      hdrs.forEach((h, i) => {
-        if (fixedExpected.includes(h)) idx[h] = i;
-        else if (!['','id'].includes(h)) linkHeaders.push(h);
-      });
-      if (!idx['Parite'] || !idx['Setup']) { alert('CSV formatı tanınmadı.'); return; }
-
-      let count = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const f = parseCSV(lines[i]);
-        const get = (n) => f[idx[n]] || '';
-        const rrRaw = get('RR');
-        const rr = rrRaw !== '' ? parseFloat(rrRaw.replace(',','.')) : null;
-        const confRaw = get('Konfirmasyonlar');
-        const links = {};
-        linkHeaders.forEach(h => { const v = f[hdrs.indexOf(h)]; if (v && v.trim()) links[h] = v.trim(); });
-        const trade = {
-          id: Date.now() + count,
-          date: get('Tarih'),
-          pair: get('Parite'),
-          tf: get('TF'),
-          setup: get('Setup'),
-          result: get('Sonuç'),
-          rr: !isNaN(rr) ? rr : null,
-          links: Object.keys(links).length > 0 ? links : undefined,
-          not: get('Not'),
-          confirmations: confRaw ? confRaw.split(',').map(s => s.trim()).filter(Boolean) : []
-        };
-        if (trade.pair && trade.setup && trade.result) { trades.push(trade); count++; }
-      }
+      const imported = csvContentToTrades(csv);
+      if (imported.length === 0) { alert('Geçersiz CSV veya hiç trade bulunamadı.'); return; }
+      for (const t of imported) trades.push(t);
       save();
       syncAllToFirestore();
       renderAll();
-      alert(count + ' trade içe aktarıldı.');
+      alert(imported.length + ' trade içe aktarıldı.');
       $('importInput').value = '';
     };
     reader.readAsText(file, 'UTF-8');
@@ -1900,6 +1856,53 @@ let currentUser = null;
     a.click();
     URL.revokeObjectURL(a.href);
   });
+
+  // --- CSV parse utilities ---
+  function parseCsvLine(line) {
+    const r = []; let c = ''; let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { if (q && i+1 < line.length && line[i+1] === '"') { c += '"'; i++; } else { q = !q; } }
+      else if (ch === ',' && !q) { r.push(c); c = ''; }
+      else { c += ch; }
+    }
+    r.push(c); return r;
+  }
+
+  function csvContentToTrades(csv) {
+    const lines = csv.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return [];
+    const hdrs = parseCsvLine(lines[0]).map(h => h.trim());
+    const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
+    const idx = {};
+    const linkHeaders = [];
+    hdrs.forEach((h, i) => {
+      if (fixedExpected.includes(h)) idx[h] = i;
+      else if (!['','id'].includes(h)) linkHeaders.push(h);
+    });
+    if (!idx['Parite'] || !idx['Setup']) return [];
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+      const f = parseCsvLine(lines[i]);
+      const get = (n) => f[idx[n]] || '';
+      const rrRaw = get('RR');
+      const rr = rrRaw !== '' ? parseFloat(rrRaw.replace(',','.')) : null;
+      const confRaw = get('Konfirmasyonlar');
+      const links = {};
+      linkHeaders.forEach(h => { const v = f[hdrs.indexOf(h)]; if (v && v.trim()) links[h] = v.trim(); });
+      const trade = {
+        id: Date.now() + result.length,
+        date: get('Tarih'), pair: get('Parite'), tf: get('TF'),
+        setup: get('Setup'), result: get('Sonuç'),
+        rr: !isNaN(rr) ? rr : null,
+        links: Object.keys(links).length > 0 ? links : undefined,
+        not: get('Not'),
+        confirmations: confRaw ? confRaw.split(',').map(s => s.trim()).filter(Boolean) : []
+      };
+      if (trade.pair && trade.setup && trade.result) result.push(trade);
+    }
+    return result;
+  }
 
   // --- Preview / Fullscreen ---
   const previewPopup = $('previewPopup');
@@ -2775,8 +2778,9 @@ let currentUser = null;
     csvTabPublic.classList.remove('active');
     document.getElementById('csvMyBody').style.display = 'flex';
     document.getElementById('csvPublicBody').style.display = 'none';
-    // If was watching public, restore own mode
-    if (isWatchingPublic) {
+    if (isCsvPreview) {
+      exitCsvPreview();
+    } else if (isWatchingPublic) {
       isWatchingPublic = false;
       csvEditor.readOnly = false;
       csvEditor.style.opacity = '1';
@@ -2794,7 +2798,6 @@ let currentUser = null;
         await loadUserSettings();
       }
     }
-    if (isCsvPreview) exitCsvPreview();
     // Set public=false
     try {
       const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
@@ -2849,15 +2852,30 @@ let currentUser = null;
     const btn = e.target.closest('button');
     if (!btn) return;
     if (btn.classList.contains('csv-pub-view')) {
+      // Full backup on first preview
       if (!isCsvPreview) {
         csvPreviewBackup = {
           value: csvEditor.value,
           name: csvNameInput.value,
-          fileId: csvCurrentFileId
+          fileId: csvCurrentFileId,
+          trades: JSON.parse(JSON.stringify(trades)),
+          pairList: [...pairList], tfList: [...tfList],
+          setupList: [...setupList], confList: [...confList],
+          linkList: [...linkList]
         };
       }
       const key = btn.getAttribute('data-key');
-      csvEditor.value = csvPublicContentMap.get(key) || '';
+      const csvContent = csvPublicContentMap.get(key) || '';
+
+      // Parse CSV and load trades into main panel (no Firestore write)
+      const previewTrades = csvContentToTrades(csvContent);
+      if (previewTrades.length > 0) {
+        trades = previewTrades;
+        save();
+        renderAll();
+      }
+
+      csvEditor.value = csvContent;
       csvNameInput.value = '';
       csvCurrentFileId = null;
       csvDirty = false;
@@ -2878,9 +2896,26 @@ let currentUser = null;
 
   function exitCsvPreview() {
     if (csvPreviewBackup) {
-      csvEditor.value = csvPreviewBackup.value;
-      csvNameInput.value = csvPreviewBackup.name;
-      csvCurrentFileId = csvPreviewBackup.fileId;
+      const b = csvPreviewBackup;
+      // Restore trades
+      trades = b.trades;
+      save();
+      // Restore panel settings
+      pairList = b.pairList; tfList = b.tfList;
+      setupList = b.setupList; confList = b.confList;
+      linkList = b.linkList;
+      saveLists();
+      // Rebuild UI
+      renderAll();
+      if (editMode) renderAllChips();
+      buildConfGrid(); buildConfFilterDropdown(); populateSelectors();
+      renderLinkFields(); renderTrades();
+      // Restore CSV editor
+      csvEditor.value = b.value;
+      csvNameInput.value = b.name;
+      csvCurrentFileId = b.fileId;
+      // Re-sync to Firestore (preview didn't write, but ensure consistency)
+      syncAllToFirestore();
     }
     csvDirty = false;
     csvEditor.readOnly = false;
