@@ -1841,7 +1841,7 @@ let currentUser = null;
   });
 
   function tradesToCsv() {
-    const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList });
+    const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList, confFilterSelection });
     const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
     const headers = [...fixedHeaders, ...linkList, 'Not'];
     const rows = trades.map(t => [
@@ -2685,7 +2685,7 @@ let currentUser = null;
     }
 
     // Save panel settings alongside content
-    const panelData = { pairList, tfList, setupList, confList, linkList };
+    const panelData = { pairList, tfList, setupList, confList, linkList, confFilterSelection };
 
     // Save file
     try {
@@ -2737,7 +2737,8 @@ let currentUser = null;
             tfList: d.tfList || [],
             setupList: d.setupList || [],
             confList: d.confList || [],
-            linkList: d.linkList || []
+            linkList: d.linkList || [],
+            confFilterSelection: d.confFilterSelection || []
           });
           items.push({
             uid, fileId: fd.id, key,
@@ -2869,7 +2870,8 @@ let currentUser = null;
       trades: JSON.parse(JSON.stringify(trades)),
       pairList: [...pairList], tfList: [...tfList],
       setupList: [...setupList], confList: [...confList],
-      linkList: [...linkList]
+      linkList: [...linkList],
+      confFilterSelection: [...confFilterSelection]
     };
 
     // Parse CSV and load trades
@@ -2885,6 +2887,8 @@ let currentUser = null;
     setupList = panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
     confList = panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
     linkList = panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
+    confFilterSelection = panelSrc.confFilterSelection.length > 0 ? [...panelSrc.confFilterSelection] : [];
+    saveConfFilterSelection();
 
     save();
     saveLists();
@@ -2915,6 +2919,8 @@ let currentUser = null;
     pairList = b.pairList; tfList = b.tfList;
     setupList = b.setupList; confList = b.confList;
     linkList = b.linkList;
+    confFilterSelection = b.confFilterSelection || [];
+    saveConfFilterSelection();
     save();
     saveLists();
     renderAll();
