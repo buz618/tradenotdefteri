@@ -7,1682 +7,516 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
+html, body { height: 100%; overflow: hidden; }
 body {
-  background: #131722;
   font-family: -apple-system, system-ui, sans-serif;
-  color: #d1d4dc;
-  padding: 12px;
-}
-body::before {
-  content: ''; position: fixed; inset: 0; z-index: -2;
-  background: linear-gradient(135deg, #0c0f1a, #161a2a, #0d1b2a, #1a0d20);
-  background-size: 400% 400%;
-  animation: bgShift 20s ease infinite;
-}
-body.bg-static::before {
-  animation: none;
   background: #131722;
-}
-body::after {
-  content: ''; position: fixed; inset: 0; z-index: -1;
-  background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-@keyframes bgShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-h1 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-h1 span { color: #f0c040; }
-h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #787b86; }
-.card {
-  background: #1e222d;
-  border: 1px solid #2a2e39;
-  border-radius: 6px;
-  padding: 12px;
-  margin-bottom: 12px;
-}
-.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.row+.row { margin-top: 8px; }
-#linkFields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-label { font-size: 11px; color: #787b86; white-space: nowrap; }
-input, select {
-  background: #2a2e39;
-  border: 1px solid #363a45;
   color: #d1d4dc;
-  padding: 5px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: inherit;
 }
-input:focus, select:focus { outline: none; border-color: #22ab94; }
-input[type="text"], input[type="number"] { width: 80px; }
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type="number"] { -moz-appearance: textfield; }
-input.pair-input { width: 100px; }
-select { min-width: 70px; cursor: pointer; }
+
+#threeCanvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; width: 100%; height: 100%; display: block; }
+#particleCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; width: 100%; height: 100%; display: block; }
+
+.login-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(30, 34, 45, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 44px 40px 36px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.brand { text-align: center; margin-bottom: 32px; }
+.brand-icon { font-size: 40px; line-height: 1; margin-bottom: 8px; }
+.brand h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.brand h1 span { color: #22ab94; }
+.brand-sub { font-size: 13px; color: #787b86; margin-top: 6px; }
+
+.input-group {
+  position: relative;
+  margin-bottom: 22px;
+}
+.input-group input {
+  width: 100%;
+  padding: 18px 16px 6px;
+  background: rgba(42, 46, 57, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #d1d4dc;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.input-group input:focus {
+  border-color: #22ab94;
+  box-shadow: 0 0 0 3px rgba(34, 171, 148, 0.08), 0 0 20px rgba(34, 171, 148, 0.06);
+}
+.input-group input::placeholder { color: transparent; }
+.input-group label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #787b86;
+  font-size: 14px;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  padding: 0 4px;
+}
+.input-group input:focus ~ label,
+.input-group input:not(:placeholder-shown) ~ label {
+  top: 6px;
+  font-size: 11px;
+  color: #22ab94;
+  transform: translateY(0);
+}
+
+.btn-row { display: flex; gap: 10px; margin-top: 6px; }
 .btn {
-  background: #2a2e39;
-  border: 1px solid #363a45;
-  color: #d1d4dc;
-  padding: 5px 14px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
+  flex: 1;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
 }
-.btn:hover { background: #363a45; }
-.btn-primary { background: #22ab94; border-color: #22ab94; color: #fff; }
-.btn-primary:hover { background: #1d9a85; }
-.btn-danger { background: #f7525a; border-color: #f7525a; color: #fff; }
-.btn-danger:hover { background: #e0444b; }
-.btn-sm { padding: 3px 10px; font-size: 11px; }
-.conf-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.conf-item { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
-.conf-item input { width: 14px; height: 14px; cursor: pointer; accent-color: #22ab94; }
+.btn:active { transform: scale(0.97); }
 
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
-.stat-card {
-  background: #2a2e39;
-  border-radius: 4px;
-  padding: 10px;
-  border-left: 3px solid #22ab94;
+.btn-primary {
+  background: linear-gradient(135deg, #22ab94, #1d9a85, #22ab94, #2bc4a8);
+  background-size: 200% 200%;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(34, 171, 148, 0.25);
 }
-.stat-card .stat-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
-.stat-card .stat-row { font-size: 11px; color: #787b86; }
-.stat-card .stat-row b { color: #d1d4dc; }
-.stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
-.stat-bar .bar-win { background: #22ab94; }
-.stat-bar .bar-be { background: #f0c040; }
-.stat-bar .bar-lose { background: #f7525a; }
-.stat-conf-row { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 2px; }
-.stat-conf { display: inline-block; background: #2a2e39; color: #787b86; padding: 1px 6px; border-radius: 3px; font-size: 10px; }
-.stat-card[data-setup] { cursor: pointer; transition: border-left-color 0.15s; }
-.stat-card[data-setup]:hover { border-left-color: #2cd4b8; }
-.stat-card-detail { margin-top: 10px; padding-top: 8px; border-top: 1px solid #363a45; cursor: default; }
-.stat-card-detail .stat-sub-title { font-size: 11px; color: #787b86; margin-bottom: 6px; font-weight: 600; }
-.stat-sub-grid { display: flex; flex-direction: column; gap: 4px; }
-.stat-sub-card { background: #1e222d; border-radius: 4px; padding: 7px 10px; border-left: 2px solid #363a45; }
-.stat-sub-card .stat-sub-name { font-size: 11px; font-weight: 600; color: #d1d4dc; margin-bottom: 3px; }
-.stat-sub-card .stat-sub-row { font-size: 10px; color: #787b86; }
-.stat-sub-card .stat-sub-row b { color: #d1d4dc; }
-.stat-sub-card .stat-sub-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin: 4px 0; }
-.pair-wrap { display: inline-flex; align-items: center; gap: 4px; }
-.pair-wrap select { min-width: 100px; }
-.pair-wrap input { min-width: 100px; }
-textarea.note-input { width: 100%; min-height: 36px; resize: vertical; background: #2a2e39; border: 1px solid #363a45; color: #d1d4dc; border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; }
-textarea.note-input:focus { outline: none; border-color: #22ab94; }
-.note-cell { max-width: 160px; min-width: 60px; cursor: pointer; }
-.note-display { font-size: 11px; color: #787b86; }
-.note-display:hover { color: #22ab94; }
-.note-display.has-note { color: #d1d4dc; }
-.note-input-inline { width: 100%; min-width: 60px; background: #2a2e39; border: 1px solid #22ab94; color: #d1d4dc; border-radius: 3px; padding: 2px 6px; font-size: 11px; font-family: inherit; }
-
-.filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { text-align: left; padding: 6px 8px; background: #2a2e39; color: #787b86; font-weight: 600; font-size: 11px; border-bottom: 1px solid #363a45; position: sticky; top: 0; white-space: nowrap; }
-td { padding: 6px 8px; border-bottom: 1px solid #2a2e39; vertical-align: middle; }
-tr:hover td { background: #1e222d; }
-.badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
-.badge-win { background: #22ab9440; color: #22ab94; }
-.badge-be { background: #f0c04040; color: #f0c040; }
-.badge-lose { background: #f7525a40; color: #f7525a; }
-.badge-setup { background: #2a2e39; color: #787b86; margin-right: 2px; }
-.conf-chip { display: inline-block; background: #2a2e39; color: #787b86; padding: 0 5px; border-radius: 2px; font-size: 10px; margin: 1px; }
-.actions { white-space: nowrap; }
-.empty { text-align: center; padding: 24px; color: #787b86; font-size: 13px; }
-input.link-input { width: 260px; font-size: 11px; }
-.preview-link { color: #22ab94; cursor: pointer; font-size: 11px; font-weight: 600; }
-.preview-link:hover { color: #2cd4b8; text-decoration: underline; }
-#previewPopup {
-  display: none; position: fixed; z-index: 1000;
-  border-radius: 8px; overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-  border: 1px solid #2a2e39;
-  background: #0d0f14;
-  min-width: 120px; min-height: 80px;
-  opacity: 0; transition: opacity 0.2s ease;
-}
-#previewPopup.show { opacity: 1; }
-#previewPopup img {
-  display: block; width: 100%; height: 100%;
-  object-fit: contain; cursor: zoom-in;
-}
-#fullscreenModal { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.95); cursor: pointer; }
-#fullscreenModal img { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); max-width: 95vw; max-height: 95vh; object-fit: contain; }
-#fullscreenModal .close-btn { position: absolute; top: 12px; right: 16px; color: #787b86; font-size: 28px; cursor: pointer; line-height: 1; }
-#fullscreenModal .close-btn:hover { color: #fff; }
-
-@keyframes iceGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(79,195,247,0.15), 0 0 24px rgba(79,195,247,0.03); border-color: rgba(79,195,247,0.3); }
-  50% { box-shadow: 0 0 16px rgba(79,195,247,0.35), 0 0 48px rgba(79,195,247,0.08); border-color: rgba(79,195,247,0.6); }
-}
-@keyframes frostSweep {
-  0% { transform: translateX(-100%) skewX(-20deg); }
-  50% { transform: translateX(200%) skewX(-20deg); }
-  100% { transform: translateX(-100%) skewX(-20deg); }
-}
-.card-ice {
-  position: relative; overflow: hidden;
-  background: linear-gradient(135deg, #171d2e, #1e222d);
-  animation: iceGlow 3s ease-in-out infinite;
-}
-.card-ice::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(79,195,247,0.05), transparent);
-  animation: frostSweep 6s ease-in-out infinite;
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 28% 18%, rgba(255,255,255,0.2), transparent 55%);
   pointer-events: none;
 }
-.card-ice.edit-active {
-  border-color: #f0c040;
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+  pointer-events: none;
 }
-.card-ice.edit-active::before {
-  background: linear-gradient(90deg, transparent, rgba(240,192,64,0.08), transparent);
-}
-@keyframes newRowGlow {
-  0% { outline: 1px solid rgba(240,192,64,0.5); box-shadow: 0 0 16px rgba(240,192,64,0.25); }
-  100% { outline: 1px solid transparent; box-shadow: 0 0 0 rgba(240,192,64,0); }
-}
-tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
-
-.sig-ice {
-  font-size: 22px; line-height: 1;
-  display: flex; align-items: flex-end; gap: 3px;
-  cursor: pointer; user-select: none;
-}
-.sig-ice .sig-text {
-  color: #7dd8f2; font-weight: 600; font-size: 15px;
-  letter-spacing: 0.5px;
-  animation: sigTextGlow 4s ease-in-out infinite;
-}
-.sig-ice .sig-emoji {
-  display: inline-block;
-  animation: sigEmoji 4s ease-in-out infinite;
-}
-.sig-wrap {
-  position: fixed; bottom: 12px; right: 14px; z-index: 999;
-}
-.sig-popup {
-  position: absolute; bottom: calc(100% + 14px); right: -4px;
-  width: 290px; padding: 14px 16px;
-  background: #1e222d; border: 1px solid #2a2e39;
-  border-radius: 8px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  font-size: 12px; color: #d1d4dc; line-height: 1.6;
-  text-align: left; pointer-events: none;
-  opacity: 0; visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-  border-top: 2px solid #7dd8f2;
-}
-.sig-popup::after {
-  content: ''; position: absolute; top: 100%; right: 20px;
-  border: 6px solid transparent; border-top-color: #2a2e39;
-}
-.sig-wrap:hover .sig-popup {
-  opacity: 1; visibility: visible; pointer-events: auto;
-}
-@keyframes sigTextGlow {
-  0%, 100% { text-shadow: 0 0 4px rgba(125,216,242,0.2); }
-  25% { text-shadow: 0 0 14px rgba(125,216,242,0.5); }
-  50% { text-shadow: 0 0 8px rgba(125,216,242,0.3); }
-  75% { text-shadow: 0 0 18px rgba(125,216,242,0.6); }
-}
-@keyframes sigEmoji {
-  0% { transform: rotate(0deg) scale(0.94); }
-  25% { transform: rotate(6deg) scale(1.04); }
-  50% { transform: rotate(0deg) scale(0.98); }
-  75% { transform: rotate(-6deg) scale(1.06); }
-  100% { transform: rotate(0deg) scale(0.94); }
+.btn-primary:hover::after { transform: translateX(100%); }
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(34, 171, 148, 0.35);
 }
 
-.card-header {
+.btn-secondary {
+  background: rgba(42, 46, 57, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #d1d4dc;
+}
+.btn-secondary:hover {
+  background: rgba(54, 58, 69, 0.6);
+  transform: translateY(-1px);
+}
+
+.divider {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin: 24px 0;
+  gap: 16px;
 }
-.card-header h2 { margin-bottom: 0; }
-.gear-wrap { position: relative; }
-.gear-btn {
-  cursor: pointer; font-size: 18px; user-select: none;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 4px;
-  transition: background 0.15s;
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
 }
-.gear-btn:hover { background: #2a2e39; }
-.gear-menu {
-  position: absolute; right: 0; top: calc(100% + 4px);
-  background: #1e222d; border: 1px solid #2a2e39;
-  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  min-width: 220px; z-index: 50;
-  display: none; overflow: hidden;
+.divider span {
+  font-size: 12px;
+  color: #787b86;
+  white-space: nowrap;
 }
-.gear-menu.show { display: block; }
-.gear-option {
-  padding: 8px 14px; font-size: 12px; cursor: pointer;
-  color: #d1d4dc; transition: background 0.12s;
-}
-.gear-option:hover { background: #2a2e39; }
-.gear-option.danger { color: #f7525a; }
-.gear-option.success { color: #22ab94; }
-.gear-option + .gear-option { border-top: 1px solid #2a2e39; }
 
-.edit-chips {
-  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
-  padding-top: 4px; width: 100%;
-}
-.edit-chips .chip {
-  display: inline-flex; align-items: center; gap: 3px;
-  background: #2a2e39; border: 1px solid #363a45;
-  border-radius: 3px; padding: 2px 6px; font-size: 11px;
+.btn-google {
+  width: 100%;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
   color: #d1d4dc;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
-.edit-chips .chip .chip-x {
-  cursor: pointer; color: #787b86; font-size: 12px;
-  line-height: 1; margin-left: 2px;
+.btn-google::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23FFC107' d='M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z'/%3E%3Cpath fill='%23FF3D00' d='m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z'/%3E%3Cpath fill='%234CAF50' d='M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z'/%3E%3Cpath fill='%231976D2' d='M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z'/%3E%3C/svg%3E") no-repeat center;
+  background-size: contain;
+  display: inline-block;
+  flex-shrink: 0;
 }
-.edit-chips .chip .chip-x:hover { color: #f7525a; }
-.edit-chips .chip-add {
-  display: inline-flex; align-items: center;
-  cursor: pointer; color: #22ab94; font-size: 13px;
-  padding: 2px 6px; border-radius: 3px;
-  background: transparent; border: 1px dashed #363a45;
-}
-.edit-chips .chip-add:hover { background: #2a2e39; border-color: #22ab94; }
-.edit-chips .chip-input-wrap { display: inline-flex; }
-.edit-chips .chip-input-wrap input {
-  width: 90px; padding: 2px 6px; font-size: 11px;
-  background: #2a2e39; border: 1px solid #22ab94;
-  border-radius: 3px; color: #d1d4dc;
-}
-
-.conf-filter-wrap { position: relative; display: inline-block; }
-.conf-filter-trigger {
-  background: #2a2e39; border: 1px solid #363a45;
-  color: #d1d4dc; padding: 5px 22px 5px 8px; border-radius: 4px;
-  font-size: 12px; cursor: pointer; font-family: inherit;
-  min-width: 100px; position: relative; white-space: nowrap;
-}
-.conf-filter-trigger::after {
-  content: '▾'; position: absolute; right: 6px; top: 50%;
-  transform: translateY(-50%); font-size: 10px; color: #787b86;
-}
-.conf-filter-dropdown {
-  display: none; position: absolute; top: 100%; left: 0;
-  margin-top: 2px; background: #1e222d; border: 1px solid #2a2e39;
-  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  min-width: 200px; max-height: 260px; overflow-y: auto;
-  z-index: 50; padding: 4px 0;
-}
-.conf-filter-dropdown.show { display: block; }
-.conf-filter-item {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px; font-size: 12px; cursor: pointer;
-  color: #d1d4dc;
-}
-.conf-filter-item:hover { background: #2a2e39; }
-.conf-filter-item input[type="checkbox"] {
-  width: 14px; height: 14px; accent-color: #22ab94; cursor: pointer;
-}
-.filter-summary {
-  font-size: 11px; color: #787b86; white-space: nowrap; display: inline-flex; align-items: center;
+.btn-google:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
 }
 
-@media (max-width: 600px) {
-  .stats-grid { grid-template-columns: 1fr; }
-  .row { flex-direction: column; align-items: stretch; }
-  .row label { margin-top: 4px; }
-  input, select { width: 100% !important; }
-  .filter-row .btn { margin-left: 0; }
+.error-msg {
+  text-align: center;
+  font-size: 12px;
+  color: #f7525a;
+  margin-top: 14px;
+  min-height: 18px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.error-msg.show { opacity: 1; }
+
+@media (max-width: 480px) {
+  .login-card { padding: 32px 24px 28px; }
+  .btn-row { flex-direction: column; }
+  .brand h1 { font-size: 19px; }
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-<h1>Trade <span>Not Defteri</span></h1>
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">💠</div>
+      <h1>Trade <span>Not Defteri</span></h1>
+      <p class="brand-sub">Giriş Yap / Kayıt Ol</p>
+    </div>
 
-<div class="card card-ice" id="tradeCard">
-  <div class="card-header">
-    <h2>Yeni Trade</h2>
-    <div class="gear-wrap">
-      <span class="gear-btn" id="gearBtn">⚙</span>
-      <div class="gear-menu" id="gearMenu">
-        <div class="gear-option" data-action="toggle-edit">Düzenle</div>
-        <div class="gear-option" data-action="toggle-bg"><span>🎨</span> Dinamik Arka Plan</div>
-        <div class="gear-option" data-action="reset">Sıfırla</div>
-        <div class="gear-option success" data-action="save-default">Varsayılan Olarak Kaydet</div>
-      </div>
+    <div class="input-group">
+      <input type="email" id="email-input" placeholder=" " autocomplete="email">
+      <label for="email-input">E-posta Adresi</label>
     </div>
-  </div>
-  <form id="tradeForm">
-    <div class="row">
-      <label>Parite <span class="pair-wrap"><select id="fPair"></select><input type="text" id="fPairCustom" style="display:none" placeholder="Parite girin"></span></label>
-      <div class="edit-chips" id="editChipsPair" style="display:none"></div>
-      <label>TF <select id="fTf"></select></label>
-      <div class="edit-chips" id="editChipsTf" style="display:none"></div>
-      <label>Setup <select id="fSetup"></select></label>
-      <div class="edit-chips" id="editChipsSetup" style="display:none"></div>
-      <label>Sonuç <select id="fResult"><option value="Win">Win</option><option value="BE">BE</option><option value="Lose">Lose</option></select></label>
-      <label>RR <input type="number" id="fRr" step="0.01" min="0" placeholder="0.00"></label>
-      <div id="linkFields"></div>
+    <div class="input-group">
+      <input type="password" id="password-input" placeholder=" " autocomplete="current-password">
+      <label for="password-input">Şifre</label>
     </div>
-    <div class="row" style="margin-top:10px">
-      <span style="font-size:11px;color:#787b86">Konfirmasyonlar:</span>
-    </div>
-    <div class="row">
-      <div class="conf-grid" id="confGrid"></div>
-    </div>
-    <div class="edit-chips" id="editChipsConf" style="display:none"></div>
-    <div class="row" style="margin-top:6px">
-      <span style="font-size:11px;color:#787b86">Link Başlıkları:</span>
-    </div>
-    <div class="edit-chips" id="editChipsLink" style="display:none"></div>
-    <div class="row" style="margin-top:10px">
-      <textarea id="fNote" class="note-input" placeholder="Not..." rows="1"></textarea>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <button type="submit" class="btn btn-primary" id="submitBtn">EKLE</button>
-      <button type="button" class="btn" id="cancelEditBtn" style="display:none">İptal</button>
-    </div>
-  </form>
-</div>
 
-<div class="card">
-  <h2>En Başarılı Setuplar</h2>
-  <div class="stats-grid" id="statsGrid"></div>
-</div>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary btn-glossy" id="loginBtn">Giriş Yap</button>
+      <button type="button" class="btn btn-secondary" id="registerBtn">Kayıt Ol</button>
+    </div>
 
-<div class="card">
-  <h2>Kayıtlar</h2>
-  <div class="row filter-row">
-    <label>Parite <select id="filterPair"><option value="">Tümü</option></select></label>
-    <label>TF <select id="filterTf"><option value="">Tümü</option></select></label>
-    <label>Setup <select id="filterSetup"><option value="">Tümü</option></select></label>
-    <label>Sonuç <select id="filterResult"><option value="">Tümü</option><option>Win</option><option>BE</option><option>Lose</option></select></label>
-    <label>Konfirmasyonlar</label>
-    <div class="conf-filter-wrap" id="confFilterWrap"><div class="conf-filter-trigger" id="confFilterTrigger">Tümü</div><div class="conf-filter-dropdown" id="confFilterDropdown"></div></div>
-    <span class="filter-summary" id="filterSummary"></span>
-    <button class="btn btn-sm" id="clearFilterBtn">Temizle</button>
-    <span style="flex:1"></span>
-    <input type="file" id="importInput" accept=".csv" style="display:none">
-    <button class="btn btn-sm" id="importBtn">İçe Aktar</button>
-    <button class="btn btn-sm" id="exportBtn">Excel İhracat</button>
-    <button class="btn btn-sm btn-danger" id="deleteAllBtn">Tümünü Sil</button>
-  </div>
-  <div class="table-wrap">
-      <table>
-        <thead id="tradesHead"></thead>
-        <tbody id="tradesBody"></tbody>
-    </table>
-    <div class="empty" id="emptyMsg">Henüz trade kaydı yok.</div>
+    <div class="divider"><span>VEYA</span></div>
+
+    <button type="button" class="btn-google" id="googleBtn">Google ile Devam Et</button>
+
+    <div class="error-msg" id="errorMsg"></div>
   </div>
 </div>
 
-<div id="previewPopup"><img id="previewImg" alt="preview"></div>
-<div id="fullscreenModal"><img id="fullscreenImg" alt="fullscreen"><span class="close-btn">✕</span></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-<script>
-(function() {
-  const STORAGE_KEY = 'trade_notlari';
-  const SETTINGS_KEY = 'td_lists';
-  const DEFAULTS_KEY = 'td_custom_defaults';
-  const BG_KEY = 'td_bg_animated';
+const firebaseConfig = {
+  apiKey: "AIzaSyDaNFZQROCrfiTYcz1kx90YbyMIe4ZouA0",
+  authDomain: "web-chat-csv-app.firebaseapp.com",
+  projectId: "web-chat-csv-app",
+  storageBucket: "web-chat-csv-app.firebasestorage.app",
+  messagingSenderId: "564926359968",
+  appId: "1:564926359968:web:f15d8db01cf8a8f0a31cc5"
+};
 
-  // === THREE.JS BACKGROUND ENGINE ===
-  let bgEnabled = false;
-  let bgRenderer, bgScene, bgCamera, bgClock;
-  let bgMountain, bgGrid, bgStars1, bgStars2, bgWave;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-  function loadBgPref() {
-    try { bgEnabled = localStorage.getItem(BG_KEY) === 'on'; }
-    catch (e) { bgEnabled = false; }
-    applyBgState();
-  }
+onAuthStateChanged(auth, (user) => {
+  if (user) window.location.href = "main.html";
+});
 
-  function applyBgState() {
-    document.body.classList.toggle('bg-static', !bgEnabled);
-    if (bgRenderer) {
-      bgRenderer.domElement.style.display = bgEnabled ? '' : 'none';
-      if (bgEnabled) requestAnimationFrame(renderBg);
+const emailInput = document.getElementById("email-input");
+const passwordInput = document.getElementById("password-input");
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+const googleBtn = document.getElementById("googleBtn");
+const errorMsg = document.getElementById("errorMsg");
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.add("show");
+  setTimeout(() => errorMsg.classList.remove("show"), 4000);
+}
+
+async function loginWithEmail() {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  if (!email || !password) { showError("E-posta ve şifre gerekli."); return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    window.location.href = "main.html";
+  } catch (e) {
+    if (e.code === "auth/user-not-found" || e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") {
+      showError("E-posta veya şifre hatalı.");
+    } else {
+      showError("Giriş hatası: " + e.message);
     }
   }
+}
 
-  function initBgCanvas() {
-    try { THREE; } catch(e) { return; }
-    bgClock = new THREE.Clock();
-    bgScene = new THREE.Scene();
-    bgCamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
-    bgCamera.position.set(0, 0.5, 14);
-    bgCamera.lookAt(0, 0, 0);
-    bgRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    bgRenderer.setSize(innerWidth, innerHeight);
-    bgRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    bgRenderer.domElement.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;width:100%;height:100%';
-    document.body.prepend(bgRenderer.domElement);
-    addEventListener('resize', () => {
-      bgCamera.aspect = innerWidth / innerHeight;
-      bgCamera.updateProjectionMatrix();
-      bgRenderer.setSize(innerWidth, innerHeight);
-    });
-    buildBgGrid();
-    buildBgMountain();
-    buildBgStars();
-    buildBgWave();
-    if (bgEnabled) requestAnimationFrame(renderBg);
-  }
-
-  function buildBgGrid() {
-    const size = 20, div = 20, step = size / div, half = size / 2, p = [];
-    for (let i = 0; i <= div; i++) { const x = -half + i * step; p.push(x, 0, -half, x, 0, half); }
-    for (let i = 0; i <= div; i++) { const z = -half + i * step; p.push(-half, 0, z, half, 0, z); }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
-    const m = new THREE.LineBasicMaterial({ color: 0x22ab94, transparent: true, opacity: 0.035, depthWrite: false });
-    bgGrid = new THREE.LineSegments(g, m);
-    bgGrid.rotation.x = -Math.PI / 3.5;
-    bgGrid.position.y = -3.5;
-    bgScene.add(bgGrid);
-  }
-
-  function buildBgMountain() {
-    const n = 2048, p = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { p[i * 3] = (i / n - 0.5) * 22; p[i * 3 + 1] = 0; p[i * 3 + 2] = (Math.random() - 0.5) * 0.6; }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-    const u = { uTime: { value: 0 }, uMorph: { value: 0 }, uAmp: { value: 1 }, uShift: { value: 0 }, uColor: { value: new THREE.Color(0xf0c040) }, uOpacity: { value: 0.055 } };
-    const vs = `
-      uniform float uTime; uniform float uMorph; uniform float uAmp; uniform float uShift;
-      varying float vA;
-      float hsh(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-      float nse(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(hsh(i+vec2(0,0)),hsh(i+vec2(1,0)),f.x),
-                   mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x),f.y); }
-      float fbm(vec2 p) { float v=0.,a=.5; for(int i=0;i<3;i++){v+=a*nse(p);p*=2.;a*=.5;} return v; }
-      void main() {
-        vec3 pos=position; float x=pos.x;
-        float mt=fbm(vec2(x*.1+uTime*.012,0))*3.5+fbm(vec2(x*.22+uTime*.02,2.))*1.2-1.5;
-        float zg=sin(x*.4+uTime*.25)*1.8+sin(x*.9+uTime*.55)*.9+sin(x*1.8+uTime*1.1)*.4+sin(x*3.6+uTime*1.8)*.2;
-        float baseY=mix(mt,zg,uMorph); pos.y=baseY*uAmp+uShift; vA=1.-abs(baseY)*.12;
-        gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1);
-      }`;
-    const fs = 'uniform vec3 uColor;uniform float uOpacity;varying float vA;void main(){gl_FragColor=vec4(uColor,uOpacity*vA);}';
-    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-    bgMountain = new THREE.Line(g, mat);
-    bgScene.add(bgMountain);
-  }
-
-  function makeCircleTexture() {
-    const c = document.createElement('canvas'); c.width = 32; c.height = 32;
-    const ctx = c.getContext('2d');
-    const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(255,255,255,0.8)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
-    const tex = new THREE.CanvasTexture(c);
-    return tex;
-  }
-
-  function buildBgStars() {
-    const tex = makeCircleTexture();
-    function mk(cnt, col, sz, op) {
-      const p = new Float32Array(cnt * 3);
-      for (let i = 0; i < cnt; i++) {
-        const t = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 8 + Math.random() * 12;
-        p[i * 3] = r * Math.sin(ph) * Math.cos(t);
-        p[i * 3 + 1] = r * Math.cos(ph) * 0.6;
-        p[i * 3 + 2] = r * Math.sin(ph) * Math.sin(t) - 6;
-      }
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-      const m = new THREE.PointsMaterial({ color: col, size: sz, map: tex, transparent: true, opacity: op, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending });
-      return new THREE.Points(g, m);
+async function registerWithEmail() {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  if (!email || !password) { showError("E-posta ve şifre gerekli."); return; }
+  if (password.length < 6) { showError("Şifre en az 6 karakter olmalı."); return; }
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    window.location.href = "main.html";
+  } catch (e) {
+    if (e.code === "auth/email-already-in-use") {
+      showError("Bu e-posta zaten kayıtlı.");
+    } else {
+      showError("Kayıt hatası: " + e.message);
     }
-    bgStars1 = mk(200, 0xffffff, 0.12, 0.05);
-    bgStars2 = mk(60, 0x22ab94, 0.18, 0.035);
-    bgScene.add(bgStars1); bgScene.add(bgStars2);
   }
+}
 
-  function buildBgWave() {
-    const n = 1024, p = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { p[i * 3] = (i / n - 0.5) * 18; p[i * 3 + 1] = 0; p[i * 3 + 2] = 0; }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-    const u = { uTime: { value: 0 }, uColor: { value: new THREE.Color(0x22ab94) }, uOpacity: { value: 0.035 } };
-    const vs = 'uniform float uTime;void main(){vec3 p=position;float x=p.x;float y=sin(x*.25+uTime*.18)*.7+sin(x*.6+uTime*.35+1.)*.35+sin(x*1.4+uTime*.6+2.)*.15;p.y=y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1);}';
-    const fs = 'uniform vec3 uColor;uniform float uOpacity;void main(){gl_FragColor=vec4(uColor,uOpacity);}';
-    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-    bgWave = new THREE.Line(g, mat);
-    bgWave.position.y = -1.2;
-    bgScene.add(bgWave);
-  }
-
-  let bgShiftTarget = 0;
-
-  function renderBg() {
-    if (!bgEnabled || !bgRenderer) return;
-    requestAnimationFrame(renderBg);
-    const dt = Math.min(bgClock.getDelta(), 0.05);
-    const t = bgClock.getElapsedTime();
-    if (bgMountain) {
-      bgMountain.material.uniforms.uTime.value = t;
-      bgMountain.material.uniforms.uMorph.value = (Math.sin(t * 0.06) + 1) * 0.5;
-      bgMountain.material.uniforms.uAmp.value = 1 + Math.sin(t * 0.008) * 0.5 + Math.sin(t * 0.019) * 0.4 + Math.sin(t * 0.003) * 0.3;
-      const shiftLvls = [-3,-2,-1,1,2,3];
-      if (t % 14 < dt || t < 0.1) {
-        let prev = bgShiftTarget;
-        do { bgShiftTarget = shiftLvls[Math.floor(Math.random() * shiftLvls.length)]; }
-        while (bgShiftTarget === prev && shiftLvls.length > 1);
-      }
-      const cur = bgMountain.material.uniforms.uShift.value;
-      bgMountain.material.uniforms.uShift.value += (bgShiftTarget - cur) * dt * 0.25;
+async function loginWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  try {
+    await signInWithPopup(auth, provider);
+    window.location.href = "main.html";
+  } catch (e) {
+    if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") {
+      showError("Google giriş hatası: " + e.message);
     }
-    if (bgWave) bgWave.material.uniforms.uTime.value = t;
-    if (bgStars1) { bgStars1.rotation.y += dt * 0.008; bgStars2.rotation.y += dt * 0.006; }
-
-    // Cinematic camera orbit — zooms in/out around the golden line from every angle
-    const spd = 0.032;
-    const a = t * spd;
-    const r = 4 + Math.sin(t * 0.015) * 2.8;
-    const y = Math.sin(t * 0.022) * 1.8 + 0.3;
-    bgCamera.position.x = Math.cos(a) * r;
-    bgCamera.position.z = Math.sin(a) * r;
-    bgCamera.position.y = y;
-
-    // gaze drifts slowly along the line for a cinematic pan feel
-    const lx = Math.sin(t * 0.007) * 1.8;
-    bgCamera.lookAt(lx, 0.2, 0);
-
-    // Grid rotates in 3D with the same energy as the camera
-    if (bgGrid) {
-      bgGrid.rotation.x = -Math.PI / 3.5 + Math.sin(t * 0.012) * 0.06;
-      bgGrid.rotation.z += dt * 0.003;
-    }
-
-    bgRenderer.render(bgScene, bgCamera);
   }
+}
 
-  const BUILTIN_DEFAULTS = {
-    pairs: ['XAUUSD','XAGUSD','EURUSD','GBPUSD','AUDUSD','NZDUSD','USDCAD','USDJPY','GBPJPY','EURJPY'],
-    tfs: ['1m','5m','15m','30m','1h','4h','D','W','M'],
-    setups: ['Senkron','Fx Devam','Fx','Bitiriş'],
-    confs: ['Şimşek','Saat','FVG','Sekans','Ucuz-Pahallı','Eş Pair','K. Market Y. Tepkisi','Bacak 1','Bacak 2','-1'],
-    linkTitles: ['HTF','LTF','Eş Pair']
+loginBtn.addEventListener("click", loginWithEmail);
+registerBtn.addEventListener("click", registerWithEmail);
+googleBtn.addEventListener("click", loginWithGoogle);
+
+emailInput.addEventListener("keydown", (e) => { if (e.key === "Enter") loginBtn.click(); });
+passwordInput.addEventListener("keydown", (e) => { if (e.key === "Enter") loginBtn.click(); });
+
+// === THREE.JS FLUID SHADER ===
+let renderer, scene, camera, shaderMaterial, clock;
+
+function initThree() {
+  if (typeof THREE === "undefined") return;
+  clock = new THREE.Clock();
+  const uniforms = {
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0.5, 0.5) }
   };
 
-  let trades = [];
-  let editingId = null;
-  let expandedSetup = null;
-  let editMode = false;
-  let customDefaults = null;
-
-  let pairList = [];
-  let tfList = [];
-  let setupList = [];
-  let confList = [];
-  let linkList = [];
-
-  let confFilterSelection = [];
-  const CF_STORAGE_KEY = 'td_conf_filter';
-
-  function loadConfFilterSelection() {
-    try {
-      const saved = localStorage.getItem(CF_STORAGE_KEY);
-      if (saved) confFilterSelection = JSON.parse(saved);
-      else confFilterSelection = [];
-    } catch (e) { confFilterSelection = []; }
-  }
-  function saveConfFilterSelection() {
-    localStorage.setItem(CF_STORAGE_KEY, JSON.stringify(confFilterSelection));
-  }
-
-  const $ = id => document.getElementById(id);
-  const form = $('tradeForm');
-  const fPair = $('fPair');
-  const fPairCustom = $('fPairCustom');
-  const fTf = $('fTf');
-  const fSetup = $('fSetup');
-  const fResult = $('fResult');
-  const fRr = $('fRr');
-  const fNote = $('fNote');
-  const submitBtn = $('submitBtn');
-  const cancelBtn = $('cancelEditBtn');
-
-  // Settings persistence
-  function loadLists() {
-    try {
-      const data = localStorage.getItem(SETTINGS_KEY);
-      if (data) {
-        const parsed = JSON.parse(data);
-        pairList = parsed.pairs || [...BUILTIN_DEFAULTS.pairs];
-        tfList = parsed.tfs || [...BUILTIN_DEFAULTS.tfs];
-        setupList = parsed.setups || [...BUILTIN_DEFAULTS.setups];
-        confList = parsed.confs || [...BUILTIN_DEFAULTS.confs];
-        linkList = parsed.linkTitles || [...BUILTIN_DEFAULTS.linkTitles];
-        return;
+  shaderMaterial = new THREE.ShaderMaterial({
+    uniforms,
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    } catch(e) {}
-    pairList = [...BUILTIN_DEFAULTS.pairs];
-    tfList = [...BUILTIN_DEFAULTS.tfs];
-    setupList = [...BUILTIN_DEFAULTS.setups];
-    confList = [...BUILTIN_DEFAULTS.confs];
-    linkList = [...BUILTIN_DEFAULTS.linkTitles];
-  }
-  function saveLists() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-      pairs: pairList, tfs: tfList, setups: setupList, confs: confList, linkTitles: linkList
-    }));
-  }
-  function loadCustomDefaults() {
-    try {
-      const data = localStorage.getItem(DEFAULTS_KEY);
-      customDefaults = data ? JSON.parse(data) : null;
-    } catch(e) { customDefaults = null; }
-  }
-  function saveCustomDefaults(lists) {
-    localStorage.setItem(DEFAULTS_KEY, JSON.stringify(lists));
-    customDefaults = lists;
-  }
-  function getDefaults() {
-    return customDefaults || BUILTIN_DEFAULTS;
-  }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec2 uMouse;
+      varying vec2 vUv;
 
-  // Populate select from a list
-  function populateSelect(sel, list, curVal) {
-    sel.innerHTML = '';
-    list.forEach(v => {
-      sel.innerHTML += `<option value="${v}">${v}</option>`;
-    });
-    if (curVal !== undefined && list.includes(curVal)) {
-      sel.value = curVal;
-    }
-  }
+      void main() {
+        vec2 uv = vUv;
+        float t = uTime * 0.035;
+        float w1 = sin(uv.x * 2.1 + uv.y * 1.7 + t * 0.9) * 0.5 + 0.5;
+        float w2 = sin(uv.x * 3.3 - uv.y * 2.5 + t * 1.3 + 1.7) * 0.5 + 0.5;
+        float w3 = sin((uv.x + uv.y) * 1.5 + t * 0.5 + 3.2) * 0.5 + 0.5;
 
-  function populatePairOptions() {
-    const cur = fPair.value;
-    const unique = new Set(pairList);
-    trades.forEach(t => { if (t.pair) unique.add(t.pair); });
-    fPair.innerHTML = '';
-    Array.from(unique).sort().forEach(v => {
-      fPair.innerHTML += `<option value="${v}">${v}</option>`;
-    });
-    if (cur && unique.has(cur)) fPair.value = cur;
-    else fPair.value = pairList[0] || '';
-  }
+        vec3 c1 = vec3(0.082, 0.176, 0.192);
+        vec3 c2 = vec3(0.106, 0.141, 0.227);
+        vec3 c3 = vec3(0.161, 0.094, 0.192);
+        vec3 c4 = vec3(0.039, 0.055, 0.086);
 
-  function populateSelectors() {
-    const curPair = fPair.value;
-    const curTf = fTf.value;
-    const curSetup = fSetup.value;
-    populateSelect(fTf, tfList, curTf);
-    populateSelect(fSetup, setupList, curSetup);
-    populatePairOptions();
-  }
+        vec3 color = mix(c1, c2, w1);
+        color = mix(color, c3, w2 * 0.4);
+        color = mix(color, c4, w3 * 0.3);
 
-  // Conf checkboxes
-  function getConfChecks() {
-    return document.querySelectorAll('#confGrid input[type="checkbox"]');
-  }
-  function getConf() {
-    return Array.from(getConfChecks()).filter(c => c.checked).map(c => c.value);
-  }
-  function setConf(arr) {
-    getConfChecks().forEach(c => { c.checked = arr.includes(c.value); });
-  }
+        float mi = 0.05;
+        color += (c2 - c1) * (uMouse.x - 0.5) * mi;
+        color += (c3 - c2) * (uMouse.y - 0.5) * mi;
 
-  function buildConfGrid() {
-    const grid = $('confGrid');
-    grid.innerHTML = confList.map(v =>
-      `<label class="conf-item"><input type="checkbox" value="${v}"> ${v}</label>`
-    ).join('');
-  }
-
-  // Edit mode chips
-  function renderChips(listId, list, containerId) {
-    const container = $(containerId);
-    if (!editMode) { container.style.display = 'none'; return; }
-    container.style.display = 'flex';
-    container.innerHTML = list.map((v, i) =>
-      `<span class="chip">${v}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
-    ).join('') + `<span class="chip-add" data-list="${listId}">+</span>`;
-  }
-
-  function renderAllChips() {
-    renderChips('pairs', pairList, 'editChipsPair');
-    renderChips('tfs', tfList, 'editChipsTf');
-    renderChips('setups', setupList, 'editChipsSetup');
-    renderChips('confs', confList, 'editChipsConf');
-    renderChips('links', linkList, 'editChipsLink');
-  }
-
-  function renderLinkFields() {
-    const container = $('linkFields');
-    if (!container) return;
-    if (linkList.length === 0) { container.innerHTML = ''; return; }
-    container.innerHTML = linkList.map(title =>
-      `<label>${title} Link <input type="text" class="link-input" data-link-title="${title}" placeholder="tradingview.com/x/..."></label>`
-    ).join('');
-  }
-
-  function addChipItem(listId) {
-    const chipAdd = document.querySelector(`.chip-add[data-list="${listId}"]`);
-    if (!chipAdd) return;
-    const wrap = document.createElement('span');
-    wrap.className = 'chip-input-wrap';
-    const inp = document.createElement('input');
-    inp.placeholder = 'Yeni...';
-    wrap.appendChild(inp);
-    chipAdd.replaceWith(wrap);
-    inp.focus();
-
-    function commit() {
-      if (!document.body.contains(inp)) return;
-      const val = inp.value.trim();
-      if (val) {
-        let list;
-        if (listId === 'pairs') { pairList.push(val); list = pairList; }
-        else if (listId === 'tfs') { tfList.push(val); list = tfList; }
-        else if (listId === 'setups') { setupList.push(val); list = setupList; }
-        else if (listId === 'confs') { confList.push(val); list = confList; }
-        else if (listId === 'links') { linkList.push(val); list = linkList; }
-        saveLists();
-        buildConfGrid();
-        buildConfFilterDropdown();
-        populateSelectors();
-        renderAllChips();
-        if (listId === 'links') { renderLinkFields(); renderTrades(); }
-      } else {
-        renderAllChips();
+        gl_FragColor = vec4(color, 1.0);
       }
-    }
-
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); }
-      if (e.key === 'Escape') { renderAllChips(); }
-    });
-    inp.addEventListener('blur', () => {
-      setTimeout(() => {
-        if (document.activeElement !== inp) commit();
-      }, 100);
-    });
-  }
-
-  function removeChipItem(listId, index) {
-    if (listId === 'pairs') pairList.splice(index, 1);
-    else if (listId === 'tfs') tfList.splice(index, 1);
-    else if (listId === 'setups') setupList.splice(index, 1);
-    else if (listId === 'confs') confList.splice(index, 1);
-    else if (listId === 'links') linkList.splice(index, 1);
-    saveLists();
-    buildConfGrid();
-    populateSelectors();
-    renderAllChips();
-    buildConfFilterDropdown();
-    if (listId === 'links') { renderLinkFields(); renderTrades(); }
-  }
-
-  // Conf filter — "Tümü" mantığı
-  function buildConfFilterDropdown() {
-    loadConfFilterSelection();
-    // Remove stale entries
-    confFilterSelection = confFilterSelection.filter(v => confList.includes(v));
-    saveConfFilterSelection();
-    const dd = $('confFilterDropdown');
-    const wasOpen = dd.classList.contains('show');
-    dd.innerHTML = `<label class="conf-filter-item"><input type="checkbox" id="confFilterAll"> <b>Tümü</b></label>`
-      + confList.map(v =>
-        `<label class="conf-filter-item"><input type="checkbox" value="${v}"> ${v}</label>`
-      ).join('');
-    dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', onConfFilterChange);
-    });
-    syncConfFilterChecks();
-    updateConfFilterTrigger();
-    if (wasOpen) dd.classList.add('show');
-  }
-
-  function onConfFilterChange(e) {
-    const cb = e.target;
-    const dd = $('confFilterDropdown');
-    if (cb.id === 'confFilterAll') {
-      confFilterSelection = [];
-      dd.querySelectorAll('input[type="checkbox"]:not(#confFilterAll)').forEach(c => c.checked = false);
-      cb.checked = true;
-    } else {
-      if (cb.checked) {
-        if (!confFilterSelection.includes(cb.value)) confFilterSelection.push(cb.value);
-        const allCb = $('confFilterAll');
-        if (allCb) allCb.checked = false;
-      } else {
-        confFilterSelection = confFilterSelection.filter(v => v !== cb.value);
-      }
-    }
-    saveConfFilterSelection();
-    updateConfFilterTrigger();
-    renderTrades();
-  }
-
-  function syncConfFilterChecks() {
-    const dd = $('confFilterDropdown');
-    if (!dd) return;
-    const isAll = confFilterSelection.length === 0;
-    const allCb = $('confFilterAll');
-    if (allCb) allCb.checked = isAll;
-    dd.querySelectorAll('input[type="checkbox"]:not(#confFilterAll)').forEach(c => {
-      c.checked = !isAll && confFilterSelection.includes(c.value);
-    });
-  }
-
-  function updateConfFilterTrigger() {
-    const trigger = $('confFilterTrigger');
-    if (!trigger) return;
-    if (confFilterSelection.length === 0) {
-      trigger.textContent = 'Tümü';
-    } else if (confFilterSelection.length <= 2) {
-      trigger.textContent = confFilterSelection.join(', ');
-    } else {
-      trigger.textContent = confFilterSelection.length + ' seçili';
-    }
-  }
-
-  function showConfFilter(e) {
-    e.stopPropagation();
-    const dd = $('confFilterDropdown');
-    if (dd.classList.contains('show')) {
-      dd.classList.remove('show');
-      return;
-    }
-    loadConfFilterSelection();
-    syncConfFilterChecks();
-    updateConfFilterTrigger();
-    dd.classList.add('show');
-  }
-
-  function hideConfFilter() {
-    $('confFilterDropdown').classList.remove('show');
-  }
-
-  // Close conf filter on outside click
-  document.addEventListener('click', (e) => {
-    const wrap = $('confFilterWrap');
-    if (wrap && !wrap.contains(e.target)) {
-      hideConfFilter();
-    }
+    `
   });
 
-  // Event delegation for chips (add / remove)
-  document.addEventListener('click', (e) => {
-    const chipX = e.target.closest('.chip-x');
-    if (chipX) {
-      const listId = chipX.getAttribute('data-list');
-      const index = parseInt(chipX.getAttribute('data-index'), 10);
-      removeChipItem(listId, index);
-      return;
-    }
-    const chipAdd = e.target.closest('.chip-add');
-    if (chipAdd) {
-      const listId = chipAdd.getAttribute('data-list');
-      addChipItem(listId);
-      return;
-    }
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const mesh = new THREE.Mesh(geometry, shaderMaterial);
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  camera.position.z = 1;
+  scene.add(mesh);
+
+  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.domElement.id = "threeCanvas";
+  document.body.prepend(renderer.domElement);
+
+  window.addEventListener("resize", () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
   });
+}
 
-  // Gear menu
-  const gearBtn = $('gearBtn');
-  const gearMenu = $('gearMenu');
-  const tradeCard = $('tradeCard');
+document.addEventListener("mousemove", (e) => {
+  if (!shaderMaterial) return;
+  const x = e.clientX / window.innerWidth;
+  const y = 1 - e.clientY / window.innerHeight;
+  shaderMaterial.uniforms.uMouse.value.set(x, y);
+});
 
-  gearBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    gearMenu.classList.toggle('show');
-  });
+// === PARTICLE SYSTEM ===
+const particleCanvas = document.createElement("canvas");
+particleCanvas.id = "particleCanvas";
+document.body.prepend(particleCanvas);
+const pCtx = particleCanvas.getContext("2d");
 
-  document.addEventListener('click', () => {
-    gearMenu.classList.remove('show');
-  });
+function resizeParticleCanvas() {
+  particleCanvas.width = window.innerWidth;
+  particleCanvas.height = window.innerHeight;
+}
+resizeParticleCanvas();
+window.addEventListener("resize", resizeParticleCanvas);
 
-  gearMenu.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const option = e.target.closest('.gear-option');
-    if (!option) return;
-    const action = option.getAttribute('data-action');
+const particles = [];
+const PARTICLE_COLORS = ["#ffffff", "#22ab94", "#f0c040"];
 
-    if (action === 'toggle-edit') {
-      editMode = !editMode;
-      option.textContent = editMode ? 'Düzenlemeyi Bitir' : 'Düzenle';
-      tradeCard.classList.toggle('edit-active', editMode);
-      renderAllChips();
-      gearMenu.classList.remove('show');
-    } else if (action === 'toggle-bg') {
-      bgEnabled = !bgEnabled;
-      localStorage.setItem(BG_KEY, bgEnabled ? 'on' : 'off');
-      applyBgState();
-      gearMenu.classList.remove('show');
-    } else if (action === 'reset') {
-      const defs = getDefaults();
-      pairList = [...defs.pairs];
-      tfList = [...defs.tfs];
-      setupList = [...defs.setups];
-      confList = [...defs.confs];
-      linkList = [...(defs.linkTitles || BUILTIN_DEFAULTS.linkTitles)];
-      saveLists();
-      if (editMode) renderAllChips();
-      buildConfGrid();
-      buildConfFilterDropdown();
-      populateSelectors();
-      renderLinkFields();
-      renderTrades();
-      gearMenu.classList.remove('show');
-    } else if (action === 'save-default') {
-      saveCustomDefaults({
-        pairs: [...pairList], tfs: [...tfList], setups: [...setupList],
-        confs: [...confList], linkTitles: [...linkList]
-      });
-      gearMenu.classList.remove('show');
-    }
-  });
-
-  // --- Original code below with modifications ---
-
-  fPair.addEventListener('change', () => {
-    if (fPair.value === '__custom__') {
-      fPair.style.display = 'none';
-      fPairCustom.style.display = 'inline-block';
-      fPairCustom.value = '';
-      fPairCustom.focus();
-    }
-  });
-  fPairCustom.addEventListener('blur', () => {
-    if (!fPairCustom.value.trim()) {
-      fPairCustom.style.display = 'none';
-      fPair.style.display = 'inline-block';
-    }
-  });
-
-  function getPairValue() {
-    if (fPair.style.display === 'none') return fPairCustom.value.trim();
-    return fPair.value === '__custom__' ? '' : fPair.value;
-  }
-
-  function load() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      trades = data ? JSON.parse(data) : [];
-    } catch(e) { trades = []; }
-    // Migrate old format: htf/ltf/esPair → links
-    trades.forEach(t => {
-      if (!t.links && (t.htf || t.ltf || t.esPair)) {
-        t.links = {};
-        if (t.htf) t.links.HTF = t.htf;
-        if (t.ltf) t.links.LTF = t.ltf;
-        if (t.esPair) t.links['Eş Pair'] = t.esPair;
-        delete t.htf; delete t.ltf; delete t.esPair;
-      }
+function burstParticles(cx, cy, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 40 + Math.random() * 140;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1.0,
+      color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+      size: 1.5 + Math.random() * 4
     });
   }
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+}
+
+let lastParticleTime = performance.now();
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt / 1.5;
+    p.vx *= 0.97;
+    p.vy *= 0.97;
+    if (p.life <= 0) particles.splice(i, 1);
   }
+}
 
-  function resetForm() {
-    form.reset();
-    fPair.style.display = 'inline-block';
-    fPairCustom.style.display = 'none';
-    fPairCustom.value = '';
-    fPair.value = pairList[0] || '';
-    fTf.value = tfList.includes('15m') ? '15m' : (tfList[0] || '');
-    fSetup.value = setupList.includes('Senkron') ? 'Senkron' : (setupList[0] || '');
-    fResult.value = 'Win';
-    fRr.value = '';
-    renderLinkFields();
-    fNote.value = '';
-    setConf([]);
-    editingId = null;
-    submitBtn.textContent = 'EKLE';
-    cancelBtn.style.display = 'none';
+function drawParticles() {
+  pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+  for (const p of particles) {
+    pCtx.globalAlpha = Math.max(0, p.life);
+    pCtx.fillStyle = p.color;
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.size * Math.max(0.1, p.life), 0, Math.PI * 2);
+    pCtx.fill();
   }
+  pCtx.globalAlpha = 1;
+}
 
-  function getFilterValues() {
-    const v = {};
-    ['Pair','Tf','Setup','Result'].forEach(k => {
-      v[k] = $(`filter${k}`).value;
-    });
-    return v;
-  }
+// Burst on hover over login button
+let burstCooldown = 0;
+loginBtn.addEventListener("mouseenter", () => {
+  const rect = loginBtn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  burstParticles(cx, cy, 30);
+  burstCooldown = 0.3;
+});
 
-  function populateFilterOptions() {
-    const sets = { Pair: new Set(), Tf: new Set(), Setup: new Set() };
-    trades.forEach(t => {
-      if (t.pair) sets.Pair.add(t.pair);
-      if (t.tf) sets.Tf.add(t.tf);
-      if (t.setup) sets.Setup.add(t.setup);
-    });
-    ['Pair','Tf','Setup'].forEach(k => {
-      const sel = $(`filter${k}`);
-      const cur = sel.value;
-      sel.innerHTML = '<option value="">Tümü</option>';
-      Array.from(sets[k]).sort().forEach(v => {
-        sel.innerHTML += `<option value="${v}">${v}</option>`;
-      });
-      sel.value = cur;
-    });
-  }
-
-  // Winrate: win / (win + lose) * 100, BE excluded
-  function calcWinPct(win, lose) {
-    const denominator = win + lose;
-    if (denominator === 0) return win > 0 ? 100 : 0;
-    return win / denominator * 100;
-  }
-
-  function renderStats() {
-    const grid = $('statsGrid');
-    const confNames = confList;
-    const confColors = {
-      'Şimşek': { t:'#f0d060', b:'rgba(240,208,96,0.12)' },
-      'Saat': { t:'#6ab8e8', b:'rgba(106,184,232,0.12)' },
-      'FVG': { t:'#5cc08a', b:'rgba(92,192,138,0.12)' },
-      'Sekans': { t:'#b088d8', b:'rgba(176,136,216,0.12)' },
-      'Ucuz-Pahallı': { t:'#e8a860', b:'rgba(232,168,96,0.12)' },
-      'Eş Pair': { t:'#60c8c0', b:'rgba(96,200,192,0.12)' },
-      'K. Market Y. Tepkisi': { t:'#e888a8', b:'rgba(232,136,168,0.12)' },
-      'Bacak 1': { t:'#68d0d0', b:'rgba(104,208,208,0.12)' },
-      'Bacak 2': { t:'#c8a0d0', b:'rgba(200,160,208,0.12)' },
-      '-1': { t:'#e87878', b:'rgba(232,120,120,0.12)' }
-    };
-    const setupMap = {};
-    trades.forEach(t => {
-      if (!t.setup) return;
-      if (!setupMap[t.setup]) {
-        setupMap[t.setup] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
-        confNames.forEach(c => setupMap[t.setup].confCounts[c] = 0);
-      }
-      const s = setupMap[t.setup];
-      s.total++;
-      if (t.result === 'Win') s.win++;
-      else if (t.result === 'BE') s.be++;
-      else if (t.result === 'Lose') s.lose++;
-      if (t.rr != null && t.rr !== '') {
-        s.rrSum += Number(t.rr);
-        s.rrCount++;
-      }
-      if (t.confirmations) {
-        t.confirmations.forEach(c => {
-          if (s.confCounts[c] !== undefined) s.confCounts[c]++;
-        });
-      }
-    });
-
-    const arr = Object.entries(setupMap).map(([name, s]) => {
-      const winRate = calcWinPct(s.win, s.lose);
-      const winPct = s.total ? (s.win / s.total * 100) : 0;
-      const bePct = s.total ? (s.be / s.total * 100) : 0;
-      const losePct = s.total ? (s.lose / s.total * 100) : 0;
-      const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
-      return { name, ...s, winRate, winPct, bePct, losePct, avgRr };
-    });
-    arr.sort((a,b) => b.winPct - a.winPct || b.total - a.total);
-
-    if (arr.length === 0) {
-      grid.innerHTML = '<div class="empty">Henüz setup verisi yok.</div>';
-      return;
-    }
-
-    function getPairStats(setupName) {
-      const pairMap = {};
-      const filtered = trades.filter(t => t.setup === setupName && t.pair);
-      filtered.forEach(t => {
-        const p = t.pair;
-        if (!pairMap[p]) {
-          pairMap[p] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
-          confNames.forEach(c => pairMap[p].confCounts[c] = 0);
-        }
-        const s = pairMap[p];
-        s.total++;
-        if (t.result === 'Win') s.win++;
-        else if (t.result === 'BE') s.be++;
-        else if (t.result === 'Lose') s.lose++;
-        if (t.rr != null && t.rr !== '') { s.rrSum += Number(t.rr); s.rrCount++; }
-        if (t.confirmations) {
-          t.confirmations.forEach(c => { if (s.confCounts[c] !== undefined) s.confCounts[c]++; });
-        }
-      });
-      return Object.entries(pairMap).map(([name, s]) => {
-        const winRate = calcWinPct(s.win, s.lose);
-        const winPct = s.total ? (s.win / s.total * 100) : 0;
-        const losePct = s.total ? (s.lose / s.total * 100) : 0;
-        const bePct = s.total ? (s.be / s.total * 100) : 0;
-        const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
-        return { name, ...s, winRate, winPct, losePct, bePct, avgRr };
-      }).sort((a,b) => b.winRate - a.winRate || b.total - a.total);
-    }
-
-    grid.innerHTML = arr.map(s => {
-      const confHtml = confNames
-        .filter(c => s.confCounts[c] > 0)
-        .sort((a,b) => s.confCounts[b] - s.confCounts[a])
-        .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${c} %${(s.confCounts[c] / s.total * 100).toFixed(0)}</span>`)
-        .join('');
-
-      let detailHtml = '';
-      if (expandedSetup === s.name) {
-        const pairs = getPairStats(s.name);
-        detailHtml = pairs.length ? `
-          <div class="stat-card-detail">
-            <div class="stat-sub-title">Parite Bazında</div>
-            <div class="stat-sub-grid">
-              ${pairs.map(p => {
-                const pConf = confNames
-                  .filter(c => p.confCounts[c] > 0)
-                  .sort((a,b) => p.confCounts[b] - p.confCounts[a])
-                  .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${c} %${(p.confCounts[c] / p.total * 100).toFixed(0)}</span>`)
-                  .join('');
-                return `
-                <div class="stat-sub-card">
-                  <div class="stat-sub-name">${p.name}</div>
-                  <div class="stat-sub-row">Winrate <b>${p.winRate.toFixed(1)}%</b> | Ort. RR: <b>${p.avgRr.toFixed(2)}</b></div>
-                  <div class="stat-sub-row"><b>${p.total}</b> trade | Win <b>${p.win}</b> | Lose <b>${p.lose}</b> | BE <b>${p.be}</b></div>
-                  <div class="stat-sub-bar">
-                    <div class="bar-win" style="flex:${p.winPct}"></div>
-                    <div class="bar-be" style="flex:${p.bePct}"></div>
-                    <div class="bar-lose" style="flex:${p.losePct}"></div>
-                  </div>
-                  ${pConf ? `<div class="stat-conf-row">${pConf}</div>` : ''}
-                </div>`;
-              }).join('')}
-            </div>
-          </div>` : '';
-      }
-
-      return `
-      <div class="stat-card" data-setup="${s.name}">
-        <div class="stat-title">${s.name}</div>
-        <div class="stat-row">Winrate <b>${s.winRate.toFixed(1)}%</b> | Ort. RR: <b>${s.avgRr.toFixed(2)}</b></div>
-        <div class="stat-row"><b>${s.total}</b> trade | Win <b>${s.win}</b> | Lose <b>${s.lose}</b> | BE <b>${s.be}</b></div>
-        <div class="stat-bar">
-          <div class="bar-win" style="flex:${s.winPct}"></div>
-          <div class="bar-be" style="flex:${s.bePct}"></div>
-          <div class="bar-lose" style="flex:${s.losePct}"></div>
-        </div>
-        ${confHtml ? `<div class="stat-conf-row">${confHtml}</div>` : ''}
-        ${detailHtml}
-      </div>`;
-    }).join('');
-  }
-
-  function renderTrades() {
-    const filters = getFilterValues();
-    const tbody = $('tradesBody');
-    const empty = $('emptyMsg');
-
-    let filtered = trades.filter(t => {
-      if (filters.Pair && t.pair !== filters.Pair) return false;
-      if (filters.Tf && t.tf !== filters.Tf) return false;
-      if (filters.Setup && t.setup !== filters.Setup) return false;
-      if (filters.Result && t.result !== filters.Result) return false;
-      // Conf filter: show trades that have ALL selected confirmations
-      if (confFilterSelection.length > 0) {
-        if (!t.confirmations || t.confirmations.length === 0) return false;
-        if (!confFilterSelection.every(c => t.confirmations.includes(c))) return false;
-      }
-      return true;
-    });
-    filtered = [...filtered].reverse();
-
-    const summary = $('filterSummary');
-    const total = filtered.length;
-    const wins = filtered.filter(t => t.result === 'Win').length;
-    const loses = filtered.filter(t => t.result === 'Lose').length;
-    const bes = filtered.filter(t => t.result === 'BE').length;
-    const winDenom = wins + loses;
-    const winPct = winDenom > 0 ? (wins / winDenom * 100) : (wins > 0 ? 100 : 0);
-    const rrVals = filtered.map(t => t.rr).filter(v => v != null && v !== '').map(Number);
-    const avgRr = rrVals.length > 0 ? (rrVals.reduce((a, b) => a + b, 0) / rrVals.length) : 0;
-    summary.textContent =
-      `→ Winrate ${winPct.toFixed(1)}% | Ort. RR: ${avgRr.toFixed(2)} | ${total} trade | Win ${wins} | Lose ${loses} | BE ${bes}`;
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = '';
-      empty.style.display = 'block';
-      return;
-    }
-    empty.style.display = 'none';
-
-    // Build dynamic thead
-    const thead = $('tradesHead');
-    thead.innerHTML = '<tr>'
-      + ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR']
-        .map(h => `<th>${h}</th>`).join('')
-      + linkList.map(h => `<th>${h}</th>`).join('')
-      + ['Not', ''].map(h => `<th>${h}</th>`).join('')
-      + '</tr>';
-
-    tbody.innerHTML = filtered.map(t => {
-      const confStr = t.confirmations && t.confirmations.length
-        ? t.confirmations.map(c => `<span class="conf-chip">${c}</span>`).join('')
-        : '<span style="color:#787b86;font-size:10px">-</span>';
-      const resultBadge = `badge-${t.result.toLowerCase()}`;
-      const linkCells = linkList.map(title => {
-        const url = t.links && t.links[title];
-        return url ? `<td><span class="preview-link" data-url="${url}">${title}</span></td>`
-                   : '<td>-</td>';
-      }).join('');
-      return `<tr${t._new ? ' class="new-trade"' : ''}>
-        <td style="white-space:nowrap">${t.date || '-'}</td>
-        <td><b>${t.pair || '-'}</b></td>
-        <td>${t.tf || '-'}</td>
-        <td><span class="badge badge-setup">${t.setup || '-'}</span></td>
-        <td>${confStr}</td>
-        <td><span class="badge ${resultBadge}">${t.result || '-'}</span></td>
-        <td>${t.rr != null && t.rr !== '' ? Number(t.rr).toFixed(2) : '-'}</td>
-        ${linkCells}
-        <td class="note-cell"><span class="note-display ${t.not ? 'has-note' : ''}" data-id="${t.id}">${t.not || 'Not...'}</span></td>
-        <td class="actions">
-          <button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
-          <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>
-        </td>
-      </tr>`;
-    }).join('');
-
-    tbody.querySelectorAll('[data-edit]').forEach(b => {
-      b.addEventListener('click', () => startEdit(Number(b.getAttribute('data-edit'))));
-    });
-    tbody.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => deleteTrade(Number(b.getAttribute('data-del'))));
-    });
-    tbody.querySelectorAll('.preview-link').forEach(el => {
-      el.addEventListener('mouseenter', () => { previewEnter(el); });
-      el.addEventListener('mouseleave', () => { previewLeave(); });
-    });
-    tbody.querySelectorAll('.note-display').forEach(el => {
-      el.addEventListener('click', () => startNoteEdit(el));
-    });
-  }
-
-  function startNoteEdit(el) {
-    const id = Number(el.getAttribute('data-id'));
-    const t = trades.find(x => x.id === id);
-    if (!t) return;
-    const td = el.closest('.note-cell');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.className = 'note-input-inline';
-    inp.value = t.not || '';
-    td.innerHTML = '';
-    td.appendChild(inp);
-    inp.focus();
-    inp.select();
-
-    function saveNote() {
-      const val = inp.value.trim();
-      t.not = val || '';
-      save();
-      renderTrades();
-    }
-    inp.addEventListener('blur', saveNote);
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { inp.blur(); }
-      if (e.key === 'Escape') { renderTrades(); }
-    });
-  }
-
-  function deleteTrade(id) {
-    if (!confirm('Bu trade kaydını silmek istediğinize emin misiniz?')) return;
-    trades = trades.filter(t => t.id !== id);
-    save();
-    renderAll();
-  }
-
-  function startEdit(id) {
-    const t = trades.find(x => x.id === id);
-    if (!t) return;
-    editingId = id;
-    fPair.style.display = 'inline-block';
-    fPairCustom.style.display = 'none';
-    fPairCustom.value = '';
-    const pairOpts = Array.from(fPair.options).map(o => o.value);
-    if (pairOpts.includes(t.pair || '')) {
-      fPair.value = t.pair || '';
-    } else {
-      fPair.value = '__custom__';
-      fPair.style.display = 'none';
-      fPairCustom.value = t.pair || '';
-      fPairCustom.style.display = 'inline-block';
-    }
-    fTf.value = t.tf || '';
-    fSetup.value = t.setup || '';
-    fResult.value = t.result || '';
-    fRr.value = t.rr != null ? t.rr : '';
-    renderLinkFields();
-    document.querySelectorAll('#linkFields input[data-link-title]').forEach(inp => {
-      const title = inp.getAttribute('data-link-title');
-      if (t.links && t.links[title]) inp.value = t.links[title];
-    });
-    fNote.value = t.not || '';
-    setConf(t.confirmations || []);
-    submitBtn.textContent = 'GÜNCELLE';
-    cancelBtn.style.display = 'inline-block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function isDuplicate(pair, tf, setup, result, rr) {
-    return trades.some(t =>
-      t.pair === pair && t.tf === tf && t.setup === setup &&
-      t.result === result && (t.rr == rr || (t.rr == null && rr == null))
-    );
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (submitBtn.disabled) return;
-    submitBtn.disabled = true;
-    const pair = getPairValue();
-    if (!pair) { alert('Parite girin.'); submitBtn.disabled = false; return; }
-    const tf = fTf.value;
-    const setup = fSetup.value;
-    const result = fResult.value;
-    const rr = fRr.value !== '' ? fRr.value : null;
-    if (result === 'Win' && (rr === null || rr === '')) {
-      fRr.focus();
-      fRr.style.borderColor = '#f7525a';
-      fRr.style.boxShadow = '0 0 0 2px #f7525a40';
-      setTimeout(() => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; }, 2500);
-      submitBtn.disabled = false;
-      return;
-    }
-    if (!editingId && isDuplicate(pair, tf, setup, result, rr)) {
-      alert('Bu trade zaten mevcut.');
-      submitBtn.disabled = false;
-      return;
-    }
-    const links = {};
-    document.querySelectorAll('#linkFields input[data-link-title]').forEach(inp => {
-      const val = inp.value.trim();
-      if (val) links[inp.getAttribute('data-link-title')] = val;
-    });
-    const not = fNote.value.trim() || '';
-    const confirmations = getConf();
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-
-    if (editingId) {
-      const idx = trades.findIndex(t => t.id === editingId);
-      if (idx !== -1) {
-        trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations };
-      }
-    } else {
-      const newId = Date.now();
-      const newTrade = {
-        id: newId,
-        _new: true,
-        date: dateStr,
-        pair, tf, setup, result, rr, links, not,
-        confirmations
-      };
-      trades.push(newTrade);
-      setTimeout(() => {
-        const t = trades.find(x => x.id === newId);
-        if (t) { delete t._new; save(); renderTrades(); }
-      }, 3200);
-    }
-
-    save();
-    resetForm();
-    renderAll();
-    submitBtn.disabled = false;
-  }
-
-  function renderAll() {
-    populateSelectors();
-    populateFilterOptions();
-    renderStats();
-    renderTrades();
-  }
-
-  fRr.addEventListener('input', () => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; });
-  fResult.addEventListener('change', () => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; });
-
-  // Events
-  $('statsGrid').addEventListener('click', (e) => {
-    if (e.target.closest('.stat-card-detail')) return;
-    const card = e.target.closest('.stat-card[data-setup]');
-    if (!card) return;
-    const setup = card.getAttribute('data-setup');
-    expandedSetup = expandedSetup === setup ? null : setup;
-    renderStats();
-  });
-
-  form.addEventListener('submit', handleSubmit);
-  cancelBtn.addEventListener('click', resetForm);
-
-  document.querySelectorAll('#filterPair,#filterTf,#filterSetup,#filterResult').forEach(el => {
-    el.addEventListener('change', renderTrades);
-  });
-
-  $('clearFilterBtn').addEventListener('click', () => {
-    ['filterPair','filterTf','filterSetup','filterResult'].forEach(id => $(id).value = '');
-    confFilterSelection = [];
-    saveConfFilterSelection();
-    buildConfFilterDropdown();
-    renderTrades();
-  });
-
-  $('deleteAllBtn').addEventListener('click', () => {
-    if (!confirm('Tüm trade kayıtlarını silmek istediğinize emin misiniz?')) return;
-    trades = [];
-    save();
-    renderAll();
-  });
-
-  $('importBtn').addEventListener('click', () => { $('importInput').click(); });
-  $('importInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const csv = ev.target.result;
-      const lines = csv.split('\n').filter(l => l.trim());
-      if (lines.length < 2) { alert('Geçersiz CSV.'); return; }
-
-      function parseCSV(line) {
-        const r = []; let c = ''; let q = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') { if (q && i+1 < line.length && line[i+1] === '"') { c += '"'; i++; } else { q = !q; } }
-          else if (ch === ',' && !q) { r.push(c); c = ''; }
-          else { c += ch; }
-        }
-        r.push(c); return r;
-      }
-
-      const hdrs = parseCSV(lines[0]).map(h => h.trim());
-      const expectedBase = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
-      const idx = {};
-      hdrs.forEach((h, i) => { if (expectedBase.includes(h)) idx[h] = i; });
-      if (!idx['Parite'] || !idx['Setup']) { alert('CSV formatı tanınmadı.'); return; }
-
-      let count = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const f = parseCSV(lines[i]);
-        const get = (n) => f[idx[n]] || '';
-        const rrRaw = get('RR');
-        const rr = rrRaw !== '' ? parseFloat(rrRaw.replace(',','.')) : null;
-        const confRaw = get('Konfirmasyonlar');
-        const links = {};
-        hdrs.forEach(h => {
-          if (!expectedBase.includes(h) && h) links[h] = get(h);
-        });
-        const trade = {
-          id: Date.now() + count,
-          date: get('Tarih'),
-          pair: get('Parite'),
-          tf: get('TF'),
-          setup: get('Setup'),
-          result: get('Sonuç'),
-          rr: !isNaN(rr) ? rr : null,
-          links,
-          not: get('Not'),
-          confirmations: confRaw ? confRaw.split(',').map(s => s.trim()).filter(Boolean) : []
-        };
-        if (trade.pair && trade.setup && trade.result) { trades.push(trade); count++; }
-      }
-      save();
-      renderAll();
-      alert(count + ' trade içe aktarıldı.');
-      $('importInput').value = '';
-    };
-    reader.readAsText(file, 'UTF-8');
-  });
-
-  $('exportBtn').addEventListener('click', () => {
-    const base = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
-    const headers = [...base, ...linkList, 'Not'];
-    const rows = trades.map(t => [
-      t.date || '',
-      t.pair || '',
-      t.tf || '',
-      t.setup || '',
-      (t.confirmations || []).join(', '),
-      t.result || '',
-      t.rr != null ? Number(t.rr).toFixed(2) : '',
-      ...linkList.map(title => (t.links && t.links[title]) || ''),
-      t.not || ''
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
-    const blob = new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'trade_notlari.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
-  // --- Preview / Fullscreen ---
-  const previewPopup = $('previewPopup');
-  const previewImg = $('previewImg');
-  const fullscreenModal = $('fullscreenModal');
-  const fullscreenImg = $('fullscreenImg');
-  let previewHideTimer = null;
-  let previewShowTimer = null;
-
-  function positionPreview(el) {
+// Also burst on hover over other interactive buttons
+document.querySelectorAll(".btn-secondary, .btn-google").forEach(el => {
+  el.addEventListener("mouseenter", () => {
     const rect = el.getBoundingClientRect();
-    const gap = 12;
-    const margin = 24;
-    const pw = Math.min(window.innerWidth * 0.5, 800);
-    const ph = Math.min(window.innerHeight * 0.5, 500);
-
-    const fitBelow = rect.bottom + gap + ph <= window.innerHeight - margin;
-    const fitAbove = rect.top - gap - ph >= margin;
-
-    let top;
-    if (fitBelow) top = rect.bottom + gap;
-    else if (fitAbove) top = rect.top - gap - ph;
-    else top = margin + (window.innerHeight - ph - 2 * margin) / 2;
-
-    const fitRight = rect.left + pw <= window.innerWidth - margin;
-    const fitLeft = rect.right - pw >= margin;
-
-    let left;
-    if (fitRight) left = rect.left;
-    else if (fitLeft) left = rect.right - pw;
-    else left = margin + (window.innerWidth - pw - 2 * margin) / 2;
-
-    left = Math.round(Math.max(margin, Math.min(left, window.innerWidth - pw - margin)));
-    top  = Math.round(Math.max(margin, Math.min(top, window.innerHeight - ph - margin)));
-
-    previewPopup.style.left = left + 'px';
-    previewPopup.style.top = top + 'px';
-    previewPopup.style.width = pw + 'px';
-    previewPopup.style.height = ph + 'px';
-  }
-
-  function showPreview(url, el) {
-    positionPreview(el);
-    previewPopup.style.display = 'block';
-    previewPopup.classList.remove('show');
-    void previewPopup.offsetHeight;
-    previewPopup.classList.add('show');
-    previewImg.onload = () => {};
-    previewImg.onerror = () => { hidePreview(); };
-    previewImg.src = url;
-  }
-
-  function hidePreview() {
-    previewPopup.classList.remove('show');
-    previewPopup.style.display = 'none';
-    previewPopup.style.width = '';
-    previewPopup.style.height = '';
-    previewImg.src = '';
-    previewImg.onload = null;
-    previewImg.onerror = null;
-  }
-
-  function previewEnter(el) {
-    clearTimeout(previewHideTimer);
-    const url = el.getAttribute('data-url');
-    if (!url) return;
-    clearTimeout(previewShowTimer);
-    previewShowTimer = setTimeout(() => showPreview(url, el), 200);
-  }
-
-  function previewLeave() {
-    clearTimeout(previewShowTimer);
-    clearTimeout(previewHideTimer);
-    previewHideTimer = setTimeout(hidePreview, 350);
-  }
-
-  previewPopup.addEventListener('mouseenter', () => {
-    clearTimeout(previewHideTimer);
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    burstParticles(cx, cy, 15);
   });
-  previewPopup.addEventListener('mouseleave', () => {
-    previewLeave();
-  });
-  previewImg.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const url = previewImg.src;
-    if (url) openFullscreen(url);
-  });
+});
 
-  function openFullscreen(url) {
-    fullscreenImg.src = url;
-    fullscreenModal.style.display = 'block';
-  }
-  function closeFullscreen() {
-    fullscreenModal.style.display = 'none';
-    fullscreenImg.src = '';
-  }
-  fullscreenModal.addEventListener('click', closeFullscreen);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && fullscreenModal.style.display === 'block') closeFullscreen();
-  });
+// === ANIMATION LOOP ===
+function animate() {
+  requestAnimationFrame(animate);
 
-  // Conf filter toggle
-  $('confFilterTrigger').addEventListener('click', showConfFilter);
+  const t = performance.now();
+  const dt = Math.min((t - lastParticleTime) / 1000, 0.05);
+  lastParticleTime = t;
 
-  // Init
-  loadBgPref();
-  initBgCanvas();
-  loadLists();
-  loadCustomDefaults();
-  loadConfFilterSelection();
-  buildConfGrid();
-  buildConfFilterDropdown();
-  populateSelectors();
-  load();
-  renderAll();
-  resetForm();
-  if (editMode) {
-    tradeCard.classList.add('edit-active');
-    renderAllChips();
+  if (renderer && shaderMaterial) {
+    shaderMaterial.uniforms.uTime.value = clock.getElapsedTime();
+    renderer.render(scene, camera);
   }
-})();
+
+  if (burstCooldown > 0) {
+    burstCooldown -= dt;
+    if (burstCooldown > 0) {
+      const rect = loginBtn.getBoundingClientRect();
+      burstParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 2);
+    }
+  }
+
+  updateParticles(dt);
+  drawParticles();
+}
+
+initThree();
+animate();
 </script>
-<div class="sig-wrap">
-  <div class="sig-popup">"Excel İhracat" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
-  <div class="sig-ice"><span class="sig-text">BUZ</span> <span class="sig-emoji">🧊</span></div>
-</div>
 </body>
 </html>
