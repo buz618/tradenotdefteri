@@ -207,7 +207,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   position: fixed; bottom: 12px; left: 14px; z-index: 999;
 }
 .sig-popup {
-  position: absolute; bottom: calc(100% + 14px); right: -4px;
+  position: absolute; bottom: calc(100% + 14px); left: 0;
   width: 290px; padding: 14px 16px;
   background: #1e222d; border: 1px solid #2a2e39;
   border-radius: 8px;
@@ -219,7 +219,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   border-top: 2px solid #7dd8f2;
 }
 .sig-popup::after {
-  content: ''; position: absolute; top: 100%; right: 20px;
+  content: ''; position: absolute; top: 100%; left: 18px;
   border: 6px solid transparent; border-top-color: #2a2e39;
 }
 .sig-wrap:hover .sig-popup {
@@ -372,6 +372,18 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   z-index: 1;
 }
 .chat-resize-handle:hover { opacity: 0.8; }
+.popup-panel#csvPanel { position: fixed; resize: none; overflow: hidden; }
+.popup-panel#csvPanel.open { min-width: 340px; min-height: 260px; }
+.popup-panel#csvPanel .pp-header { cursor: move; user-select: none; }
+.csv-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #22ab94 50%);
+  opacity: 0.4; transition: opacity 0.15s;
+  z-index: 1;
+}
+.csv-resize-handle:hover { opacity: 0.8; }
 .popup-panel#adminPanel { width: 380px; max-height: 480px; }
 .admin-user-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -540,6 +552,12 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   50% { box-shadow: 0 0 16px 4px rgba(247,82,90,0.5); }
 }
 
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #2a2e39; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #363a45; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #22ab94; }
+* { scrollbar-width: thin; scrollbar-color: #363a45 #2a2e39; }
+
 @media (max-width: 480px) {
   .popup-panel { width: calc(100vw - 28px); right: 14px; max-height: 60vh; }
 }
@@ -620,8 +638,9 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
     <button class="btn btn-sm" id="clearFilterBtn">Temizle</button>
     <span style="flex:1"></span>
     <input type="file" id="importInput" accept=".csv" style="display:none">
+    <button class="btn btn-sm" id="exitPreviewBtn" style="display:none">Önizlemeyi Bitir 🔄</button>
     <button class="btn btn-sm" id="importBtn">İçe Aktar</button>
-    <button class="btn btn-sm" id="exportBtn">Excel İhracat</button>
+    <button class="btn btn-sm" id="exportBtn">Dışa Aktar</button>
     <button class="btn btn-sm btn-danger" id="deleteAllBtn">Tümünü Sil</button>
   </div>
   <div class="table-wrap">
@@ -2183,9 +2202,18 @@ let currentUser = null;
       renderAllChips();
     }
     checkAdmin();
+    // Ensure nickname in meta at login
+    const savedNick = localStorage.getItem('chatNickname');
+    if (savedNick) {
+      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: savedNick }, { merge: true }).catch(() => {});
+    }
     restoreChatPosition();
     initChatDrag();
     initChatResize();
+    restoreCsvPosition();
+    restoreCsvSize();
+    initCsvDrag();
+    initCsvResize();
     if (!chatUnsub) initChat();
     initCsvPublicWatcher();
   });
@@ -2283,6 +2311,9 @@ let currentUser = null;
     const val = inp.value.trim();
     if (!val) { alert('Lütfen bir rumuz girin.'); return; }
     localStorage.setItem('chatNickname', val);
+    if (currentUser) {
+      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: val }, { merge: true }).catch(() => {});
+    }
     inp.value = '';
     const nicknameWrap = $('chatNicknameWrap');
     const chatBody = $('chatBody');
@@ -2338,32 +2369,6 @@ let currentUser = null;
     });
   }
 
-  document.addEventListener('mousemove', (e) => {
-    if (chatIsDragging) {
-      chatPanel.style.left = (e.clientX - chatDragOffset.x) + 'px';
-      chatPanel.style.top = (e.clientY - chatDragOffset.y) + 'px';
-    } else if (chatIsResizing) {
-      const dw = e.clientX - chatResizeStart.x;
-      const dh = e.clientY - chatResizeStart.y;
-      const newW = Math.max(280, chatResizeStart.w + dw);
-      const newH = Math.max(200, chatResizeStart.h + dh);
-      chatPanel.style.width = newW + 'px';
-      chatPanel.style.height = newH + 'px';
-    }
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (chatIsDragging) {
-      chatIsDragging = false;
-      const rect = chatPanel.getBoundingClientRect();
-      localStorage.setItem('chatPanelLeft', rect.left);
-      localStorage.setItem('chatPanelTop', rect.top);
-    } else if (chatIsResizing) {
-      chatIsResizing = false;
-      saveChatSize();
-    }
-  });
-
   let chatIsResizing = false;
   let chatResizeStart = { w: 0, h: 0, x: 0, y: 0 };
 
@@ -2392,7 +2397,132 @@ let currentUser = null;
       localStorage.setItem('chatPanelLeft', chatPanel.style.left.replace('px',''));
       localStorage.setItem('chatPanelTop', chatPanel.style.top.replace('px',''));
     }
+    // Also clamp CSV panel
+    const crect = csvPanel.getBoundingClientRect();
+    let cleft = parseInt(csvPanel.style.left) || crect.left;
+    let ctop = parseInt(csvPanel.style.top) || crect.top;
+    const cmaxLeft = window.innerWidth - crect.width - pad;
+    const cmaxTop = window.innerHeight - crect.height - pad;
+    if (cleft > cmaxLeft || ctop > cmaxTop || cleft < pad || ctop < pad) {
+      csvPanel.style.left = Math.max(pad, Math.min(cleft, cmaxLeft)) + 'px';
+      csvPanel.style.top = Math.max(pad, Math.min(ctop, cmaxTop)) + 'px';
+      localStorage.setItem('csvPanelLeft', csvPanel.style.left.replace('px',''));
+      localStorage.setItem('csvPanelTop', csvPanel.style.top.replace('px',''));
+    }
   });
+
+  // CSV drag
+  let csvDragOffset = { x: 0, y: 0 };
+  let csvIsDragging = false;
+
+  function initCsvDrag() {
+    const header = csvPanel.querySelector('.pp-header');
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.pp-close')) return;
+      csvIsDragging = true;
+      csvPanel.style.bottom = 'auto';
+      csvPanel.style.right = 'auto';
+      const rect = csvPanel.getBoundingClientRect();
+      csvDragOffset.x = e.clientX - rect.left;
+      csvDragOffset.y = e.clientY - rect.top;
+    });
+  }
+
+  // CSV resize
+  let csvIsResizing = false;
+  let csvResizeStart = { w: 0, h: 0, x: 0, y: 0 };
+
+  function initCsvResize() {
+    const handle = document.getElementById('csvResizeHandle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      csvIsResizing = true;
+      const rect = csvPanel.getBoundingClientRect();
+      csvResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
+    });
+  }
+
+  function saveCsvSize() {
+    localStorage.setItem('csvPanelWidth', csvPanel.offsetWidth);
+    localStorage.setItem('csvPanelHeight', csvPanel.offsetHeight);
+  }
+
+  function restoreCsvSize() {
+    const w = localStorage.getItem('csvPanelWidth');
+    const h = localStorage.getItem('csvPanelHeight');
+    if (w) csvPanel.style.width = w + 'px';
+    if (h) csvPanel.style.height = h + 'px';
+  }
+
+  function restoreCsvPosition() {
+    const l = localStorage.getItem('csvPanelLeft');
+    const t = localStorage.getItem('csvPanelTop');
+    if (l && t) {
+      csvPanel.style.bottom = 'auto';
+      csvPanel.style.right = 'auto';
+      csvPanel.style.left = l + 'px';
+      csvPanel.style.top = t + 'px';
+    }
+  }
+
+  // Global mousemove: drag/resize with viewport clamping
+  document.addEventListener('mousemove', (e) => {
+    const pad = 10;
+    if (chatIsDragging) {
+      const maxLeft = window.innerWidth - chatPanel.offsetWidth - pad;
+      const maxTop = window.innerHeight - chatPanel.offsetHeight - pad;
+      chatPanel.style.left = Math.max(pad, Math.min(e.clientX - chatDragOffset.x, maxLeft)) + 'px';
+      chatPanel.style.top = Math.max(pad, Math.min(e.clientY - chatDragOffset.y, maxTop)) + 'px';
+    } else if (chatIsResizing) {
+      const cl = parseInt(chatPanel.style.left) || pad;
+      const ct = parseInt(chatPanel.style.top) || pad;
+      const dw = e.clientX - chatResizeStart.x;
+      const dh = e.clientY - chatResizeStart.y;
+      const newW = Math.max(280, Math.min(chatResizeStart.w + dw, window.innerWidth - cl - pad));
+      const newH = Math.max(200, Math.min(chatResizeStart.h + dh, window.innerHeight - ct - pad));
+      chatPanel.style.width = newW + 'px';
+      chatPanel.style.height = newH + 'px';
+    } else if (csvIsDragging) {
+      const maxLeft = window.innerWidth - csvPanel.offsetWidth - pad;
+      const maxTop = window.innerHeight - csvPanel.offsetHeight - pad;
+      csvPanel.style.left = Math.max(pad, Math.min(e.clientX - csvDragOffset.x, maxLeft)) + 'px';
+      csvPanel.style.top = Math.max(pad, Math.min(e.clientY - csvDragOffset.y, maxTop)) + 'px';
+    } else if (csvIsResizing) {
+      const cl = parseInt(csvPanel.style.left) || pad;
+      const ct = parseInt(csvPanel.style.top) || pad;
+      const dw = e.clientX - csvResizeStart.x;
+      const dh = e.clientY - csvResizeStart.y;
+      const newW = Math.max(340, Math.min(csvResizeStart.w + dw, window.innerWidth - cl - pad));
+      const newH = Math.max(260, Math.min(csvResizeStart.h + dh, window.innerHeight - ct - pad));
+      csvPanel.style.width = newW + 'px';
+      csvPanel.style.height = newH + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (chatIsDragging) {
+      chatIsDragging = false;
+      const rect = chatPanel.getBoundingClientRect();
+      localStorage.setItem('chatPanelLeft', rect.left);
+      localStorage.setItem('chatPanelTop', rect.top);
+    } else if (chatIsResizing) {
+      chatIsResizing = false;
+      saveChatSize();
+    } else if (csvIsDragging) {
+      csvIsDragging = false;
+      const rect = csvPanel.getBoundingClientRect();
+      localStorage.setItem('csvPanelLeft', rect.left);
+      localStorage.setItem('csvPanelTop', rect.top);
+    } else if (csvIsResizing) {
+      csvIsResizing = false;
+      saveCsvSize();
+    }
+  });
+
+  // Restore CSV position/size on login
+  restoreCsvPosition();
+  restoreCsvSize();
 
   // ====== CSV ======
   const csvEditor = $('csvEditor');
@@ -2533,10 +2663,18 @@ let currentUser = null;
           alert('15 dakika içinde maksimum 3 kayıt yapabilirsiniz. Kalan süre: ' + remaining + ' dakika.');
           return;
         }
+        const nickSave = localStorage.getItem('chatNickname') || '';
         await setDoc(doc(db, 'csv_storage', currentUser.uid), {
-          saveCount: saveCount + 1, saveResetAt, updatedAt: serverTimestamp()
+          saveCount: saveCount + 1, saveResetAt, nickname: nickSave,
+          updatedAt: serverTimestamp()
         }, { merge: true });
       } catch(e) { alert('CSV kaydedilemedi: ' + e.message); return; }
+    } else {
+      // Admin path: ensure nickname in meta
+      const nickSave = localStorage.getItem('chatNickname') || '';
+      if (nickSave) {
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: nickSave }, { merge: true });
+      }
     }
 
     // Save file
@@ -2619,8 +2757,7 @@ let currentUser = null;
           <div class="csv-pub-name">${escapeHtml(sanitizeName(item.name))}</div>
         </div>
         <div class="csv-pub-actions">
-          <button class="csv-pub-view" data-uid="${item.uid}" data-fid="${item.fileId}" data-content="${escapeHtml(item.content)}">Görüntüle</button>
-          <button class="csv-pub-copy" data-uid="${item.uid}" data-fid="${item.fileId}" data-name="${escapeHtml(item.name)}" data-content="${escapeHtml(item.content)}">Yükle</button>
+          <button class="csv-pub-view" data-uid="${item.uid}" data-fid="${item.fileId}" data-content="${escapeHtml(item.content)}">Önizle</button>
         </div>
       </div>
     `).join('');
@@ -2628,6 +2765,8 @@ let currentUser = null;
 
   // Tab switching
   let isWatchingPublic = false;
+  let isCsvPreview = false;
+  let csvPreviewBackup = null;
 
   csvTabMy.addEventListener('click', async () => {
     csvTabMy.classList.add('active');
@@ -2653,6 +2792,7 @@ let currentUser = null;
         await loadUserSettings();
       }
     }
+    if (isCsvPreview) exitCsvPreview();
     // Set public=false
     try {
       const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
@@ -2707,26 +2847,40 @@ let currentUser = null;
     const btn = e.target.closest('button');
     if (!btn) return;
     if (btn.classList.contains('csv-pub-view')) {
+      if (!isCsvPreview) {
+        csvPreviewBackup = {
+          value: csvEditor.value,
+          name: csvNameInput.value,
+          fileId: csvCurrentFileId
+        };
+      }
       csvEditor.value = btn.getAttribute('data-content');
       csvNameInput.value = btn.getAttribute('data-name') || '';
       csvCurrentFileId = null;
+      csvDirty = false;
       csvEditor.readOnly = true;
-    } else if (btn.classList.contains('csv-pub-copy')) {
-      const content = btn.getAttribute('data-content');
-      const origName = btn.getAttribute('data-name') || 'isimsiz';
-      const nick = localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
-      const now = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
-      csvNameInput.value = `imported_${origName}_${ts}`;
-      csvEditor.value = content;
-      csvCurrentFileId = null;
-      csvEditor.readOnly = false;
-      csvDirty = true;
-      // Switch to My tab
-      csvTabMy.click();
+      isCsvPreview = true;
+      const exitBtn = $('exitPreviewBtn');
+      if (exitBtn) exitBtn.style.display = 'inline-block';
     }
   });
+
+  function exitCsvPreview() {
+    if (csvPreviewBackup) {
+      csvEditor.value = csvPreviewBackup.value;
+      csvNameInput.value = csvPreviewBackup.name;
+      csvCurrentFileId = csvPreviewBackup.fileId;
+    }
+    csvDirty = false;
+    csvEditor.readOnly = false;
+    csvEditor.style.opacity = '1';
+    isCsvPreview = false;
+    csvPreviewBackup = null;
+    const exitBtn = $('exitPreviewBtn');
+    if (exitBtn) exitBtn.style.display = 'none';
+  }
+
+  $('exitPreviewBtn').addEventListener('click', exitCsvPreview);
 
   // Tab initial state
   csvTabMy.classList.add('active');
@@ -2805,6 +2959,7 @@ let currentUser = null;
         <div style="color:#787b86;text-align:center;padding:10px">Henüz public CSV bulunamadı.</div>
       </div>
     </div>
+    <div class="csv-resize-handle" id="csvResizeHandle"></div>
   </div>
 
   <!-- Admin panel -->
@@ -2827,7 +2982,7 @@ let currentUser = null;
 </div>
 
 <div class="sig-wrap">
-  <div class="sig-popup">"Excel İhracat" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
+  <div class="sig-popup">"Dışa Aktar" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
   <div class="sig-ice"><span class="sig-emoji">🧊</span> <span class="sig-text">BUZ</span></div>
 </div>
 </body>
