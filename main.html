@@ -1834,20 +1834,7 @@ let currentUser = null;
   });
 
   $('exportBtn').addEventListener('click', () => {
-    const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
-    const headers = [...fixedHeaders, ...linkList, 'Not'];
-    const rows = trades.map(t => [
-      t.date || '',
-      t.pair || '',
-      t.tf || '',
-      t.setup || '',
-      (t.confirmations || []).join(', '),
-      t.result || '',
-      t.rr != null ? Number(t.rr).toFixed(2) : '',
-      ...linkList.map(title => (t.links && t.links[title]) || ''),
-      t.not || ''
-    ]);
-    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const csv = tradesToCsv();
     const blob = new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1855,6 +1842,20 @@ let currentUser = null;
     a.click();
     URL.revokeObjectURL(a.href);
   });
+
+  function tradesToCsv() {
+    const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
+    const headers = [...fixedHeaders, ...linkList, 'Not'];
+    const rows = trades.map(t => [
+      t.date || '', t.pair || '', t.tf || '', t.setup || '',
+      (t.confirmations || []).join(', '),
+      t.result || '',
+      t.rr != null ? Number(t.rr).toFixed(2) : '',
+      ...linkList.map(title => (t.links && t.links[title]) || ''),
+      t.not || ''
+    ]);
+    return [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+  }
 
   // --- CSV parse utilities ---
   function parseCsvLine(line) {
@@ -2576,6 +2577,11 @@ let currentUser = null;
       });
       csvMyFiles.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       renderCsvMyList();
+      // Auto-fill editor with current trades if no file selected
+      if (!csvCurrentFileId && !csvEditor.value && trades.length > 0) {
+        csvEditor.value = tradesToCsv();
+        csvDirty = true;
+      }
     } catch(e) { console.warn('CSV files load error:', e); }
   }
 
@@ -2629,6 +2635,10 @@ let currentUser = null;
         csvDirty = false;
         csvEditor.readOnly = false;
         csvEditor.style.opacity = '1';
+        if (trades.length > 0) {
+          csvEditor.value = tradesToCsv();
+          csvDirty = true;
+        }
       }
     } catch(e) { alert('CSV silinemedi: ' + e.message); }
   }
