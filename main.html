@@ -513,15 +513,6 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   text-align: center; color: #787b86; font-size: 12px; padding: 24px;
 }
 
-/* CSV editor */
-.csv-editor {
-  width: 100%; min-height: 260px;
-  background: #2a2e39; border: 1px solid #363a45;
-  color: #d1d4dc; border-radius: 4px; padding: 8px;
-  font-size: 12px; font-family: monospace; resize: vertical;
-}
-.csv-editor:focus { outline: none; border-color: #22ab94; }
-
 /* Toggle buttons row */
 .popup-toggles {
   pointer-events: auto;
@@ -638,6 +629,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
     <button class="btn btn-sm" id="clearFilterBtn">Temizle</button>
     <span style="flex:1"></span>
     <input type="file" id="importInput" accept=".csv" style="display:none">
+    <button class="btn btn-sm" id="exitPreviewBtn" style="display:none">Önizlemeyi Bitir 🔄</button>
     <button class="btn btn-sm" id="importBtn">İçe Aktar</button>
     <button class="btn btn-sm" id="exportBtn">Dışa Aktar</button>
     <button class="btn btn-sm btn-danger" id="deleteAllBtn">Tümünü Sil</button>
@@ -1708,6 +1700,7 @@ let currentUser = null;
   function handleSubmit(e) {
     e.preventDefault();
     if (submitBtn.disabled) return;
+    if (isPreviewMode) { alert('Önizleme modunda trade eklenemez.'); return; }
     submitBtn.disabled = true;
     const pair = getPairValue();
     if (!pair) { alert('Parite girin.'); submitBtn.disabled = false; return; }
@@ -1807,6 +1800,7 @@ let currentUser = null;
   });
 
   $('deleteAllBtn').addEventListener('click', () => {
+    if (isPreviewMode) { alert('Önizleme modunda silme yapılamaz.'); return; }
     if (!confirm('Tüm trade kayıtlarını silmek istediğinize emin misiniz?')) return;
     trades = [];
     save();
@@ -1814,7 +1808,10 @@ let currentUser = null;
     renderAll();
   });
 
-  $('importBtn').addEventListener('click', () => { $('importInput').click(); });
+  $('importBtn').addEventListener('click', () => {
+    if (isPreviewMode) { alert('Önizleme modunda içe aktarma yapılamaz.'); return; }
+    $('importInput').click();
+  });
   $('importInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -2528,15 +2525,15 @@ let currentUser = null;
   restoreCsvSize();
 
   // ====== CSV ======
-  const csvEditor = $('csvEditor');
   const csvNameInput = $('csvNameInput');
   const csvMyList = $('csvMyList');
   const csvPublicList = $('csvPublicList');
   const csvTabMy = $('csvTabMy');
   const csvTabPublic = $('csvTabPublic');
-  let csvDirty = false;
   let csvCurrentFileId = null;
   let csvMyFiles = [];
+  let isPreviewMode = false;
+  let previewBackup = null;
 
   function getDefaultCsvName() {
     const nick = localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
@@ -2577,11 +2574,6 @@ let currentUser = null;
       });
       csvMyFiles.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       renderCsvMyList();
-      // Auto-fill editor with current trades if no file selected
-      if (!csvCurrentFileId && !csvEditor.value && trades.length > 0) {
-        csvEditor.value = tradesToCsv();
-        csvDirty = true;
-      }
     } catch(e) { console.warn('CSV files load error:', e); }
   }
 
@@ -2608,17 +2600,12 @@ let currentUser = null;
   }
 
   async function openCsvFile(id) {
-    if (csvDirty && !confirm('Kaydedilmemiş değişiklikler var. Devam etmek istiyor musunuz?')) return;
     try {
       const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
       if (!snap.exists()) { alert('CSV bulunamadı.'); return; }
       const data = snap.data();
-      csvEditor.value = data.content || '';
       csvNameInput.value = data.name || '';
       csvCurrentFileId = id;
-      csvDirty = false;
-      csvEditor.readOnly = false;
-      csvEditor.style.opacity = '1';
     } catch(e) { alert('CSV açılamadı: ' + e.message); }
   }
 
@@ -2629,29 +2616,22 @@ let currentUser = null;
       alert('CSV silindi.');
       await loadMyCsvFiles();
       if (csvCurrentFileId === id) {
-        csvEditor.value = '';
         csvNameInput.value = '';
         csvCurrentFileId = null;
-        csvDirty = false;
-        csvEditor.readOnly = false;
-        csvEditor.style.opacity = '1';
-        if (trades.length > 0) {
-          csvEditor.value = tradesToCsv();
-          csvDirty = true;
-        }
       }
     } catch(e) { alert('CSV silinemedi: ' + e.message); }
   }
 
   async function saveCsvToFirestore() {
     if (!currentUser) return;
+    if (isPreviewMode) { alert('Önizleme modunda kayıt yapılamaz.'); return; }
     let name = csvNameInput.value.trim();
     if (!name) {
       name = getDefaultCsvName();
       csvNameInput.value = name;
     }
     name = sanitizeName(name);
-    const content = csvEditor.value;
+    const content = tradesToCsv();
 
     if (content.length > CSV_MAX_SIZE) {
       alert('CSV dosyası çok büyük. Maksimum 5MB olabilir. (Şu an: ' + (content.length / 1000000).toFixed(1) + 'MB)');
@@ -2704,7 +2684,6 @@ let currentUser = null;
         });
         csvCurrentFileId = newId;
       }
-      csvDirty = false;
       alert('CSV kaydedildi.');
       await loadMyCsvFiles();
     } catch(e) { alert('CSV kaydedilemedi: ' + e.message); }
@@ -2787,8 +2766,6 @@ let currentUser = null;
     document.getElementById('csvPublicBody').style.display = 'none';
     if (isWatchingPublic) {
       isWatchingPublic = false;
-      csvEditor.readOnly = false;
-      csvEditor.style.opacity = '1';
       $('csvSaveBtn').disabled = false;
       // Restore own settings if backup exists
       if (window._ownSettingsBackup) {
@@ -2820,8 +2797,6 @@ let currentUser = null;
     document.getElementById('csvMyBody').style.display = 'none';
     document.getElementById('csvPublicBody').style.display = 'flex';
     isWatchingPublic = true;
-    csvEditor.readOnly = true;
-    csvEditor.style.opacity = '0.6';
     $('csvSaveBtn').disabled = true;
     // Backup own settings
     window._ownSettingsBackup = {
@@ -2856,33 +2831,81 @@ let currentUser = null;
   csvPublicList.addEventListener('click', async (e) => {
     const btn = e.target.closest('button');
     if (!btn) return;
-    if (btn.classList.contains('csv-pub-view')) {
-      const key = btn.getAttribute('data-key');
-      const csvContent = csvPublicContentMap.get(key) || '';
-      if (!csvContent) return;
+    if (!btn.classList.contains('csv-pub-view')) return;
+    if (isPreviewMode) return;
 
-      // Parse CSV and load trades into main panel
-      const previewTrades = csvContentToTrades(csvContent);
-      if (previewTrades.length > 0) {
-        trades = previewTrades;
-        save();
-        renderAll();
-      }
+    const key = btn.getAttribute('data-key');
+    const csvContent = csvPublicContentMap.get(key) || '';
+    if (!csvContent) return;
 
-      // Close CSV panel
-      csvPanel.classList.remove('open');
-      csvToggle.classList.remove('active');
-    }
+    // Backup current state
+    previewBackup = {
+      trades: JSON.parse(JSON.stringify(trades)),
+      pairList: [...pairList], tfList: [...tfList],
+      setupList: [...setupList], confList: [...confList],
+      linkList: [...linkList]
+    };
+
+    // Parse CSV and load trades
+    const previewTrades = csvContentToTrades(csvContent);
+    if (previewTrades.length === 0) return;
+    trades = previewTrades;
+
+    // Rebuild panel settings from preview trades' data
+    pairList = [...new Set(trades.map(t => t.pair).filter(Boolean))];
+    tfList = [...new Set(trades.map(t => t.tf).filter(Boolean))];
+    setupList = [...new Set(trades.map(t => t.setup).filter(Boolean))];
+    confList = [...new Set(trades.flatMap(t => t.confirmations || []))];
+    linkList = [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
+
+    save();
+    saveLists();
+    renderAll();
+    buildConfGrid();
+    buildConfFilterDropdown();
+    populateSelectors();
+    renderLinkFields();
+    if (editMode) renderAllChips();
+    renderTrades();
+
+    // Enter preview mode
+    isPreviewMode = true;
+    $('exitPreviewBtn').style.display = 'inline-block';
+    $('importBtn').disabled = true;
+    $('csvSaveBtn').disabled = true;
+
+    // Close CSV panel
+    csvPanel.classList.remove('open');
+    csvToggle.classList.remove('active');
+  });
+
+  // Exit preview
+  $('exitPreviewBtn').addEventListener('click', () => {
+    if (!previewBackup) return;
+    const b = previewBackup;
+    trades = b.trades;
+    pairList = b.pairList; tfList = b.tfList;
+    setupList = b.setupList; confList = b.confList;
+    linkList = b.linkList;
+    save();
+    saveLists();
+    renderAll();
+    if (editMode) renderAllChips();
+    buildConfGrid(); buildConfFilterDropdown(); populateSelectors();
+    renderLinkFields(); renderTrades();
+    syncAllToFirestore();
+
+    isPreviewMode = false;
+    previewBackup = null;
+    $('exitPreviewBtn').style.display = 'none';
+    $('importBtn').disabled = false;
+    $('csvSaveBtn').disabled = false;
   });
 
   // Tab initial state
   csvTabMy.classList.add('active');
   document.getElementById('csvMyBody').style.display = 'flex';
   document.getElementById('csvPublicBody').style.display = 'none';
-
-  // Dirty tracking
-  csvEditor.addEventListener('input', () => { csvDirty = true; });
-  csvNameInput.addEventListener('input', () => { csvDirty = true; });
 
   // Save button
   $('csvSaveBtn').addEventListener('click', saveCsvToFirestore);
@@ -2938,7 +2961,6 @@ let currentUser = null;
         <input type="text" id="csvNameInput" placeholder="CSV adı..." maxlength="100" style="flex:1;background:#2a2e39;border:1px solid #363a45;color:#d1d4dc;padding:6px 8px;border-radius:4px;font-size:12px">
         <button class="btn btn-sm btn-primary" id="csvSaveBtn">Buluta Kaydet</button>
       </div>
-      <textarea class="csv-editor" id="csvEditor" placeholder="CSV içeriği..."></textarea>
       <div class="csv-list-label">Kayıtlı CSV'leriniz:</div>
       <div id="csvMyList" style="display:flex;flex-direction:column;gap:4px;font-size:12px">
         <div style="color:#787b86;text-align:center;padding:10px">Henüz kayıtlı CSV yok.</div>
