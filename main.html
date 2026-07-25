@@ -2197,12 +2197,19 @@ let currentUser = null;
         if (filesSnap.empty) {
           await showAlert('Bu kullanıcının CSV verisi yok.');
         } else {
-          let output = '';
-          filesSnap.forEach(d => {
-            const data = d.data();
-            output += `--- ${data.name || 'isimsiz'} ---\n${(data.content || '').slice(0, 1000)}\n\n`;
-          });
-          await showAlert('Kullanıcı CSV dosyaları:\n\n' + output.slice(0, 5000));
+          // Find the latest file by updatedAt
+          const latest = filesSnap.docs.sort((a, b) => {
+            const au = a.data().updatedAt?.seconds || 0;
+            const bu = b.data().updatedAt?.seconds || 0;
+            return bu - au;
+          })[0];
+          const d = latest.data();
+          const csvContent = d.content || '';
+          if (!csvContent) { await showAlert('CSV içeriği boş.'); return; }
+          // Close admin panel before preview
+          adminPanel.classList.remove('open');
+          adminToggle.classList.remove('active');
+          startPreview(csvContent, d);
         }
       } catch(e) { await showAlert('CSV yüklenemedi: ' + e.message); }
     } else if (action === 'view-info') {
@@ -3133,16 +3140,8 @@ let currentUser = null;
     else if (btn.classList.contains('csv-delete')) deleteCsvFile(id);
   });
 
-  csvPublicList.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    if (!btn.classList.contains('csv-pub-view')) return;
+  function startPreview(csvContent, fallbackPanelData) {
     if (isPreviewMode) return;
-
-    const key = btn.getAttribute('data-key');
-    const data = csvPublicContentMap.get(key);
-    if (!data) return;
-    const csvContent = data.content || '';
 
     // Backup current state
     previewBackup = {
@@ -3158,15 +3157,15 @@ let currentUser = null;
     if (previewTrades.length === 0) return;
     trades = previewTrades;
 
-    // Load panel settings from CSV content #PANEL header first, then Firestore Map, then derive from trades
+    // Load panel settings: #PANEL header > Firestore fallback > derive from trades
     const csvPanelData = extractPanelDataFromCsv(csvContent);
-    const panelSrc = csvPanelData || data;
-    pairList = panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
-    tfList = panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
-    setupList = panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
-    confList = panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
-    linkList = panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
-    confFilterSelection = panelSrc.confFilterSelection.length > 0 ? [...panelSrc.confFilterSelection] : [];
+    const panelSrc = csvPanelData || fallbackPanelData || {};
+    pairList = panelSrc.pairList && panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
+    tfList = panelSrc.tfList && panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
+    setupList = panelSrc.setupList && panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
+    confList = panelSrc.confList && panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
+    linkList = panelSrc.linkList && panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
+    confFilterSelection = panelSrc.confFilterSelection && panelSrc.confFilterSelection.length > 0 ? [...panelSrc.confFilterSelection] : [];
 
     renderAll();
     buildConfGrid();
@@ -3185,6 +3184,20 @@ let currentUser = null;
     // Close CSV panel
     csvPanel.classList.remove('open');
     csvToggle.classList.remove('active');
+  }
+
+  csvPublicList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (!btn.classList.contains('csv-pub-view')) return;
+    if (isPreviewMode) return;
+
+    const key = btn.getAttribute('data-key');
+    const data = csvPublicContentMap.get(key);
+    if (!data) return;
+    const csvContent = data.content || '';
+
+    startPreview(csvContent, data);
   });
 
   // Exit preview
