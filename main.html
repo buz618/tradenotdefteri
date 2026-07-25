@@ -2669,18 +2669,21 @@ let currentUser = null;
       }
     }
 
+    // Save panel settings alongside content
+    const panelData = { pairList, tfList, setupList, confList, linkList };
+
     // Save file
     try {
       if (csvCurrentFileId) {
         // Update existing
         await updateDoc(doc(db, 'csv_storage', currentUser.uid, 'files', csvCurrentFileId), {
-          name, content, updatedAt: serverTimestamp()
+          name, content, ...panelData, updatedAt: serverTimestamp()
         });
       } else {
         // New file
         const newId = crypto.randomUUID();
         await setDoc(doc(db, 'csv_storage', currentUser.uid, 'files', newId), {
-          name, content, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+          name, content, ...panelData, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
         });
         csvCurrentFileId = newId;
       }
@@ -2713,7 +2716,14 @@ let currentUser = null;
         filesSnap.forEach(fd => {
           const d = fd.data();
           const key = uid + '_' + fd.id;
-          csvPublicContentMap.set(key, d.content || '');
+          csvPublicContentMap.set(key, {
+            content: d.content || '',
+            pairList: d.pairList || [],
+            tfList: d.tfList || [],
+            setupList: d.setupList || [],
+            confList: d.confList || [],
+            linkList: d.linkList || []
+          });
           items.push({
             uid, fileId: fd.id, key,
             userName: meta.nickname || uid.slice(0, 8),
@@ -2835,8 +2845,9 @@ let currentUser = null;
     if (isPreviewMode) return;
 
     const key = btn.getAttribute('data-key');
-    const csvContent = csvPublicContentMap.get(key) || '';
-    if (!csvContent) return;
+    const data = csvPublicContentMap.get(key);
+    if (!data) return;
+    const csvContent = data.content || '';
 
     // Backup current state
     previewBackup = {
@@ -2851,12 +2862,12 @@ let currentUser = null;
     if (previewTrades.length === 0) return;
     trades = previewTrades;
 
-    // Rebuild panel settings from preview trades' data
-    pairList = [...new Set(trades.map(t => t.pair).filter(Boolean))];
-    tfList = [...new Set(trades.map(t => t.tf).filter(Boolean))];
-    setupList = [...new Set(trades.map(t => t.setup).filter(Boolean))];
-    confList = [...new Set(trades.flatMap(t => t.confirmations || []))];
-    linkList = [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
+    // Load panel settings from saved data (fallback: derive from trades)
+    pairList = data.pairList.length > 0 ? [...data.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
+    tfList = data.tfList.length > 0 ? [...data.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
+    setupList = data.setupList.length > 0 ? [...data.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
+    confList = data.confList.length > 0 ? [...data.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
+    linkList = data.linkList.length > 0 ? [...data.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
 
     save();
     saveLists();
