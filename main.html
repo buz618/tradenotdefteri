@@ -2862,7 +2862,15 @@ let currentUser = null;
       csvCurrentFileId = null;
       csvDirty = false;
       csvEditor.readOnly = true;
+      csvEditor.style.opacity = '1';
       isCsvPreview = true;
+      isWatchingPublic = false;
+      $('csvSaveBtn').disabled = false;
+      // Switch tab to show editor
+      csvTabMy.classList.add('active');
+      csvTabPublic.classList.remove('active');
+      document.getElementById('csvMyBody').style.display = 'flex';
+      document.getElementById('csvPublicBody').style.display = 'none';
       const exitBtn = $('exitPreviewBtn');
       if (exitBtn) exitBtn.style.display = 'inline-block';
     }
@@ -2883,7 +2891,13 @@ let currentUser = null;
     if (exitBtn) exitBtn.style.display = 'none';
   }
 
-  $('exitPreviewBtn').addEventListener('click', exitCsvPreview);
+  $('exitPreviewBtn').addEventListener('click', () => {
+    exitCsvPreview();
+    csvTabPublic.classList.add('active');
+    csvTabMy.classList.remove('active');
+    document.getElementById('csvPublicBody').style.display = 'flex';
+    document.getElementById('csvMyBody').style.display = 'none';
+  });
 
   // Tab initial state
   csvTabMy.classList.add('active');
