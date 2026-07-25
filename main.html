@@ -2086,7 +2086,8 @@ let currentUser = null;
         nicknameWrap.style.display = 'none';
         chatBody.style.display = 'flex';
         chatFooter.style.display = 'flex';
-        if (!chatUnsub) initChat();
+        if (chatUnsub) chatUnsub();
+        initChat();
       }
       restoreChatSize();
       chatToggle.classList.remove('has-unread');
@@ -2147,6 +2148,7 @@ let currentUser = null;
     restoreChatPosition();
     initChatDrag();
     initChatResize();
+    if (!chatUnsub) initChat();
   });
 
   // ====== CHAT ======
@@ -2314,6 +2316,22 @@ let currentUser = null;
       chatResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
     });
   }
+
+  // Clamp chat panel within viewport on resize
+  window.addEventListener('resize', () => {
+    const rect = chatPanel.getBoundingClientRect();
+    const pad = 10;
+    let left = parseInt(chatPanel.style.left) || rect.left;
+    let top = parseInt(chatPanel.style.top) || rect.top;
+    const maxLeft = window.innerWidth - rect.width - pad;
+    const maxTop = window.innerHeight - rect.height - pad;
+    if (left > maxLeft || top > maxTop || left < pad || top < pad) {
+      chatPanel.style.left = Math.max(pad, Math.min(left, maxLeft)) + 'px';
+      chatPanel.style.top = Math.max(pad, Math.min(top, maxTop)) + 'px';
+      localStorage.setItem('chatPanelLeft', chatPanel.style.left.replace('px',''));
+      localStorage.setItem('chatPanelTop', chatPanel.style.top.replace('px',''));
+    }
+  });
 
   // ====== CSV ======
   const csvEditor = $('csvEditor');
@@ -2484,17 +2502,18 @@ let currentUser = null;
   async function loadPublicCsvs() {
     if (!currentUser) return;
     try {
-      // Get all users with public=true or all users for admin
       const usersSnap = await getDocs(collection(db, 'csv_storage'));
+      console.log('[loadPublicCsvs] total users in csv_storage:', usersSnap.size);
       let items = [];
       for (const userDoc of usersSnap) {
         const uid = userDoc.id;
         const meta = userDoc.data();
         const isPublic = meta.public === true;
         const isAdminUser = isAdmin;
+        console.log('[loadPublicCsvs] uid:', uid, 'public:', meta.public, 'isAdmin:', isAdminUser);
         if (!isPublic && !isAdminUser) continue;
-        // Get user's email/nickname hint from the path or meta
         const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        console.log('[loadPublicCsvs] files for', uid, ':', filesSnap.size);
         filesSnap.forEach(fd => {
           const d = fd.data();
           items.push({
@@ -2505,6 +2524,7 @@ let currentUser = null;
           });
         });
       }
+      console.log('[loadPublicCsvs] total items:', items.length);
       renderCsvPublicList(items);
     } catch(e) { console.warn('Public CSV load error:', e); }
   }
