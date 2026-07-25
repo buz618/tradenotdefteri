@@ -1841,6 +1841,7 @@ let currentUser = null;
   });
 
   function tradesToCsv() {
+    const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList });
     const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
     const headers = [...fixedHeaders, ...linkList, 'Not'];
     const rows = trades.map(t => [
@@ -1851,7 +1852,7 @@ let currentUser = null;
       ...linkList.map(title => (t.links && t.links[title]) || ''),
       t.not || ''
     ]);
-    return [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    return '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
   }
 
   // --- CSV parse utilities ---
@@ -1867,7 +1868,10 @@ let currentUser = null;
   }
 
   function csvContentToTrades(csv) {
-    const lines = csv.replace(/\r\n/g, '\n').split('\n').filter(l => l.trim());
+    const lines = csv.replace(/\r\n/g, '\n').split('\n').filter(l => {
+      const t = l.trim();
+      return t && !t.startsWith('#');
+    });
     if (lines.length < 2) return [];
     const hdrs = parseCsvLine(lines[0]).map(h => h.trim());
     const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
@@ -1899,6 +1903,17 @@ let currentUser = null;
       if (trade.pair && trade.setup && trade.result) result.push(trade);
     }
     return result;
+  }
+
+  function extractPanelDataFromCsv(csv) {
+    for (const line of csv.replace(/\r\n/g, '\n').split('\n')) {
+      const t = line.trim();
+      if (t.startsWith('#PANEL ')) {
+        try { return JSON.parse(t.slice(7)); } catch(e) { return null; }
+      }
+      if (t && !t.startsWith('#')) break;
+    }
+    return null;
   }
 
   // --- Preview / Fullscreen ---
@@ -2862,12 +2877,14 @@ let currentUser = null;
     if (previewTrades.length === 0) return;
     trades = previewTrades;
 
-    // Load panel settings from saved data (fallback: derive from trades)
-    pairList = data.pairList.length > 0 ? [...data.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
-    tfList = data.tfList.length > 0 ? [...data.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
-    setupList = data.setupList.length > 0 ? [...data.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
-    confList = data.confList.length > 0 ? [...data.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
-    linkList = data.linkList.length > 0 ? [...data.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
+    // Load panel settings from CSV content #PANEL header first, then Firestore Map, then derive from trades
+    const csvPanelData = extractPanelDataFromCsv(csvContent);
+    const panelSrc = csvPanelData || data;
+    pairList = panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
+    tfList = panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
+    setupList = panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
+    confList = panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
+    linkList = panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
 
     save();
     saveLists();
