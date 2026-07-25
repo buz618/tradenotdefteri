@@ -2700,6 +2700,7 @@ let currentUser = null;
 
   let csvPublicUnsub = null;
   let csvPublicCache = [];
+  const csvPublicContentMap = new Map();
 
   function initCsvPublicWatcher() {
     if (csvPublicUnsub || !currentUser) return;
@@ -2713,26 +2714,27 @@ let currentUser = null;
   }
 
   async function fetchPublicCsvFiles(publicUsers) {
+    csvPublicContentMap.clear();
     let items = [];
-    for (const { uid, meta } of publicUsers) {
+    await Promise.all(publicUsers.map(async ({ uid, meta }) => {
       try {
         const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
         filesSnap.forEach(fd => {
           const d = fd.data();
+          const key = uid + '_' + fd.id;
+          csvPublicContentMap.set(key, d.content || '');
           items.push({
-            uid, fileId: fd.id,
+            uid, fileId: fd.id, key,
             userName: meta.nickname || uid.slice(0, 8),
-            name: d.name || 'isimsiz',
-            content: d.content || ''
+            name: d.name || 'isimsiz'
           });
         });
       } catch(e) { /* skip */ }
-    }
+    }));
     const seen = new Set();
     items = items.filter(item => {
-      const key = item.uid + '_' + item.fileId;
-      if (seen.has(key)) return false;
-      seen.add(key);
+      if (seen.has(item.key)) return false;
+      seen.add(item.key);
       return true;
     });
     csvPublicCache = items;
@@ -2757,7 +2759,7 @@ let currentUser = null;
           <div class="csv-pub-name">${escapeHtml(sanitizeName(item.name))}</div>
         </div>
         <div class="csv-pub-actions">
-          <button class="csv-pub-view" data-uid="${item.uid}" data-fid="${item.fileId}" data-content="${escapeHtml(item.content)}">Önizle</button>
+          <button class="csv-pub-view" data-key="${item.key}">Önizle</button>
         </div>
       </div>
     `).join('');
@@ -2854,8 +2856,9 @@ let currentUser = null;
           fileId: csvCurrentFileId
         };
       }
-      csvEditor.value = btn.getAttribute('data-content');
-      csvNameInput.value = btn.getAttribute('data-name') || '';
+      const key = btn.getAttribute('data-key');
+      csvEditor.value = csvPublicContentMap.get(key) || '';
+      csvNameInput.value = '';
       csvCurrentFileId = null;
       csvDirty = false;
       csvEditor.readOnly = true;
