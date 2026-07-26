@@ -699,7 +699,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot, query, orderBy, where, limit, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDaNFZQROCrfiTYcz1kx90YbyMIe4ZouA0",
@@ -1020,7 +1020,7 @@ let currentUser = null;
   function populateSelect(sel, list, curVal) {
     sel.innerHTML = '';
     list.forEach(v => {
-      sel.innerHTML += `<option value="${v}">${v}</option>`;
+      sel.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
     });
     if (curVal !== undefined && list.includes(curVal)) {
       sel.value = curVal;
@@ -1033,7 +1033,7 @@ let currentUser = null;
     trades.forEach(t => { if (t.pair) unique.add(t.pair); });
     fPair.innerHTML = '';
     Array.from(unique).sort().forEach(v => {
-      fPair.innerHTML += `<option value="${v}">${v}</option>`;
+      fPair.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
     });
     if (cur && unique.has(cur)) fPair.value = cur;
     else fPair.value = pairList[0] || '';
@@ -1062,7 +1062,7 @@ let currentUser = null;
   function buildConfGrid() {
     const grid = $('confGrid');
     grid.innerHTML = confList.map(v =>
-      `<label class="conf-item"><input type="checkbox" value="${v}"> ${v}</label>`
+      `<label class="conf-item"><input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`
     ).join('');
   }
 
@@ -1072,7 +1072,7 @@ let currentUser = null;
     if (!container) return;
     if (linkList.length === 0) { container.innerHTML = ''; return; }
     container.innerHTML = linkList.map(title =>
-      `<label>${title} Link <input type="text" class="link-input" data-link-title="${title}" placeholder="tradingview.com/x/..."></label>`
+      `<label>${escapeHtml(title)} Link <input type="text" class="link-input" data-link-title="${escapeAttr(title)}" placeholder="tradingview.com/x/..."></label>`
     ).join('');
   }
 
@@ -1082,7 +1082,7 @@ let currentUser = null;
     if (!editMode) { container.style.display = 'none'; return; }
     container.style.display = 'flex';
     container.innerHTML = list.map((v, i) =>
-      `<span class="chip">${v}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
+      `<span class="chip">${escapeHtml(v)}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
     ).join('') + `<span class="chip-add" data-list="${listId}">+</span>`;
   }
 
@@ -1161,7 +1161,7 @@ let currentUser = null;
     const wasOpen = dd.classList.contains('show');
     dd.innerHTML = `<label class="conf-filter-item"><input type="checkbox" id="confFilterAll"> <b>Tümü</b></label>`
       + confList.map(v =>
-        `<label class="conf-filter-item"><input type="checkbox" value="${v}"> ${v}</label>`
+        `<label class="conf-filter-item"><input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`
       ).join('');
     dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', onConfFilterChange);
@@ -1439,7 +1439,7 @@ let currentUser = null;
       const cur = sel.value;
       sel.innerHTML = '<option value="">Tümü</option>';
       Array.from(sets[k]).sort().forEach(v => {
-        sel.innerHTML += `<option value="${v}">${v}</option>`;
+        sel.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
       });
       sel.value = cur;
     });
@@ -1538,7 +1538,7 @@ let currentUser = null;
       const confHtml = confNames
         .filter(c => s.confCounts[c] > 0)
         .sort((a,b) => s.confCounts[b] - s.confCounts[a])
-        .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${c} %${(s.confCounts[c] / s.total * 100).toFixed(0)}</span>`)
+        .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${escapeHtml(c)} %${(s.confCounts[c] / s.total * 100).toFixed(0)}</span>`)
         .join('');
 
       let detailHtml = '';
@@ -1552,11 +1552,11 @@ let currentUser = null;
                 const pConf = confNames
                   .filter(c => p.confCounts[c] > 0)
                   .sort((a,b) => p.confCounts[b] - p.confCounts[a])
-                  .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${c} %${(p.confCounts[c] / p.total * 100).toFixed(0)}</span>`)
+                  .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : '#787b86'};background:${confColors[c] ? confColors[c].b : '#2a2e39'}">${escapeHtml(c)} %${(p.confCounts[c] / p.total * 100).toFixed(0)}</span>`)
                   .join('');
                 return `
                 <div class="stat-sub-card">
-                  <div class="stat-sub-name">${p.name}</div>
+                  <div class="stat-sub-name">${escapeHtml(p.name)}</div>
                   <div class="stat-sub-row">Winrate <b>${p.winRate.toFixed(1)}%</b> | Ort. RR: <b>${p.avgRr.toFixed(2)}</b></div>
                   <div class="stat-sub-row"><b>${p.total}</b> trade | Win <b>${p.win}</b> | Lose <b>${p.lose}</b> | BE <b>${p.be}</b></div>
                   <div class="stat-sub-bar">
@@ -1572,8 +1572,8 @@ let currentUser = null;
       }
 
       return `
-      <div class="stat-card" data-setup="${s.name}">
-        <div class="stat-title">${s.name}</div>
+      <div class="stat-card" data-setup="${escapeAttr(s.name)}">
+        <div class="stat-title">${escapeHtml(s.name)}</div>
         <div class="stat-row">Winrate <b>${s.winRate.toFixed(1)}%</b> | Ort. RR: <b>${s.avgRr.toFixed(2)}</b></div>
         <div class="stat-row"><b>${s.total}</b> trade | Win <b>${s.win}</b> | Lose <b>${s.lose}</b> | BE <b>${s.be}</b></div>
         <div class="stat-bar">
@@ -1630,29 +1630,29 @@ let currentUser = null;
     thead.innerHTML = '<tr>'
       + ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR']
         .map(h => `<th>${h}</th>`).join('')
-      + linkList.map(h => `<th>${h}</th>`).join('')
+      + linkList.map(h => `<th>${escapeHtml(h)}</th>`).join('')
       + ['Not', ''].map(h => `<th>${h}</th>`).join('')
       + '</tr>';
 
     tbody.innerHTML = filtered.map(t => {
       const confStr = t.confirmations && t.confirmations.length
-        ? t.confirmations.map(c => `<span class="conf-chip">${c}</span>`).join('')
+        ? t.confirmations.map(c => `<span class="conf-chip">${escapeHtml(c)}</span>`).join('')
         : '<span style="color:#787b86;font-size:10px">-</span>';
       const resultBadge = `badge-${t.result.toLowerCase()}`;
       const linkCells = linkList.map(title => {
         const url = t.links && t.links[title];
-        return `<td>${url ? `<span class="preview-link" data-url="${url}">${title}</span>` : '-'}</td>`;
+        return `<td>${url ? `<span class="preview-link" data-url="${escapeAttr(url)}">${escapeHtml(title)}</span>` : '-'}</td>`;
       }).join('');
       return `<tr${t._new ? ' class="new-trade"' : ''}>
-        <td style="white-space:nowrap">${t.date || '-'}</td>
-        <td><b>${t.pair || '-'}</b></td>
-        <td>${t.tf || '-'}</td>
-        <td><span class="badge badge-setup">${t.setup || '-'}</span></td>
+        <td style="white-space:nowrap">${escapeHtml(t.date) || '-'}</td>
+        <td><b>${escapeHtml(t.pair) || '-'}</b></td>
+        <td>${escapeHtml(t.tf) || '-'}</td>
+        <td><span class="badge badge-setup">${escapeHtml(t.setup) || '-'}</span></td>
         <td>${confStr}</td>
-        <td><span class="badge ${resultBadge}">${t.result || '-'}</span></td>
+        <td><span class="badge ${resultBadge}">${escapeHtml(t.result) || '-'}</span></td>
         <td>${t.rr != null && t.rr !== '' ? Number(t.rr).toFixed(2) : '-'}</td>
         ${linkCells}
-        <td class="note-cell"><span class="note-display ${t.not ? 'has-note' : ''}" data-id="${t.id}">${t.not || 'Not...'}</span></td>
+        <td class="note-cell"><span class="note-display ${t.not ? 'has-note' : ''}" data-id="${t.id}">${escapeHtml(t.not) || 'Not...'}</span></td>
         <td class="actions">
           <button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
           <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>
@@ -1915,6 +1915,12 @@ let currentUser = null;
     URL.revokeObjectURL(a.href);
   });
 
+  function sanitizeCsvVal(val) {
+    const s = String(val);
+    if (/^[=+\-@\t\r]/.test(s)) return "'" + s;
+    return s;
+  }
+
   function tradesToCsv() {
     const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList, confFilterSelection });
     const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
@@ -1927,7 +1933,7 @@ let currentUser = null;
       ...linkList.map(title => (t.links && t.links[title]) || ''),
       t.not || ''
     ]);
-    return '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    return '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${sanitizeCsvVal(v)}"`).join(','))].join('\n');
   }
 
   // --- CSV parse utilities ---
@@ -2399,6 +2405,10 @@ let currentUser = null;
     return d.innerHTML;
   }
 
+  function escapeAttr(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   // --- Custom modal ---
   const modalOverlay = $('modalOverlay');
   const modalTitle = $('modalTitle');
@@ -2441,7 +2451,7 @@ let currentUser = null;
   function initChat() {
     chatMessages = $('chatBody');
     chatUnsub = onSnapshot(
-      query(collection(db, 'messages'), orderBy('createdAt', 'asc')),
+      query(collection(db, 'messages'), orderBy('createdAt', 'desc'), limit(200)),
       (snap) => {
         // Update unread badge BEFORE early return (panel closed while message arrives)
         if (!chatPanel.classList.contains('open')) {
@@ -2454,7 +2464,10 @@ let currentUser = null;
         if (!chatPanel.classList.contains('open')) return;
         chatMessages.innerHTML = '';
         let hasMsg = false;
-        snap.forEach((d) => {
+        const docs = [];
+        snap.forEach(d => docs.push(d));
+        docs.reverse();
+        docs.forEach((d) => {
           hasMsg = true;
           const m = d.data();
           const isOwn = m.uid === currentUser.uid;
@@ -2462,7 +2475,7 @@ let currentUser = null;
             ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
             : '';
           const overriddenNick = nicknameOverrideMap[m.uid];
-          const sender = overriddenNick || m.nickname || m.email || 'Anonim';
+          const sender = overriddenNick || m.nickname || (m.uid ? m.uid.slice(0, 6) + '..' : 'Anonim');
           chatMessages.innerHTML +=
             `<div class="chat-msg ${isOwn ? 'own' : 'other'}">` +
             (isOwn ? '' : `<div class="msg-sender">${escapeHtml(sender)}</div>`) +
@@ -2504,10 +2517,10 @@ let currentUser = null;
     }
 
     const nickname = localStorage.getItem('chatNickname') || currentUser.email;
+    if (text.length > 500) { await showAlert('Mesaj çok uzun (maks 500 karakter).'); return; }
     try {
       await addDoc(collection(db, 'messages'), {
         uid: currentUser.uid,
-        email: currentUser.email,
         nickname: nickname,
         text: text,
         createdAt: serverTimestamp()
@@ -2999,7 +3012,10 @@ let currentUser = null;
 
   function initCsvPublicWatcher() {
     if (csvPublicUnsub || !currentUser) return;
-    csvPublicUnsub = onSnapshot(collection(db, 'csv_storage'), (snap) => {
+    const q = isAdmin
+      ? collection(db, 'csv_storage')
+      : query(collection(db, 'csv_storage'), where('public', '==', true));
+    csvPublicUnsub = onSnapshot(q, (snap) => {
       const publicUsers = [];
       snap.forEach(doc => {
         if (doc.data().public === true || isAdmin) publicUsers.push({ uid: doc.id, meta: doc.data() });
@@ -3254,7 +3270,7 @@ let currentUser = null;
     </div>
     <div class="pp-body" id="chatNicknameWrap" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;font-size:13px">
       <div style="color:#d1d4dc">Sohbette görünecek rumuzunuzu girin:</div>
-      <div style="color:#f7525a;font-size:11px">Bu rumuz daha sonra <b>değiştirilemez</b>.</div>
+      <div style="color:#787b86;font-size:11px">Sohbette görünen rumuzunuz.</div>
       <input type="text" id="chatNicknameInput" maxlength="20" placeholder="Rumuz..." style="width:100%;max-width:200px;background:#2a2e39;border:1px solid #363a45;color:#d1d4dc;padding:6px 8px;border-radius:4px;font-size:12px;text-align:center">
       <button class="btn btn-sm btn-primary" id="chatNicknameBtn">Onayla</button>
     </div>
