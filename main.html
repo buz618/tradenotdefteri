@@ -3292,7 +3292,7 @@ let currentUser = null;
 
     // Load panel settings: #PANEL header (non-empty) > Firestore fallback > derive from trades
     const csvPanelData = extractPanelDataFromCsv(csvContent);
-    const csvHasPanel = csvPanelData && (csvPanelData.pairList || csvPanelData.tfList || csvPanelData.setupList);
+    const csvHasPanel = csvPanelData && (csvPanelData.pairList?.length || csvPanelData.tfList?.length || csvPanelData.setupList?.length || csvPanelData.confList?.length || csvPanelData.linkList?.length);
     const panelSrc = csvHasPanel ? csvPanelData : (fallbackPanelData || {});
     pairList = panelSrc.pairList && panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
     tfList = panelSrc.tfList && panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
