@@ -5,257 +5,798 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trade Not Defteri</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💠</text></svg>">
+<script>(function(){try{var t=localStorage.getItem('td_theme');if(t)document.documentElement.className='theme-'+t;}catch(e){}})();</script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; overflow: hidden; }
+html, body { height: 100%; }
+
+/* ===== THEME SYSTEM ===== */
+:root, .theme-dark-dynamic {
+  --bg-body: #131722;
+  --bg-card: #1e222d;
+  --bg-surface: #2a2e39;
+  --bg-overlay: #0d0f14;
+  --border: #2a2e39;
+  --border-light: #363a45;
+  --text: #d1d4dc;
+  --text-secondary: #787b86;
+  --text-inverse: #fff;
+  --accent: #22ab94;
+  --accent-hover: #1d9a85;
+  --accent-light: #2cd4b8;
+  --danger: #f7525a;
+  --danger-hover: #e0444b;
+  --warning: #f0c040;
+  --accent-blue: #7dd8f2;
+  --shadow: rgba(0,0,0,0.4);
+  --shadow-heavy: rgba(0,0,0,0.5);
+  --shadow-xl: rgba(0,0,0,0.5);
+  --badge-alpha: 25%;
+}
+.theme-dark-lite {
+  --bg-body: #131722;
+  --bg-card: #1e222d;
+  --bg-surface: #2a2e39;
+  --bg-overlay: #0d0f14;
+  --border: #2a2e39;
+  --border-light: #363a45;
+  --text: #d1d4dc;
+  --text-secondary: #787b86;
+  --text-inverse: #fff;
+  --accent: #22ab94;
+  --accent-hover: #1d9a85;
+  --accent-light: #2cd4b8;
+  --danger: #f7525a;
+  --danger-hover: #e0444b;
+  --warning: #f0c040;
+  --accent-blue: #7dd8f2;
+  --shadow: rgba(0,0,0,0.4);
+  --shadow-heavy: rgba(0,0,0,0.5);
+  --shadow-xl: rgba(0,0,0,0.5);
+}
+.theme-light-lite {
+  --bg-body: #f5f6f8;
+  --bg-card: #ffffff;
+  --bg-surface: #e8eaed;
+  --bg-overlay: #f0f0f0;
+  --border: #d0d4d8;
+  --border-light: #e0e4e8;
+  --text: #1a1a2e;
+  --text-secondary: #666666;
+  --text-inverse: #fff;
+  --accent: #22ab94;
+  --accent-hover: #1d9a85;
+  --accent-light: #2cd4b8;
+  --danger: #d32f2f;
+  --danger-hover: #b71c1c;
+  --warning: #f0c040;
+  --accent-blue: #1976d2;
+  --shadow: rgba(0,0,0,0.08);
+  --shadow-heavy: rgba(0,0,0,0.12);
+  --shadow-xl: rgba(0,0,0,0.15);
+}
+/* Lite mode: disable all dynamic effects */
+.theme-dark-lite body::before,
+.theme-dark-lite body::after,
+.theme-light-lite body::before,
+.theme-light-lite body::after { display: none !important; }
+.theme-dark-lite .card-ice,
+.theme-light-lite .card-ice { background: var(--bg-card) !important; animation: none !important; }
+.theme-dark-lite .card-ice::before,
+.theme-light-lite .card-ice::before { display: none !important; }
+.theme-dark-lite .sig-ice .sig-text,
+.theme-light-lite .sig-ice .sig-text { animation: none !important; }
+.theme-dark-lite .sig-ice .sig-emoji,
+.theme-light-lite .sig-ice .sig-emoji { animation: none !important; }
+.theme-dark-lite tr.new-trade,
+.theme-light-lite tr.new-trade { animation: none !important; outline: 1px solid var(--warning); }
+/* ====================== */
+
 body {
+  background: var(--bg-body);
   font-family: -apple-system, system-ui, sans-serif;
-  background: #131722;
-  color: #d1d4dc;
+  color: var(--text);
+  padding: 12px;
 }
-
-#threeCanvas { position: fixed; inset: 0; z-index: -1; pointer-events: none; width: 100%; height: 100%; display: block; }
-#particleCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; width: 100%; height: 100%; display: block; }
-
-.login-wrapper {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -2;
+  background: linear-gradient(135deg, #0c0f1a, #161a2a, #0d1b2a, #1a0d20);
+  background-size: 400% 400%;
+  animation: bgShift 20s ease infinite;
 }
-
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(30, 34, 45, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 44px 40px 36px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+body.bg-static::before {
+  animation: none;
+  background: var(--bg-body);
 }
-
-.brand { text-align: center; margin-bottom: 32px; }
-.brand-icon { font-size: 40px; line-height: 1; margin-bottom: 8px; }
-.brand h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-.brand h1 span { color: #22ab94; }
-.brand-sub { font-size: 13px; color: #787b86; margin-top: 6px; }
-
-.input-group {
-  position: relative;
-  margin-bottom: 22px;
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
-.input-group input {
-  width: 100%;
-  padding: 18px 16px 6px;
-  background: rgba(42, 46, 57, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  color: #d1d4dc;
-  font-size: 14px;
+@keyframes bgShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+h1 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+h1 span { color: #f0c040; }
+h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-surface);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row+.row { margin-top: 8px; }
+label { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+input, select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
   font-family: inherit;
-  outline: none;
-  transition: border-color 0.25s, box-shadow 0.25s;
 }
-.input-group input:focus {
-  border-color: #22ab94;
-  box-shadow: 0 0 0 3px rgba(34, 171, 148, 0.08), 0 0 20px rgba(34, 171, 148, 0.06);
-}
-.input-group input::placeholder { color: transparent; }
-.input-group label {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #787b86;
-  font-size: 14px;
-  pointer-events: none;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  background: transparent;
-  padding: 0 4px;
-}
-.input-group input:focus ~ label,
-.input-group input:not(:placeholder-shown) ~ label {
-  top: 6px;
-  font-size: 11px;
-  color: #22ab94;
-  transform: translateY(0);
-}
-
-.btn-row { display: flex; gap: 10px; margin-top: 6px; }
+input:focus, select:focus { outline: none; border-color: #22ab94; }
+input[type="text"], input[type="number"] { width: 80px; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+input.pair-input { width: 100px; }
+select { min-width: 70px; cursor: pointer; }
 .btn {
-  flex: 1;
-  padding: 13px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+.btn:hover { background: var(--border-light); }
+.btn-primary { background: #22ab94; border-color: #22ab94; color: var(--text-inverse); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: var(--text-inverse); }
+.btn-danger:hover { background: var(--danger-hover); }
+.btn-sm { padding: 3px 10px; font-size: 11px; }
+.conf-grid { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.conf-item { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+.conf-item input { width: 14px; height: 14px; cursor: pointer; accent-color: #22ab94; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.stat-card {
+  background: var(--bg-surface);
+  border-radius: 4px;
+  padding: 10px;
+  border-left: 3px solid #22ab94;
+}
+.stat-card .stat-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.stat-card .stat-row { font-size: 11px; color: var(--text-secondary); }
+.stat-card .stat-row b { color: var(--text); }
+.stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.stat-bar .bar-win { background: #22ab94; }
+.stat-bar .bar-be { background: #f0c040; }
+.stat-bar .bar-lose { background: var(--danger); }
+.stat-conf-row { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 2px; }
+.stat-conf { display: inline-block; background: var(--bg-surface); color: var(--text-secondary); padding: 1px 6px; border-radius: 3px; font-size: 10px; }
+.stat-card[data-setup] { cursor: pointer; transition: border-left-color 0.15s; }
+.stat-card[data-setup]:hover { border-left-color: var(--accent-light); }
+.stat-card-detail { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-light); cursor: default; }
+.stat-card-detail .stat-sub-title { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+.stat-sub-grid { display: flex; flex-direction: column; gap: 4px; }
+.stat-sub-card { background: var(--bg-card); border-radius: 4px; padding: 7px 10px; border-left: 2px solid var(--border-light); }
+.stat-sub-card .stat-sub-name { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.stat-sub-card .stat-sub-row { font-size: 10px; color: var(--text-secondary); }
+.stat-sub-card .stat-sub-row b { color: var(--text); }
+.stat-sub-card .stat-sub-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin: 4px 0; }
+.pair-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.pair-wrap select { min-width: 100px; }
+.pair-wrap input { min-width: 100px; }
+textarea.note-input { width: 100%; min-height: 36px; resize: vertical; background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text); border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; }
+textarea.note-input:focus { outline: none; border-color: #22ab94; }
+.note-cell { max-width: 160px; min-width: 60px; cursor: pointer; }
+.note-display { font-size: 11px; color: var(--text-secondary); }
+.note-display:hover { color: #22ab94; }
+.note-display.has-note { color: var(--text); }
+.note-input-inline { width: 100%; min-width: 60px; background: var(--bg-surface); border: 1px solid #22ab94; color: var(--text); border-radius: 3px; padding: 2px 6px; font-size: 11px; font-family: inherit; }
+
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 6px 8px; background: var(--bg-surface); color: var(--text-secondary); font-weight: 600; font-size: 11px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; white-space: nowrap; }
+td { padding: 6px 8px; border-bottom: 1px solid var(--bg-surface); vertical-align: middle; }
+tr:hover td { background: var(--bg-card); }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+.badge-win { background: #22ab9440; color: #22ab94; }
+.badge-be { background: #f0c04040; color: #f0c040; }
+.badge-lose { background: var(--danger)40; color: var(--danger); }
+.badge-setup { background: var(--bg-surface); color: var(--text-secondary); margin-right: 2px; }
+.conf-chip { display: inline-block; background: var(--bg-surface); color: var(--text-secondary); padding: 0 5px; border-radius: 2px; font-size: 10px; margin: 1px; }
+.actions { white-space: nowrap; }
+.empty { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 13px; }
+input.link-input { width: 260px; font-size: 11px; }
+.preview-link { color: #22ab94; cursor: pointer; font-size: 11px; font-weight: 600; }
+.preview-link:hover { color: var(--accent-light); text-decoration: underline; }
+#previewPopup {
+  display: none; position: fixed; z-index: 1000;
+  border-radius: 8px; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  border: 1px solid var(--bg-surface);
+  background: var(--bg-overlay);
+  min-width: 120px; min-height: 80px;
+  opacity: 0; transition: opacity 0.2s ease;
+}
+#previewPopup.show { opacity: 1; }
+#previewPopup img {
+  display: block; width: 100%; height: 100%;
+  object-fit: contain; cursor: zoom-in;
+}
+#fullscreenModal { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.95); cursor: pointer; }
+#fullscreenModal img { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); max-width: 95vw; max-height: 95vh; object-fit: contain; }
+#fullscreenModal .close-btn { position: absolute; top: 12px; right: 16px; color: var(--text-secondary); font-size: 28px; cursor: pointer; line-height: 1; }
+#fullscreenModal .close-btn:hover { color: var(--text-inverse); }
+
+@keyframes iceGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(79,195,247,0.15), 0 0 24px rgba(79,195,247,0.03); border-color: rgba(79,195,247,0.3); }
+  50% { box-shadow: 0 0 16px rgba(79,195,247,0.35), 0 0 48px rgba(79,195,247,0.08); border-color: rgba(79,195,247,0.6); }
+}
+@keyframes frostSweep {
+  0% { transform: translateX(-100%) skewX(-20deg); }
+  50% { transform: translateX(200%) skewX(-20deg); }
+  100% { transform: translateX(-100%) skewX(-20deg); }
+}
+.card-ice {
   position: relative;
-  overflow: hidden;
+  background: linear-gradient(135deg, #171d2e, var(--bg-card));
+  animation: iceGlow 3s ease-in-out infinite;
 }
-.btn:active { transform: scale(0.97); }
-
-.btn-primary {
-  background: linear-gradient(135deg, #22ab94, #1d9a85, #22ab94, #2bc4a8);
-  background-size: 200% 200%;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(34, 171, 148, 0.25);
-}
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(ellipse at 28% 18%, rgba(255,255,255,0.2), transparent 55%);
+.card-ice::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(79,195,247,0.05), transparent);
+  animation: frostSweep 6s ease-in-out infinite;
   pointer-events: none;
 }
-.btn-primary::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.6s;
-  pointer-events: none;
+.card-ice.edit-active {
+  border-color: #f0c040;
 }
-.btn-primary:hover::after { transform: translateX(100%); }
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(34, 171, 148, 0.35);
+.card-ice.edit-active::before {
+  background: linear-gradient(90deg, transparent, rgba(240,192,64,0.08), transparent);
 }
+@keyframes newRowGlow {
+  0% { outline: 1px solid rgba(240,192,64,0.5); box-shadow: 0 0 16px rgba(240,192,64,0.25); }
+  100% { outline: 1px solid transparent; box-shadow: 0 0 0 rgba(240,192,64,0); }
+}
+tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 
-.btn-secondary {
-  background: rgba(42, 46, 57, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: #d1d4dc;
+.sig-ice {
+  font-size: 22px; line-height: 1;
+  display: flex; align-items: flex-end; gap: 3px;
+  cursor: pointer; user-select: none;
 }
-.btn-secondary:hover {
-  background: rgba(54, 58, 69, 0.6);
-  transform: translateY(-1px);
+.sig-ice .sig-text {
+  color: var(--accent-blue); font-weight: 600; font-size: 15px;
+  letter-spacing: 0.5px;
+  animation: sigTextGlow 4s ease-in-out infinite;
 }
-
-.divider {
-  display: flex;
-  align-items: center;
-  margin: 24px 0;
-  gap: 16px;
-}
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-}
-.divider span {
-  font-size: 12px;
-  color: #787b86;
-  white-space: nowrap;
-}
-
-.btn-google {
-  width: 100%;
-  padding: 12px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #d1d4dc;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-.btn-google::before {
-  content: '';
-  width: 20px;
-  height: 20px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23FFC107' d='M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z'/%3E%3Cpath fill='%23FF3D00' d='m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z'/%3E%3Cpath fill='%234CAF50' d='M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z'/%3E%3Cpath fill='%231976D2' d='M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z'/%3E%3C/svg%3E") no-repeat center;
-  background-size: contain;
+.sig-ice .sig-emoji {
   display: inline-block;
-  flex-shrink: 0;
+  animation: sigEmoji 4s ease-in-out infinite;
 }
-.btn-google:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
+.sig-wrap {
+  position: fixed; bottom: 12px; left: 14px; z-index: 999;
+}
+.sig-popup {
+  position: absolute; bottom: calc(100% + 14px); left: 0;
+  width: 290px; padding: 14px 16px;
+  background: var(--bg-card); border: 1px solid var(--bg-surface);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  font-size: 12px; color: var(--text); line-height: 1.6;
+  text-align: left; pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  border-top: 2px solid var(--accent-blue);
+}
+.sig-popup::after {
+  content: ''; position: absolute; top: 100%; left: 18px;
+  border: 6px solid transparent; border-top-color: var(--bg-surface);
+}
+.sig-wrap:hover .sig-popup {
+  opacity: 1; visibility: visible; pointer-events: auto;
+}
+@keyframes sigTextGlow {
+  0%, 100% { text-shadow: 0 0 4px rgba(125,216,242,0.2); }
+  25% { text-shadow: 0 0 14px rgba(125,216,242,0.5); }
+  50% { text-shadow: 0 0 8px rgba(125,216,242,0.3); }
+  75% { text-shadow: 0 0 18px rgba(125,216,242,0.6); }
+}
+@keyframes sigEmoji {
+  0% { transform: rotate(0deg) scale(0.94); }
+  25% { transform: rotate(6deg) scale(1.04); }
+  50% { transform: rotate(0deg) scale(0.98); }
+  75% { transform: rotate(-6deg) scale(1.06); }
+  100% { transform: rotate(0deg) scale(0.94); }
 }
 
-.error-msg {
-  text-align: center;
-  font-size: 12px;
-  color: #f7525a;
-  margin-top: 14px;
-  min-height: 18px;
-  opacity: 0;
-  transition: opacity 0.3s;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
-.error-msg.show { opacity: 1; }
+.card-header h2 { margin-bottom: 0; }
+.gear-wrap { position: relative; }
+.gear-btn {
+  cursor: pointer; font-size: 18px; user-select: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 4px;
+  transition: background 0.15s;
+}
+.gear-btn:hover { background: var(--bg-surface); }
+.gear-menu {
+  position: absolute; right: 0; top: calc(100% + 4px);
+  background: var(--bg-card); border: 1px solid var(--bg-surface);
+  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 220px; z-index: 50;
+  display: none; overflow: hidden;
+}
+.gear-menu.show { display: block; }
+.gear-option {
+  padding: 8px 14px; font-size: 12px; cursor: pointer;
+  color: var(--text); transition: background 0.12s;
+}
+.gear-option:hover { background: var(--bg-surface); }
+.gear-section-label {
+  padding: 6px 14px 3px; font-size: 10px; font-weight: 700;
+  color: var(--text-secondary); letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.gear-section-label + .gear-option { border-top: none; }
+.gear-option.danger { color: var(--danger); }
+.gear-option.success { color: var(--accent); }
+.gear-option + .gear-option { border-top: 1px solid var(--bg-surface); }
+.theme-mark { display: inline-block; width: 14px; text-align: center; font-size: 11px; color: var(--accent); }
+.gear-option.theme-opt { font-size: 11px; padding-left: 10px; }
+
+.edit-chips {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+  padding-top: 4px; width: 100%;
+}
+.edit-chips .chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--bg-surface); border: 1px solid var(--border-light);
+  border-radius: 3px; padding: 2px 6px; font-size: 11px;
+  color: var(--text);
+}
+.edit-chips .chip .chip-x {
+  cursor: pointer; color: var(--text-secondary); font-size: 12px;
+  line-height: 1; margin-left: 2px;
+}
+.edit-chips .chip .chip-x:hover { color: var(--danger); }
+.edit-chips .chip-add {
+  display: inline-flex; align-items: center;
+  cursor: pointer; color: #22ab94; font-size: 13px;
+  padding: 2px 6px; border-radius: 3px;
+  background: transparent; border: 1px dashed var(--border-light);
+}
+.edit-chips .chip-add:hover { background: var(--bg-surface); border-color: #22ab94; }
+.edit-chips .chip-input-wrap { display: inline-flex; }
+.edit-chips .chip-input-wrap input {
+  width: 90px; padding: 2px 6px; font-size: 11px;
+  background: var(--bg-surface); border: 1px solid #22ab94;
+  border-radius: 3px; color: var(--text);
+}
+
+.conf-filter-wrap { position: relative; display: inline-block; }
+.conf-filter-trigger {
+  background: var(--bg-surface); border: 1px solid var(--border-light);
+  color: var(--text); padding: 5px 22px 5px 8px; border-radius: 4px;
+  font-size: 12px; cursor: pointer; font-family: inherit;
+  min-width: 100px; position: relative; white-space: nowrap;
+}
+.conf-filter-trigger::after {
+  content: '▾'; position: absolute; right: 6px; top: 50%;
+  transform: translateY(-50%); font-size: 10px; color: var(--text-secondary);
+}
+.conf-filter-dropdown {
+  display: none; position: absolute; top: 100%; left: 0;
+  margin-top: 2px; background: var(--bg-card); border: 1px solid var(--bg-surface);
+  border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  min-width: 200px; max-height: 260px; overflow-y: auto;
+  z-index: 50; padding: 4px 0;
+}
+.conf-filter-dropdown.show { display: block; }
+.conf-filter-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; font-size: 12px; cursor: pointer;
+  color: var(--text);
+}
+.conf-filter-item:hover { background: var(--bg-surface); }
+.conf-filter-item input[type="checkbox"] {
+  width: 14px; height: 14px; accent-color: #22ab94; cursor: pointer;
+}
+.filter-summary {
+  font-size: 11px; color: var(--text-secondary); white-space: nowrap; display: inline-flex; align-items: center;
+}
+
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .row { flex-direction: column; align-items: stretch; }
+  .row label { margin-top: 4px; }
+  input, select { width: 100% !important; }
+  .filter-row .btn { margin-left: 0; }
+}
+
+#linkFields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+#linkFields label { display: flex; align-items: center; gap: 4px; }
+
+/* Pop-up styles */
+.popup-container {
+  position: fixed; bottom: 14px; right: 14px; z-index: 1000;
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: 8px; pointer-events: none;
+}
+.popup-panel {
+  pointer-events: auto;
+  background: var(--bg-card); border: 1px solid var(--bg-surface);
+  border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  width: 350px; max-height: 440px;
+  display: flex; flex-direction: column;
+  opacity: 0; visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+.popup-panel#chatPanel { position: fixed; resize: none; overflow: hidden; }
+.popup-panel#chatPanel.open { min-width: 280px; min-height: 200px; }
+.popup-panel#chatPanel .pp-body:first-of-type { min-height: 100px; }
+.popup-panel#chatPanel .pp-header { cursor: move; user-select: none; }
+.chat-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #22ab94 50%);
+  opacity: 0.4; transition: opacity 0.15s;
+  z-index: 1;
+}
+.chat-resize-handle:hover { opacity: 0.8; }
+.popup-panel#csvPanel { position: fixed; resize: none; overflow: hidden; }
+.popup-panel#csvPanel.open { min-width: 340px; min-height: 260px; }
+.popup-panel#csvPanel .pp-header { cursor: move; user-select: none; }
+.csv-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #22ab94 50%);
+  opacity: 0.4; transition: opacity 0.15s;
+  z-index: 1;
+}
+.csv-resize-handle:hover { opacity: 0.8; }
+.popup-panel#adminPanel { position: fixed; resize: none; overflow: hidden; width: 380px; }
+.popup-panel#adminPanel.open { min-width: 300px; min-height: 200px; }
+.popup-panel#adminPanel .pp-header { cursor: move; user-select: none; }
+.admin-resize-handle {
+  position: absolute; bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #22ab94 50%);
+  opacity: 0.4; transition: opacity 0.15s;
+  z-index: 1;
+}
+.admin-resize-handle:hover { opacity: 0.8; }
+.admin-user-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--bg-surface); border-radius: 6px;
+  color: var(--text); font-size: 12px;
+}
+.admin-user-row .admin-actions { display: flex; gap: 4px; }
+.admin-user-row .admin-actions button {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-light);
+  background: var(--bg-card); color: var(--text); cursor: pointer; font-size: 11px;
+}
+.admin-user-row .admin-actions button:hover { background: #22ab94; color: var(--text-inverse); }
+
+/* CSV tabs */
+.csv-tabs {
+  display: flex; border-bottom: 1px solid var(--bg-surface);
+}
+.csv-tab {
+  flex: 1; padding: 8px 12px; font-size: 12px; font-weight: 600;
+  color: var(--text-secondary); background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.csv-tab:hover { color: var(--text); }
+.csv-tab.active { color: #22ab94; border-bottom-color: #22ab94; }
+
+.csv-tab-body { padding: 10px; min-height: 200px; }
+.csv-name-row { display: flex; gap: 6px; align-items: center; }
+.csv-list-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+
+/* CSV list items */
+.csv-list-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--bg-surface); border-radius: 6px;
+  color: var(--text); font-size: 12px;
+}
+.csv-list-item .csv-item-info { flex: 1; min-width: 0; }
+.csv-list-item .csv-item-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.csv-list-item .csv-item-date { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+.csv-list-item .csv-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.csv-list-item .csv-item-actions button {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-light);
+  background: var(--bg-card); color: var(--text); cursor: pointer; font-size: 11px;
+}
+.csv-list-item .csv-item-actions button:hover { background: #22ab94; color: var(--text-inverse); }
+.csv-list-item .csv-item-actions button.danger:hover { background: var(--danger); }
+
+.csv-public-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--bg-surface); border-radius: 6px;
+  color: var(--text); font-size: 12px; margin-bottom: 4px;
+}
+.csv-public-item .csv-pub-user { font-size: 11px; color: #22ab94; font-weight: 600; }
+.csv-public-item .csv-pub-name { font-size: 12px; margin-top: 2px; }
+.csv-public-item .csv-pub-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.csv-public-item .csv-pub-actions button {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-light);
+  background: var(--bg-card); color: var(--text); cursor: pointer; font-size: 11px;
+}
+.csv-public-item .csv-pub-actions button:hover { background: #22ab94; color: var(--text-inverse); }
+
+.popup-panel.open {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.popup-panel .pp-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid var(--bg-surface);
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.popup-panel .pp-close {
+  cursor: pointer; color: var(--text-secondary); font-size: 17px; line-height: 1;
+}
+.popup-panel .pp-close:hover { color: var(--danger); }
+.popup-panel .pp-body {
+  flex: 1; overflow-y: auto; padding: 8px; min-height: 0;
+}
+.popup-panel .pp-footer {
+  display: flex; gap: 6px; padding: 8px;
+  border-top: 1px solid var(--bg-surface);
+}
+.popup-panel .pp-footer input {
+  flex: 1; background: var(--bg-surface); border: 1px solid var(--border-light);
+  color: var(--text); padding: 6px 8px; border-radius: 4px;
+  font-size: 12px; font-family: inherit;
+}
+.popup-panel .pp-footer input:focus {
+  outline: none; border-color: #22ab94;
+}
+
+.popup-panel .pp-body#chatBody {
+  display: flex; flex-direction: column;
+}
+
+/* Chat messages — WhatsApp-style bubbles */
+.chat-msg {
+  display: flex; flex-direction: column;
+  margin-bottom: 8px; max-width: 85%;
+}
+.chat-msg.own {
+  align-self: flex-end; align-items: flex-end;
+}
+.chat-msg.other {
+  align-self: flex-start; align-items: flex-start;
+}
+.chat-msg .bubble {
+  padding: 8px 12px; border-radius: 16px;
+  font-size: 12px; line-height: 1.4;
+  word-break: break-word; position: relative;
+}
+.chat-msg.own .bubble {
+  background: #22ab94; color: var(--text-inverse);
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.other .bubble {
+  background: var(--bg-surface); color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.chat-msg .msg-sender {
+  font-size: 11px; color: #22ab94;
+  margin-bottom: 2px; font-weight: 600;
+}
+.chat-msg .msg-time {
+  font-size: 10px; color: var(--text-secondary);
+  margin-top: 2px;
+}
+.chat-msg.own .msg-time { text-align: right; }
+.chat-empty {
+  text-align: center; color: var(--text-secondary); font-size: 12px; padding: 24px;
+}
+
+/* Toggle buttons row */
+.popup-toggles {
+  pointer-events: auto;
+  display: flex; gap: 8px;
+}
+.popup-tgl {
+  position: relative;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #22ab94; border: none; color: var(--text-inverse);
+  font-size: 24px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(34,171,148,0.25);
+  transition: transform 0.15s, background 0.15s;
+}
+.popup-tgl.has-unread {
+  animation: unreadGlow 1.5s ease-in-out infinite;
+}
+.popup-tgl.has-unread::after {
+  content: ''; position: absolute; top: 2px; right: 2px;
+  width: 8px; height: 8px; background: var(--danger);
+  border-radius: 50%; border: 2px solid var(--bg-card);
+}
+.popup-tgl:hover { transform: scale(1.08); background: var(--accent-hover); }
+.popup-tgl.active { background: var(--danger); box-shadow: 0 4px 14px rgba(247,82,90,0.25); }
+
+@keyframes unreadGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247,82,90,0); }
+  50% { box-shadow: 0 0 16px 4px rgba(247,82,90,0.5); }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-surface); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #22ab94; }
+* { scrollbar-width: thin; scrollbar-color: var(--border-light) var(--bg-surface); }
 
 @media (max-width: 480px) {
-  .login-card { padding: 32px 24px 28px; }
-  .btn-row { flex-direction: column; }
-  .brand h1 { font-size: 19px; }
+  .popup-panel { width: calc(100vw - 28px); right: 14px; max-height: 60vh; }
 }
+
+/* Custom modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal-box {
+  background: var(--bg-card); border: 1px solid var(--bg-surface);
+  border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  width: 360px; max-width: 90vw;
+  display: flex; flex-direction: column;
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+}
+.modal-overlay.open .modal-box { transform: translateY(0); }
+.modal-box .modal-title {
+  padding: 14px 16px 0; font-size: 14px; font-weight: 600; color: var(--text);
+}
+.modal-box .modal-msg {
+  padding: 12px 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+}
+.modal-box .modal-btns {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 10px 16px 14px;
+}
+.modal-box .modal-btns button {
+  padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border-light);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--bg-surface); color: var(--text);
+}
+.modal-box .modal-btns button:hover { background: #22ab94; color: var(--text-inverse); border-color: #22ab94; }
+.modal-box .modal-btns .btn-primary { background: #22ab94; color: var(--text-inverse); border-color: #22ab94; }
+.modal-box .modal-btns .btn-primary:hover { background: #1b8a77; }
+.modal-box .modal-btns .btn-danger { background: var(--danger); color: var(--text-inverse); border-color: var(--danger); }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-<div class="login-wrapper">
-  <div class="login-card">
-    <div class="brand">
-      <div class="brand-icon">💠</div>
-      <h1>Trade <span>Not Defteri</span></h1>
-      <p class="brand-sub">Giriş Yap / Kayıt Ol</p>
-    </div>
-
-    <div class="input-group">
-      <input type="email" id="email-input" placeholder=" " autocomplete="email">
-      <label for="email-input">E-posta Adresi</label>
-    </div>
-    <div class="input-group">
-      <input type="password" id="password-input" placeholder=" " autocomplete="current-password">
-      <label for="password-input">Şifre</label>
-    </div>
-
-    <div class="btn-row">
-      <button type="button" class="btn btn-primary btn-glossy" id="loginBtn">Giriş Yap</button>
-      <button type="button" class="btn btn-secondary" id="registerBtn">Kayıt Ol</button>
-    </div>
-
-    <div class="divider"><span>VEYA</span></div>
-
-    <button type="button" class="btn-google" id="googleBtn">Google ile Devam Et</button>
-
-    <div class="error-msg" id="errorMsg"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <h1 style="margin-bottom:0">Trade <span>Not Defteri</span></h1>
+  <div id="userInfo" style="display:none;align-items:center;gap:10px">
+    <span id="userEmail" style="font-size:12px;color:var(--text-secondary)"></span>
+    <button id="logoutBtn" class="btn btn-sm">Çıkış</button>
   </div>
 </div>
 
+<div class="card card-ice" id="tradeCard">
+  <div class="card-header">
+    <h2>Yeni Trade</h2>
+    <div class="gear-wrap">
+      <span class="gear-btn" id="gearBtn">⚙</span>
+      <div class="gear-menu" id="gearMenu">
+        <div class="gear-section-label">Ayarlar</div>
+        <div class="gear-option" data-action="toggle-edit">Düzenle</div>
+        <div class="gear-option" data-action="reset">Sıfırla</div>
+        <div class="gear-option success" data-action="save-default">Varsayılan Olarak Kaydet</div>
+        <div class="gear-section-label">Tema</div>
+        <div class="gear-option" data-action="toggle-bg"><span id="bgIcon">▶️</span> Dinamik Arka Plan</div>
+        <div class="gear-option theme-opt" data-action="theme" data-theme="dark-dynamic"><span class="theme-mark">✓</span> Dark Mode — Dynamic</div>
+        <div class="gear-option theme-opt" data-action="theme" data-theme="dark-lite"><span class="theme-mark"> </span> Dark Mode — Lite</div>
+        <div class="gear-option theme-opt" data-action="theme" data-theme="light-lite"><span class="theme-mark"> </span> Light Mode — Lite</div>
+      </div>
+    </div>
+  </div>
+  <form id="tradeForm">
+    <div class="row">
+      <label>Parite <span class="pair-wrap"><select id="fPair"></select><input type="text" id="fPairCustom" style="display:none" placeholder="Parite girin"></span></label>
+      <div class="edit-chips" id="editChipsPair" style="display:none"></div>
+      <label>TF <select id="fTf"></select></label>
+      <div class="edit-chips" id="editChipsTf" style="display:none"></div>
+      <label>Setup <select id="fSetup"></select></label>
+      <div class="edit-chips" id="editChipsSetup" style="display:none"></div>
+      <label>Sonuç <select id="fResult"><option value="Win">Win</option><option value="BE">BE</option><option value="Lose">Lose</option></select></label>
+      <label>RR <input type="number" id="fRr" step="0.01" min="0" placeholder="0.00"></label>
+      <div id="linkFields"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span style="font-size:11px;color:var(--text-secondary)">Konfirmasyonlar:</span>
+    </div>
+    <div class="row">
+      <div class="conf-grid" id="confGrid"></div>
+    </div>
+    <div class="edit-chips" id="editChipsConf" style="display:none"></div>
+    <div class="row" style="margin-top:10px">
+      <span style="font-size:11px;color:var(--text-secondary)">Link Başlıkları:</span>
+    </div>
+    <div class="edit-chips" id="editChipsLink" style="display:none"></div>
+    <div class="row" style="margin-top:10px">
+      <textarea id="fNote" class="note-input" placeholder="Not..." rows="1"></textarea>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button type="submit" class="btn btn-primary" id="submitBtn">EKLE</button>
+      <button type="button" class="btn" id="cancelEditBtn" style="display:none">İptal</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>En Başarılı Setuplar</h2>
+  <div class="stats-grid" id="statsGrid"></div>
+</div>
+
+<div class="card">
+  <h2>Kayıtlar</h2>
+  <div class="row filter-row">
+    <label>Parite <select id="filterPair"><option value="">Tümü</option></select></label>
+    <label>TF <select id="filterTf"><option value="">Tümü</option></select></label>
+    <label>Setup <select id="filterSetup"><option value="">Tümü</option></select></label>
+    <label>Sonuç <select id="filterResult"><option value="">Tümü</option><option>Win</option><option>BE</option><option>Lose</option></select></label>
+    <label>Konfirmasyonlar</label>
+    <div class="conf-filter-wrap" id="confFilterWrap"><div class="conf-filter-trigger" id="confFilterTrigger">Tümü</div><div class="conf-filter-dropdown" id="confFilterDropdown"></div></div>
+    <span class="filter-summary" id="filterSummary"></span>
+    <button class="btn btn-sm" id="clearFilterBtn">Temizle</button>
+    <span style="flex:1"></span>
+    <input type="file" id="importInput" accept=".csv" style="display:none">
+    <button class="btn btn-sm" id="exitPreviewBtn" style="display:none">Önizlemeyi Bitir 🔄</button>
+    <button class="btn btn-sm" id="importBtn" title="İçe aktarmadan önce 'Dışa Aktar' ile yedeğinizi alınız. Bu işlemin dönüşü olmadığı için verilerinizi kaybedebilirsiniz.">İçe Aktar</button>
+    <button class="btn btn-sm" id="exportBtn">Dışa Aktar</button>
+    <button class="btn btn-sm btn-danger" id="deleteAllBtn">Tümünü Sil</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead id="tradesHead"></thead>
+      <tbody id="tradesBody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg">Henüz trade kaydı yok.</div>
+  </div>
+</div>
+
+<div id="previewPopup"><img id="previewImg" alt="preview"></div>
+<div id="fullscreenModal"><img id="fullscreenImg" alt="fullscreen"><span class="close-btn">✕</span></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, onSnapshot, query, orderBy, where, limit, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDaNFZQROCrfiTYcz1kx90YbyMIe4ZouA0",
@@ -268,255 +809,2829 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
-onAuthStateChanged(auth, (user) => {
-  if (user) window.location.href = "main.html";
+const db = getFirestore(app);
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === 'failed-precondition') {
+    console.warn('Offline persistence: multiple tabs open, skipping.');
+  } else if (err.code === 'unimplemented') {
+    console.warn('Offline persistence not supported in this browser.');
+  }
 });
 
-const emailInput = document.getElementById("email-input");
-const passwordInput = document.getElementById("password-input");
-const loginBtn = document.getElementById("loginBtn");
-const registerBtn = document.getElementById("registerBtn");
-const googleBtn = document.getElementById("googleBtn");
-const errorMsg = document.getElementById("errorMsg");
+let currentUser = null;
 
-function showError(msg) {
-  errorMsg.textContent = msg;
-  errorMsg.classList.add("show");
-  setTimeout(() => errorMsg.classList.remove("show"), 4000);
-}
+(function() {
+  const STORAGE_KEY = 'trade_notlari';
+  const SETTINGS_KEY = 'td_lists';
+  const DEFAULTS_KEY = 'td_custom_defaults';
+  const BG_KEY = 'td_bg_animated';
+  const THEME_KEY = 'td_theme';
+  const CSV_SAVE_LIMIT = 3;
+  const CSV_SAVE_WINDOW = 15 * 60 * 1000;
+  const CSV_MAX_SIZE = 5000000;
 
-async function loginWithEmail() {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
-  if (!email || !password) { showError("E-posta ve şifre gerekli."); return; }
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    window.location.href = "main.html";
-  } catch (e) {
-    if (e.code === "auth/user-not-found" || e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") {
-      showError("E-posta veya şifre hatalı.");
+  // === THREE.JS BACKGROUND ENGINE ===
+  let bgEnabled = true;
+  let bgRenderer, bgScene, bgCamera, bgClock;
+  let bgMountain, bgGrid, bgStars1, bgStars2, bgWave;
+
+  function loadBgPref() {
+    try { bgEnabled = localStorage.getItem(BG_KEY) !== 'off'; }
+    catch (e) { bgEnabled = true; }
+    applyBgState();
+  }
+
+  function applyBgState() {
+    document.body.classList.toggle('bg-static', !bgEnabled);
+    const bgIcon = document.getElementById('bgIcon');
+    if (bgIcon) bgIcon.textContent = bgEnabled ? '▶️' : '⏸️';
+    if (bgRenderer) {
+      bgRenderer.domElement.style.display = bgEnabled ? '' : 'none';
+      if (bgEnabled) requestAnimationFrame(renderBg);
+    }
+  }
+
+  let currentTheme = 'dark-dynamic';
+
+  function loadThemePref() {
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved) currentTheme = saved;
+    } catch(e) {}
+    applyTheme();
+  }
+
+  function setTheme(theme) {
+    currentTheme = theme;
+    localStorage.setItem(THEME_KEY, theme);
+    applyTheme();
+  }
+
+  function applyTheme() {
+    document.documentElement.className = 'theme-' + currentTheme;
+    document.querySelectorAll('.theme-opt').forEach(el => {
+      const mark = el.querySelector('.theme-mark');
+      if (mark) mark.textContent = el.getAttribute('data-theme') === currentTheme ? '✓' : ' ';
+    });
+    const isDynamic = currentTheme === 'dark-dynamic';
+    if (isDynamic && bgEnabled) {
+      if (!bgRenderer) initBgCanvas();
     } else {
-      showError("Giriş hatası: " + e.message);
+      destroyBgCanvas();
     }
+    const bgOpt = document.querySelector('[data-action="toggle-bg"]');
+    if (bgOpt) bgOpt.style.display = isDynamic ? '' : 'none';
   }
-}
 
-async function registerWithEmail() {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
-  if (!email || !password) { showError("E-posta ve şifre gerekli."); return; }
-  if (password.length < 6) { showError("Şifre en az 6 karakter olmalı."); return; }
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    window.location.href = "main.html";
-  } catch (e) {
-    if (e.code === "auth/email-already-in-use") {
-      showError("Bu e-posta zaten kayıtlı.");
-    } else {
-      showError("Kayıt hatası: " + e.message);
+  function destroyBgCanvas() {
+    if (bgRenderer) {
+      bgRenderer.domElement.remove();
+      bgRenderer.dispose();
+      bgRenderer = null;
     }
+    if (bgScene) { bgScene = null; }
+    if (bgCamera) { bgCamera = null; }
+    if (bgClock) { bgClock = null; }
+    bgMountain = null; bgGrid = null; bgStars1 = null; bgStars2 = null; bgWave = null;
   }
-}
 
-async function loginWithGoogle() {
-  const provider = new GoogleAuthProvider();
-  try {
-    await signInWithPopup(auth, provider);
-    window.location.href = "main.html";
-  } catch (e) {
-    if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") {
-      showError("Google giriş hatası: " + e.message);
+  function initBgCanvas() {
+    try { THREE; } catch(e) { return; }
+    bgClock = new THREE.Clock();
+    bgScene = new THREE.Scene();
+    bgCamera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+    bgCamera.position.set(0, 0.5, 14);
+    bgCamera.lookAt(0, 0, 0);
+    bgRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    bgRenderer.setSize(innerWidth, innerHeight);
+    bgRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    bgRenderer.domElement.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;width:100%;height:100%';
+    document.body.prepend(bgRenderer.domElement);
+    addEventListener('resize', () => {
+      bgCamera.aspect = innerWidth / innerHeight;
+      bgCamera.updateProjectionMatrix();
+      bgRenderer.setSize(innerWidth, innerHeight);
+    });
+    buildBgGrid();
+    buildBgMountain();
+    buildBgStars();
+    buildBgWave();
+    if (bgEnabled) requestAnimationFrame(renderBg);
+  }
+
+  function buildBgGrid() {
+    const size = 20, div = 20, step = size / div, half = size / 2, p = [];
+    for (let i = 0; i <= div; i++) { const x = -half + i * step; p.push(x, 0, -half, x, 0, half); }
+    for (let i = 0; i <= div; i++) { const z = -half + i * step; p.push(-half, 0, z, half, 0, z); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+    const m = new THREE.LineBasicMaterial({ color: 0x22ab94, transparent: true, opacity: 0.035, depthWrite: false });
+    bgGrid = new THREE.LineSegments(g, m);
+    bgGrid.rotation.x = -Math.PI / 3.5;
+    bgGrid.position.y = -3.5;
+    bgScene.add(bgGrid);
+  }
+
+  function buildBgMountain() {
+    const n = 2048, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { p[i * 3] = (i / n - 0.5) * 22; p[i * 3 + 1] = 0; p[i * 3 + 2] = (Math.random() - 0.5) * 0.6; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    const u = { uTime: { value: 0 }, uMorph: { value: 0 }, uAmp: { value: 1 }, uShift: { value: 0 }, uColor: { value: new THREE.Color(0xf0c040) }, uOpacity: { value: 0.055 } };
+    const vs = `
+      uniform float uTime; uniform float uMorph; uniform float uAmp; uniform float uShift;
+      varying float vA;
+      float hsh(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+      float nse(vec2 p) { vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hsh(i+vec2(0,0)),hsh(i+vec2(1,0)),f.x),
+                   mix(hsh(i+vec2(0,1)),hsh(i+vec2(1,1)),f.x),f.y); }
+      float fbm(vec2 p) { float v=0.,a=.5; for(int i=0;i<3;i++){v+=a*nse(p);p*=2.;a*=.5;} return v; }
+      void main() {
+        vec3 pos=position; float x=pos.x;
+        float mt=fbm(vec2(x*.1+uTime*.012,0))*3.5+fbm(vec2(x*.22+uTime*.02,2.))*1.2-1.5;
+        float zg=sin(x*.4+uTime*.25)*1.8+sin(x*.9+uTime*.55)*.9+sin(x*1.8+uTime*1.1)*.4+sin(x*3.6+uTime*1.8)*.2;
+        float baseY=mix(mt,zg,uMorph); pos.y=baseY*uAmp+uShift; vA=1.-abs(baseY)*.12;
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1);
+      }`;
+    const fs = 'uniform vec3 uColor;uniform float uOpacity;varying float vA;void main(){gl_FragColor=vec4(uColor,uOpacity*vA);}';
+    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    bgMountain = new THREE.Line(g, mat);
+    bgScene.add(bgMountain);
+  }
+
+  function makeCircleTexture() {
+    const c = document.createElement('canvas'); c.width = 32; c.height = 32;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(255,255,255,0.8)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 32, 32);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function buildBgStars() {
+    const tex = makeCircleTexture();
+    function mk(cnt, col, sz, op) {
+      const p = new Float32Array(cnt * 3);
+      for (let i = 0; i < cnt; i++) {
+        const t = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 8 + Math.random() * 12;
+        p[i * 3] = r * Math.sin(ph) * Math.cos(t);
+        p[i * 3 + 1] = r * Math.cos(ph) * 0.6;
+        p[i * 3 + 2] = r * Math.sin(ph) * Math.sin(t) - 6;
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      const m = new THREE.PointsMaterial({ color: col, size: sz, map: tex, transparent: true, opacity: op, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending });
+      return new THREE.Points(g, m);
     }
+    bgStars1 = mk(200, 0xffffff, 0.12, 0.05);
+    bgStars2 = mk(60, 0x22ab94, 0.18, 0.035);
+    bgScene.add(bgStars1); bgScene.add(bgStars2);
   }
-}
 
-loginBtn.addEventListener("click", loginWithEmail);
-registerBtn.addEventListener("click", registerWithEmail);
-googleBtn.addEventListener("click", loginWithGoogle);
+  function buildBgWave() {
+    const n = 1024, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { p[i * 3] = (i / n - 0.5) * 18; p[i * 3 + 1] = 0; p[i * 3 + 2] = 0; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    const u = { uTime: { value: 0 }, uColor: { value: new THREE.Color(0x22ab94) }, uOpacity: { value: 0.035 } };
+    const vs = 'uniform float uTime;void main(){vec3 p=position;float x=p.x;float y=sin(x*.25+uTime*.18)*.7+sin(x*.6+uTime*.35+1.)*.35+sin(x*1.4+uTime*.6+2.)*.15;p.y=y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1);}';
+    const fs = 'uniform vec3 uColor;uniform float uOpacity;void main(){gl_FragColor=vec4(uColor,uOpacity);}';
+    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: vs, fragmentShader: fs, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    bgWave = new THREE.Line(g, mat);
+    bgWave.position.y = -1.2;
+    bgScene.add(bgWave);
+  }
 
-emailInput.addEventListener("keydown", (e) => { if (e.key === "Enter") loginBtn.click(); });
-passwordInput.addEventListener("keydown", (e) => { if (e.key === "Enter") loginBtn.click(); });
+  let bgShiftTarget = 0;
 
-// === THREE.JS FLUID SHADER ===
-let renderer, scene, camera, shaderMaterial, clock;
+  function renderBg() {
+    if (!bgEnabled || !bgRenderer || currentTheme !== 'dark-dynamic') return;
+    requestAnimationFrame(renderBg);
+    const dt = Math.min(bgClock.getDelta(), 0.05);
+    const t = bgClock.getElapsedTime();
+    if (bgMountain) {
+      bgMountain.material.uniforms.uTime.value = t;
+      bgMountain.material.uniforms.uMorph.value = (Math.sin(t * 0.06) + 1) * 0.5;
+      bgMountain.material.uniforms.uAmp.value = 1 + Math.sin(t * 0.008) * 0.5 + Math.sin(t * 0.019) * 0.4 + Math.sin(t * 0.003) * 0.3;
+      const shiftLvls = [-3,-2,-1,1,2,3];
+      if (t % 14 < dt || t < 0.1) {
+        let prev = bgShiftTarget;
+        do { bgShiftTarget = shiftLvls[Math.floor(Math.random() * shiftLvls.length)]; }
+        while (bgShiftTarget === prev && shiftLvls.length > 1);
+      }
+      const cur = bgMountain.material.uniforms.uShift.value;
+      bgMountain.material.uniforms.uShift.value += (bgShiftTarget - cur) * dt * 0.25;
+    }
+    if (bgWave) bgWave.material.uniforms.uTime.value = t;
+    if (bgStars1) { bgStars1.rotation.y += dt * 0.008; bgStars2.rotation.y += dt * 0.006; }
 
-function initThree() {
-  if (typeof THREE === "undefined") return;
-  clock = new THREE.Clock();
-  const uniforms = {
-    uTime: { value: 0 },
-    uMouse: { value: new THREE.Vector2(0.5, 0.5) }
+    // Cinematic camera orbit — zooms in/out around the golden line from every angle
+    const spd = 0.032;
+    const a = t * spd;
+    const r = 4 + Math.sin(t * 0.015) * 2.8;
+    const y = Math.sin(t * 0.022) * 1.8 + 0.3;
+    bgCamera.position.x = Math.cos(a) * r;
+    bgCamera.position.z = Math.sin(a) * r;
+    bgCamera.position.y = y;
+
+    // gaze drifts slowly along the line for a cinematic pan feel
+    const lx = Math.sin(t * 0.007) * 1.8;
+    bgCamera.lookAt(lx, 0.2, 0);
+
+    // Grid rotates in 3D with the same energy as the camera
+    if (bgGrid) {
+      bgGrid.rotation.x = -Math.PI / 3.5 + Math.sin(t * 0.012) * 0.06;
+      bgGrid.rotation.z += dt * 0.003;
+    }
+
+    bgRenderer.render(bgScene, bgCamera);
+  }
+
+  const BUILTIN_DEFAULTS = {
+    pairs: ['XAUUSD','XAGUSD','EURUSD','GBPUSD','AUDUSD','NZDUSD','USDCAD','USDJPY','GBPJPY','EURJPY'],
+    tfs: ['1m','5m','15m','30m','1h','4h','D','W','M'],
+    setups: ['Senkron','Fx Devam','Fx','Bitiriş'],
+    confs: ['Şimşek','Saat','FVG','Sekans','Ucuz-Pahallı','Eş Pair','K. Market Y. Tepkisi','Bacak 1','Bacak 2','-1'],
+    linkTitles: ['HTF','LTF','Eş Pair']
   };
 
-  shaderMaterial = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  let trades = [];
+  let editingId = null;
+  let expandedSetup = null;
+  let editMode = false;
+  let customDefaults = null;
+
+  let pairList = [];
+  let tfList = [];
+  let setupList = [];
+  let confList = [];
+  let linkList = [];
+
+  let confFilterSelection = [];
+  const CF_STORAGE_KEY = 'td_conf_filter';
+
+  function loadConfFilterSelection() {
+    try {
+      const saved = localStorage.getItem(CF_STORAGE_KEY);
+      if (saved) confFilterSelection = JSON.parse(saved);
+      else confFilterSelection = [];
+    } catch (e) { confFilterSelection = []; }
+  }
+  function saveConfFilterSelection() {
+    localStorage.setItem(CF_STORAGE_KEY, JSON.stringify(confFilterSelection));
+  }
+
+  const $ = id => document.getElementById(id);
+  const form = $('tradeForm');
+  const fPair = $('fPair');
+  const fPairCustom = $('fPairCustom');
+  const fTf = $('fTf');
+  const fSetup = $('fSetup');
+  const fResult = $('fResult');
+  const fRr = $('fRr');
+  const fNote = $('fNote');
+  const submitBtn = $('submitBtn');
+  const cancelBtn = $('cancelEditBtn');
+
+  // Settings persistence
+  function loadLists() {
+    try {
+      const data = localStorage.getItem(SETTINGS_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        pairList = parsed.pairs || [...BUILTIN_DEFAULTS.pairs];
+        tfList = parsed.tfs || [...BUILTIN_DEFAULTS.tfs];
+        setupList = parsed.setups || [...BUILTIN_DEFAULTS.setups];
+        confList = parsed.confs || [...BUILTIN_DEFAULTS.confs];
+        linkList = parsed.linkTitles || [...BUILTIN_DEFAULTS.linkTitles];
+        return;
       }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform vec2 uMouse;
-      varying vec2 vUv;
-
-      void main() {
-        vec2 uv = vUv;
-        float t = uTime * 0.035;
-        float w1 = sin(uv.x * 2.1 + uv.y * 1.7 + t * 0.9) * 0.5 + 0.5;
-        float w2 = sin(uv.x * 3.3 - uv.y * 2.5 + t * 1.3 + 1.7) * 0.5 + 0.5;
-        float w3 = sin((uv.x + uv.y) * 1.5 + t * 0.5 + 3.2) * 0.5 + 0.5;
-
-        vec3 c1 = vec3(0.082, 0.176, 0.192);
-        vec3 c2 = vec3(0.106, 0.141, 0.227);
-        vec3 c3 = vec3(0.161, 0.094, 0.192);
-        vec3 c4 = vec3(0.039, 0.055, 0.086);
-
-        vec3 color = mix(c1, c2, w1);
-        color = mix(color, c3, w2 * 0.4);
-        color = mix(color, c4, w3 * 0.3);
-
-        float mi = 0.05;
-        color += (c2 - c1) * (uMouse.x - 0.5) * mi;
-        color += (c3 - c2) * (uMouse.y - 0.5) * mi;
-
-        gl_FragColor = vec4(color, 1.0);
+    } catch(e) {}
+    pairList = [...BUILTIN_DEFAULTS.pairs];
+    tfList = [...BUILTIN_DEFAULTS.tfs];
+    setupList = [...BUILTIN_DEFAULTS.setups];
+    confList = [...BUILTIN_DEFAULTS.confs];
+    linkList = [...BUILTIN_DEFAULTS.linkTitles];
+  }
+  function saveLists() {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      pairs: pairList, tfs: tfList, setups: setupList, confs: confList, linkTitles: linkList
+    }));
+    if (currentUser) saveUserSettings();
+  }
+  async function loadUserSettings() {
+    if (!currentUser) return;
+    try {
+      const snap = await getDoc(doc(db, 'user_settings', currentUser.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.pairList) pairList = data.pairList;
+        if (data.tfList) tfList = data.tfList;
+        if (data.setupList) setupList = data.setupList;
+        if (data.confList) confList = data.confList;
+        if (data.linkList) linkList = data.linkList;
+        saveLists();
       }
-    `
-  });
+    } catch(e) { console.warn('User settings load error:', e); }
+  }
+  async function saveUserSettings() {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'user_settings', currentUser.uid), {
+        pairList, tfList, setupList, confList, linkList,
+        updatedAt: serverTimestamp()
+      });
+    } catch(e) { console.warn('User settings save error:', e); }
+  }
+  function loadCustomDefaults() {
+    try {
+      const data = localStorage.getItem(DEFAULTS_KEY);
+      customDefaults = data ? JSON.parse(data) : null;
+    } catch(e) { customDefaults = null; }
+  }
+  function saveCustomDefaults(lists) {
+    localStorage.setItem(DEFAULTS_KEY, JSON.stringify(lists));
+    customDefaults = lists;
+  }
+  function getDefaults() {
+    return customDefaults || BUILTIN_DEFAULTS;
+  }
 
-  const geometry = new THREE.PlaneGeometry(2, 2);
-  const mesh = new THREE.Mesh(geometry, shaderMaterial);
-  scene = new THREE.Scene();
-  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-  camera.position.z = 1;
-  scene.add(mesh);
-
-  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.domElement.id = "threeCanvas";
-  document.body.prepend(renderer.domElement);
-
-  window.addEventListener("resize", () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-}
-
-document.addEventListener("mousemove", (e) => {
-  if (!shaderMaterial) return;
-  const x = e.clientX / window.innerWidth;
-  const y = 1 - e.clientY / window.innerHeight;
-  shaderMaterial.uniforms.uMouse.value.set(x, y);
-});
-
-// === PARTICLE SYSTEM ===
-const particleCanvas = document.createElement("canvas");
-particleCanvas.id = "particleCanvas";
-document.body.prepend(particleCanvas);
-const pCtx = particleCanvas.getContext("2d");
-
-function resizeParticleCanvas() {
-  particleCanvas.width = window.innerWidth;
-  particleCanvas.height = window.innerHeight;
-}
-resizeParticleCanvas();
-window.addEventListener("resize", resizeParticleCanvas);
-
-const particles = [];
-const PARTICLE_COLORS = ["#ffffff", "#22ab94", "#f0c040"];
-
-function burstParticles(cx, cy, count) {
-  for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 40 + Math.random() * 140;
-    particles.push({
-      x: cx, y: cy,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 1.0,
-      color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
-      size: 1.5 + Math.random() * 4
+  // Populate select from a list
+  function populateSelect(sel, list, curVal) {
+    sel.innerHTML = '';
+    list.forEach(v => {
+      sel.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
     });
-  }
-}
-
-let lastParticleTime = performance.now();
-
-function updateParticles(dt) {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.life -= dt / 1.5;
-    p.vx *= 0.97;
-    p.vy *= 0.97;
-    if (p.life <= 0) particles.splice(i, 1);
-  }
-}
-
-function drawParticles() {
-  pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
-  for (const p of particles) {
-    pCtx.globalAlpha = Math.max(0, p.life);
-    pCtx.fillStyle = p.color;
-    pCtx.beginPath();
-    pCtx.arc(p.x, p.y, p.size * Math.max(0.1, p.life), 0, Math.PI * 2);
-    pCtx.fill();
-  }
-  pCtx.globalAlpha = 1;
-}
-
-// Burst on hover over login button
-let burstCooldown = 0;
-loginBtn.addEventListener("mouseenter", () => {
-  const rect = loginBtn.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  burstParticles(cx, cy, 30);
-  burstCooldown = 0.3;
-});
-
-// Also burst on hover over other interactive buttons
-document.querySelectorAll(".btn-secondary, .btn-google").forEach(el => {
-  el.addEventListener("mouseenter", () => {
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    burstParticles(cx, cy, 15);
-  });
-});
-
-// === ANIMATION LOOP ===
-function animate() {
-  requestAnimationFrame(animate);
-
-  const t = performance.now();
-  const dt = Math.min((t - lastParticleTime) / 1000, 0.05);
-  lastParticleTime = t;
-
-  if (renderer && shaderMaterial) {
-    shaderMaterial.uniforms.uTime.value = clock.getElapsedTime();
-    renderer.render(scene, camera);
-  }
-
-  if (burstCooldown > 0) {
-    burstCooldown -= dt;
-    if (burstCooldown > 0) {
-      const rect = loginBtn.getBoundingClientRect();
-      burstParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, 2);
+    if (curVal !== undefined && list.includes(curVal)) {
+      sel.value = curVal;
     }
   }
 
-  updateParticles(dt);
-  drawParticles();
-}
+  function populatePairOptions() {
+    const cur = fPair.value;
+    const unique = new Set(pairList);
+    trades.forEach(t => { if (t.pair) unique.add(t.pair); });
+    fPair.innerHTML = '';
+    Array.from(unique).sort().forEach(v => {
+      fPair.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
+    });
+    if (cur && unique.has(cur)) fPair.value = cur;
+    else fPair.value = pairList[0] || '';
+  }
 
-initThree();
-animate();
+  function populateSelectors() {
+    const curPair = fPair.value;
+    const curTf = fTf.value;
+    const curSetup = fSetup.value;
+    populateSelect(fTf, tfList, curTf);
+    populateSelect(fSetup, setupList, curSetup);
+    populatePairOptions();
+  }
+
+  // Conf checkboxes
+  function getConfChecks() {
+    return document.querySelectorAll('#confGrid input[type="checkbox"]');
+  }
+  function getConf() {
+    return Array.from(getConfChecks()).filter(c => c.checked).map(c => c.value);
+  }
+  function setConf(arr) {
+    getConfChecks().forEach(c => { c.checked = arr.includes(c.value); });
+  }
+
+  function buildConfGrid() {
+    const grid = $('confGrid');
+    grid.innerHTML = confList.map(v =>
+      `<label class="conf-item"><input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`
+    ).join('');
+  }
+
+  // Render link input fields
+  function renderLinkFields() {
+    const container = $('linkFields');
+    if (!container) return;
+    if (linkList.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = linkList.map(title =>
+      `<label>${escapeHtml(title)} Link <input type="text" class="link-input" data-link-title="${escapeAttr(title)}" placeholder="tradingview.com/x/..."></label>`
+    ).join('');
+  }
+
+  // Edit mode chips
+  function renderChips(listId, list, containerId) {
+    const container = $(containerId);
+    if (!editMode) { container.style.display = 'none'; return; }
+    container.style.display = 'flex';
+    container.innerHTML = list.map((v, i) =>
+      `<span class="chip">${escapeHtml(v)}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
+    ).join('') + `<span class="chip-add" data-list="${listId}">+</span>`;
+  }
+
+  function renderAllChips() {
+    renderChips('pairs', pairList, 'editChipsPair');
+    renderChips('tfs', tfList, 'editChipsTf');
+    renderChips('setups', setupList, 'editChipsSetup');
+    renderChips('confs', confList, 'editChipsConf');
+    renderChips('links', linkList, 'editChipsLink');
+  }
+
+  function addChipItem(listId) {
+    const chipAdd = document.querySelector(`.chip-add[data-list="${listId}"]`);
+    if (!chipAdd) return;
+    const wrap = document.createElement('span');
+    wrap.className = 'chip-input-wrap';
+    const inp = document.createElement('input');
+    inp.placeholder = 'Yeni...';
+    wrap.appendChild(inp);
+    chipAdd.replaceWith(wrap);
+    inp.focus();
+
+    function commit() {
+      if (!document.body.contains(inp)) return;
+      const val = inp.value.trim();
+      if (val) {
+        let list;
+        if (listId === 'pairs') { pairList.push(val); list = pairList; }
+        else if (listId === 'tfs') { tfList.push(val); list = tfList; }
+        else if (listId === 'setups') { setupList.push(val); list = setupList; }
+        else if (listId === 'confs') { confList.push(val); list = confList; }
+        else if (listId === 'links') { linkList.push(val); list = linkList; }
+        saveLists();
+        buildConfGrid();
+        buildConfFilterDropdown();
+        populateSelectors();
+        renderAllChips();
+        if (listId === 'links') { renderLinkFields(); }
+      } else {
+        renderAllChips();
+      }
+    }
+
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { renderAllChips(); }
+    });
+    inp.addEventListener('blur', () => {
+      setTimeout(() => {
+        if (document.activeElement !== inp) commit();
+      }, 100);
+    });
+  }
+
+  function removeChipItem(listId, index) {
+    if (listId === 'pairs') pairList.splice(index, 1);
+    else if (listId === 'tfs') tfList.splice(index, 1);
+    else if (listId === 'setups') setupList.splice(index, 1);
+    else if (listId === 'confs') confList.splice(index, 1);
+    else if (listId === 'links') linkList.splice(index, 1);
+    saveLists();
+    buildConfGrid();
+    populateSelectors();
+    renderAllChips();
+    buildConfFilterDropdown();
+    if (listId === 'links') { renderLinkFields(); }
+  }
+
+  // Conf filter — "Tümü" mantığı
+  function buildConfFilterDropdown() {
+    loadConfFilterSelection();
+    // Remove stale entries
+    confFilterSelection = confFilterSelection.filter(v => confList.includes(v));
+    saveConfFilterSelection();
+    const dd = $('confFilterDropdown');
+    const wasOpen = dd.classList.contains('show');
+    dd.innerHTML = `<label class="conf-filter-item"><input type="checkbox" id="confFilterAll"> <b>Tümü</b></label>`
+      + confList.map(v =>
+        `<label class="conf-filter-item"><input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`
+      ).join('');
+    dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', onConfFilterChange);
+    });
+    syncConfFilterChecks();
+    updateConfFilterTrigger();
+    if (wasOpen) dd.classList.add('show');
+  }
+
+  function onConfFilterChange(e) {
+    const cb = e.target;
+    const dd = $('confFilterDropdown');
+    if (cb.id === 'confFilterAll') {
+      confFilterSelection = [];
+      dd.querySelectorAll('input[type="checkbox"]:not(#confFilterAll)').forEach(c => c.checked = false);
+      cb.checked = true;
+    } else {
+      if (cb.checked) {
+        if (!confFilterSelection.includes(cb.value)) confFilterSelection.push(cb.value);
+        const allCb = $('confFilterAll');
+        if (allCb) allCb.checked = false;
+      } else {
+        confFilterSelection = confFilterSelection.filter(v => v !== cb.value);
+      }
+    }
+    saveConfFilterSelection();
+    updateConfFilterTrigger();
+    renderTrades();
+  }
+
+  function syncConfFilterChecks() {
+    const dd = $('confFilterDropdown');
+    if (!dd) return;
+    const isAll = confFilterSelection.length === 0;
+    const allCb = $('confFilterAll');
+    if (allCb) allCb.checked = isAll;
+    dd.querySelectorAll('input[type="checkbox"]:not(#confFilterAll)').forEach(c => {
+      c.checked = !isAll && confFilterSelection.includes(c.value);
+    });
+  }
+
+  function updateConfFilterTrigger() {
+    const trigger = $('confFilterTrigger');
+    if (!trigger) return;
+    if (confFilterSelection.length === 0) {
+      trigger.textContent = 'Tümü';
+    } else if (confFilterSelection.length <= 2) {
+      trigger.textContent = confFilterSelection.join(', ');
+    } else {
+      trigger.textContent = confFilterSelection.length + ' seçili';
+    }
+  }
+
+  function showConfFilter(e) {
+    e.stopPropagation();
+    const dd = $('confFilterDropdown');
+    if (dd.classList.contains('show')) {
+      dd.classList.remove('show');
+      return;
+    }
+    loadConfFilterSelection();
+    syncConfFilterChecks();
+    updateConfFilterTrigger();
+    dd.classList.add('show');
+  }
+
+  function hideConfFilter() {
+    $('confFilterDropdown').classList.remove('show');
+  }
+
+  // Close conf filter on outside click
+  document.addEventListener('click', (e) => {
+    const wrap = $('confFilterWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      hideConfFilter();
+    }
+  });
+
+  // Event delegation for chips (add / remove)
+  document.addEventListener('click', (e) => {
+    const chipX = e.target.closest('.chip-x');
+    if (chipX) {
+      const listId = chipX.getAttribute('data-list');
+      const index = parseInt(chipX.getAttribute('data-index'), 10);
+      removeChipItem(listId, index);
+      return;
+    }
+    const chipAdd = e.target.closest('.chip-add');
+    if (chipAdd) {
+      const listId = chipAdd.getAttribute('data-list');
+      addChipItem(listId);
+      return;
+    }
+  });
+
+  // Gear menu
+  const gearBtn = $('gearBtn');
+  const gearMenu = $('gearMenu');
+  const tradeCard = $('tradeCard');
+
+  gearBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    gearMenu.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    gearMenu.classList.remove('show');
+  });
+
+  gearMenu.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const option = e.target.closest('.gear-option');
+    if (!option) return;
+    const action = option.getAttribute('data-action');
+
+    if (action === 'toggle-edit') {
+      editMode = !editMode;
+      option.textContent = editMode ? 'Düzenlemeyi Bitir' : 'Düzenle';
+      tradeCard.classList.toggle('edit-active', editMode);
+      renderAllChips();
+      gearMenu.classList.remove('show');
+    } else if (action === 'toggle-bg') {
+      bgEnabled = !bgEnabled;
+      localStorage.setItem(BG_KEY, bgEnabled ? 'on' : 'off');
+      applyBgState();
+      gearMenu.classList.remove('show');
+    } else if (action === 'theme') {
+      const theme = option.getAttribute('data-theme');
+      setTheme(theme);
+      gearMenu.classList.remove('show');
+    } else if (action === 'reset') {
+      const defs = getDefaults();
+      pairList = [...defs.pairs];
+      tfList = [...defs.tfs];
+      setupList = [...defs.setups];
+      confList = [...defs.confs];
+      linkList = [...(defs.linkTitles || BUILTIN_DEFAULTS.linkTitles)];
+      saveLists();
+      if (editMode) renderAllChips();
+      buildConfGrid();
+      buildConfFilterDropdown();
+      populateSelectors();
+      renderLinkFields();
+      renderTrades();
+      gearMenu.classList.remove('show');
+    } else if (action === 'save-default') {
+      saveCustomDefaults({
+        pairs: [...pairList], tfs: [...tfList], setups: [...setupList],
+        confs: [...confList], linkTitles: [...linkList]
+      });
+      gearMenu.classList.remove('show');
+    }
+  });
+
+  // --- Original code below with modifications ---
+
+  fPair.addEventListener('change', () => {
+    if (fPair.value === '__custom__') {
+      fPair.style.display = 'none';
+      fPairCustom.style.display = 'inline-block';
+      fPairCustom.value = '';
+      fPairCustom.focus();
+    }
+  });
+  fPairCustom.addEventListener('blur', () => {
+    if (!fPairCustom.value.trim()) {
+      fPairCustom.style.display = 'none';
+      fPair.style.display = 'inline-block';
+    }
+  });
+
+  function getPairValue() {
+    if (fPair.style.display === 'none') return fPairCustom.value.trim();
+    return fPair.value === '__custom__' ? '' : fPair.value;
+  }
+
+  function load() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      trades = data ? JSON.parse(data) : [];
+    } catch(e) { trades = []; }
+    // Migrate old format: htf/ltf/esPair → links
+    trades.forEach(t => {
+      if (!t.links && (t.htf || t.ltf || t.esPair)) {
+        t.links = {};
+        if (t.htf) t.links.HTF = t.htf;
+        if (t.ltf) t.links.LTF = t.ltf;
+        if (t.esPair) t.links['Eş Pair'] = t.esPair;
+        delete t.htf; delete t.ltf; delete t.esPair;
+      }
+    });
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+  }
+
+  async function loadFromFirestore() {
+    if (!currentUser) return false;
+    try {
+      // 1. Read Firestore (source of truth)
+      const snap = await getDocs(collection(db, 'trades', currentUser.uid, 'items'));
+      const firestoreTrades = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+      // 2. Read localStorage (offline cache)
+      let localTrades = [];
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) localTrades = JSON.parse(raw);
+      } catch(e) {}
+      if (firestoreTrades.length > 0) {
+        // Merge: Firestore base + localStorage-only trades (offline creations)
+        // For same-ID trades, compare timestamps — newer wins
+        const localMap = new Map(localTrades.map(t => [String(t.id), t]));
+        const firestoreMap = new Map(firestoreTrades.map(t => [String(t.id), t]));
+        for (const [id, ft] of firestoreMap) {
+          const lt = localMap.get(id);
+          if (lt) {
+            const ltTime = lt.updatedAt || 0;
+            const ftTime = typeof ft.updatedAt?.toMillis === 'function' ? ft.updatedAt.toMillis() : (ft.updatedAt || 0);
+            if (ltTime > ftTime) {
+              // localStorage is newer (offline edit)
+              const idx = firestoreTrades.findIndex(t => String(t.id) === id);
+              if (idx !== -1) firestoreTrades[idx] = lt;
+            }
+          }
+        }
+        // Add localStorage-only trades (offline creations)
+        const firestoreIds = new Set(firestoreTrades.map(t => String(t.id)));
+        for (const t of localTrades) {
+          if (!firestoreIds.has(String(t.id))) firestoreTrades.push(t);
+        }
+        trades = firestoreTrades;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+        return true;
+      }
+    } catch(e) { console.warn('Firestore load failed:', e); }
+    // Fallback: localStorage
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.length > 0) { trades = d; return true; }
+      }
+    } catch(e) {}
+    return false;
+  }
+
+  async function syncTradeToFirestore(t) {
+    if (!currentUser) return;
+    try {
+      const { _new, ...clean } = t;
+      await setDoc(doc(db, 'trades', currentUser.uid, 'items', String(t.id)), { ...clean, updatedAt: serverTimestamp() });
+    } catch(e) { console.error('Firestore sync error:', e); }
+  }
+
+  async function removeTradeFromFirestore(id) {
+    if (!currentUser) return;
+    try {
+      await deleteDoc(doc(db, 'trades', currentUser.uid, 'items', String(id)));
+    } catch(e) { console.error('Firestore delete error:', e); }
+  }
+
+  async function syncAllToFirestore() {
+    if (!currentUser) return;
+    try {
+      const col = collection(db, 'trades', currentUser.uid, 'items');
+      const existing = await getDocs(col);
+      const existingIds = new Set(existing.docs.map(d => d.id));
+      const currentIds = new Set(trades.map(t => String(t.id)));
+      const ops = [];
+      for (const d of existing.docs) { if (!currentIds.has(d.id)) ops.push(deleteDoc(d.ref)); }
+      for (const t of trades) { const { _new, ...clean } = t; ops.push(setDoc(doc(col, String(t.id)), { ...clean, updatedAt: serverTimestamp() })); }
+      await Promise.all(ops);
+    } catch(e) { console.error('Firestore sync all error:', e); }
+  }
+
+  function resetForm() {
+    form.reset();
+    fPair.style.display = 'inline-block';
+    fPairCustom.style.display = 'none';
+    fPairCustom.value = '';
+    fPair.value = pairList[0] || '';
+    fTf.value = tfList.includes('15m') ? '15m' : (tfList[0] || '');
+    fSetup.value = setupList.includes('Senkron') ? 'Senkron' : (setupList[0] || '');
+    fResult.value = 'Win';
+    fRr.value = '';
+    renderLinkFields();
+    fNote.value = '';
+    setConf([]);
+    editingId = null;
+    submitBtn.textContent = 'EKLE';
+    cancelBtn.style.display = 'none';
+  }
+
+  function getFilterValues() {
+    const v = {};
+    ['Pair','Tf','Setup','Result'].forEach(k => {
+      v[k] = $(`filter${k}`).value;
+    });
+    return v;
+  }
+
+  function populateFilterOptions() {
+    const sets = { Pair: new Set(), Tf: new Set(), Setup: new Set() };
+    trades.forEach(t => {
+      if (t.pair) sets.Pair.add(t.pair);
+      if (t.tf) sets.Tf.add(t.tf);
+      if (t.setup) sets.Setup.add(t.setup);
+    });
+    ['Pair','Tf','Setup'].forEach(k => {
+      const sel = $(`filter${k}`);
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">Tümü</option>';
+      Array.from(sets[k]).sort().forEach(v => {
+        sel.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`;
+      });
+      sel.value = cur;
+    });
+  }
+
+  // Winrate: win / (win + lose) * 100, BE excluded
+  function calcWinPct(win, lose) {
+    const denominator = win + lose;
+    if (denominator === 0) return win > 0 ? 100 : 0;
+    return win / denominator * 100;
+  }
+
+  function renderStats() {
+    const grid = $('statsGrid');
+    const confNames = confList;
+    const confColors = {
+      'Şimşek': { t:'#f0d060', b:'rgba(240,208,96,0.12)' },
+      'Saat': { t:'#6ab8e8', b:'rgba(106,184,232,0.12)' },
+      'FVG': { t:'#5cc08a', b:'rgba(92,192,138,0.12)' },
+      'Sekans': { t:'#b088d8', b:'rgba(176,136,216,0.12)' },
+      'Ucuz-Pahallı': { t:'#e8a860', b:'rgba(232,168,96,0.12)' },
+      'Eş Pair': { t:'#60c8c0', b:'rgba(96,200,192,0.12)' },
+      'K. Market Y. Tepkisi': { t:'#e888a8', b:'rgba(232,136,168,0.12)' },
+      'Bacak 1': { t:'#68d0d0', b:'rgba(104,208,208,0.12)' },
+      'Bacak 2': { t:'#c8a0d0', b:'rgba(200,160,208,0.12)' },
+      '-1': { t:'#e87878', b:'rgba(232,120,120,0.12)' }
+    };
+    const setupMap = {};
+    trades.forEach(t => {
+      if (!t.setup) return;
+      if (!setupMap[t.setup]) {
+        setupMap[t.setup] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
+        confNames.forEach(c => setupMap[t.setup].confCounts[c] = 0);
+      }
+      const s = setupMap[t.setup];
+      s.total++;
+      if (t.result === 'Win') s.win++;
+      else if (t.result === 'BE') s.be++;
+      else if (t.result === 'Lose') s.lose++;
+      if (t.rr != null && t.rr !== '') {
+        s.rrSum += Number(t.rr);
+        s.rrCount++;
+      }
+      if (t.confirmations) {
+        t.confirmations.forEach(c => {
+          if (s.confCounts[c] !== undefined) s.confCounts[c]++;
+        });
+      }
+    });
+
+    const arr = Object.entries(setupMap).map(([name, s]) => {
+      const winRate = calcWinPct(s.win, s.lose);
+      const winPct = s.total ? (s.win / s.total * 100) : 0;
+      const bePct = s.total ? (s.be / s.total * 100) : 0;
+      const losePct = s.total ? (s.lose / s.total * 100) : 0;
+      const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
+      return { name, ...s, winRate, winPct, bePct, losePct, avgRr };
+    });
+    arr.sort((a,b) => b.winPct - a.winPct || b.total - a.total);
+
+    if (arr.length === 0) {
+      grid.innerHTML = '<div class="empty">Henüz setup verisi yok.</div>';
+      return;
+    }
+
+    function getPairStats(setupName) {
+      const pairMap = {};
+      const filtered = trades.filter(t => t.setup === setupName && t.pair);
+      filtered.forEach(t => {
+        const p = t.pair;
+        if (!pairMap[p]) {
+          pairMap[p] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
+          confNames.forEach(c => pairMap[p].confCounts[c] = 0);
+        }
+        const s = pairMap[p];
+        s.total++;
+        if (t.result === 'Win') s.win++;
+        else if (t.result === 'BE') s.be++;
+        else if (t.result === 'Lose') s.lose++;
+        if (t.rr != null && t.rr !== '') { s.rrSum += Number(t.rr); s.rrCount++; }
+        if (t.confirmations) {
+          t.confirmations.forEach(c => { if (s.confCounts[c] !== undefined) s.confCounts[c]++; });
+        }
+      });
+      return Object.entries(pairMap).map(([name, s]) => {
+        const winRate = calcWinPct(s.win, s.lose);
+        const winPct = s.total ? (s.win / s.total * 100) : 0;
+        const losePct = s.total ? (s.lose / s.total * 100) : 0;
+        const bePct = s.total ? (s.be / s.total * 100) : 0;
+        const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
+        return { name, ...s, winRate, winPct, losePct, bePct, avgRr };
+      }).sort((a,b) => b.winRate - a.winRate || b.total - a.total);
+    }
+
+    grid.innerHTML = arr.map(s => {
+      const confHtml = confNames
+        .filter(c => s.confCounts[c] > 0)
+        .sort((a,b) => s.confCounts[b] - s.confCounts[a])
+        .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : 'var(--text-secondary)'};background:${confColors[c] ? confColors[c].b : 'var(--bg-surface)'}">${escapeHtml(c)} %${(s.confCounts[c] / s.total * 100).toFixed(0)}</span>`)
+        .join('');
+
+      let detailHtml = '';
+      if (expandedSetup === s.name) {
+        const pairs = getPairStats(s.name);
+        detailHtml = pairs.length ? `
+          <div class="stat-card-detail">
+            <div class="stat-sub-title">Parite Bazında</div>
+            <div class="stat-sub-grid">
+              ${pairs.map(p => {
+                const pConf = confNames
+                  .filter(c => p.confCounts[c] > 0)
+                  .sort((a,b) => p.confCounts[b] - p.confCounts[a])
+                  .map(c => `<span class="stat-conf" style="color:${confColors[c] ? confColors[c].t : 'var(--text-secondary)'};background:${confColors[c] ? confColors[c].b : 'var(--bg-surface)'}">${escapeHtml(c)} %${(p.confCounts[c] / p.total * 100).toFixed(0)}</span>`)
+                  .join('');
+                return `
+                <div class="stat-sub-card">
+                  <div class="stat-sub-name">${escapeHtml(p.name)}</div>
+                  <div class="stat-sub-row">Winrate <b>${p.winRate.toFixed(1)}%</b> | Ort. RR: <b>${p.avgRr.toFixed(2)}</b></div>
+                  <div class="stat-sub-row"><b>${p.total}</b> trade | Win <b>${p.win}</b> | Lose <b>${p.lose}</b> | BE <b>${p.be}</b></div>
+                  <div class="stat-sub-bar">
+                    <div class="bar-win" style="flex:${p.winPct}"></div>
+                    <div class="bar-be" style="flex:${p.bePct}"></div>
+                    <div class="bar-lose" style="flex:${p.losePct}"></div>
+                  </div>
+                  ${pConf ? `<div class="stat-conf-row">${pConf}</div>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>` : '';
+      }
+
+      return `
+      <div class="stat-card" data-setup="${escapeAttr(s.name)}">
+        <div class="stat-title">${escapeHtml(s.name)}</div>
+        <div class="stat-row">Winrate <b>${s.winRate.toFixed(1)}%</b> | Ort. RR: <b>${s.avgRr.toFixed(2)}</b></div>
+        <div class="stat-row"><b>${s.total}</b> trade | Win <b>${s.win}</b> | Lose <b>${s.lose}</b> | BE <b>${s.be}</b></div>
+        <div class="stat-bar">
+          <div class="bar-win" style="flex:${s.winPct}"></div>
+          <div class="bar-be" style="flex:${s.bePct}"></div>
+          <div class="bar-lose" style="flex:${s.losePct}"></div>
+        </div>
+        ${confHtml ? `<div class="stat-conf-row">${confHtml}</div>` : ''}
+        ${detailHtml}
+      </div>`;
+    }).join('');
+  }
+
+  function renderTrades() {
+    const filters = getFilterValues();
+    const tbody = $('tradesBody');
+    const empty = $('emptyMsg');
+
+    let filtered = trades.filter(t => {
+      if (filters.Pair && t.pair !== filters.Pair) return false;
+      if (filters.Tf && t.tf !== filters.Tf) return false;
+      if (filters.Setup && t.setup !== filters.Setup) return false;
+      if (filters.Result && t.result !== filters.Result) return false;
+      // Conf filter: show trades that have ALL selected confirmations
+      if (confFilterSelection.length > 0) {
+        if (!t.confirmations || t.confirmations.length === 0) return false;
+        if (!confFilterSelection.every(c => t.confirmations.includes(c))) return false;
+      }
+      return true;
+    });
+    filtered = [...filtered].reverse();
+
+    const summary = $('filterSummary');
+    const total = filtered.length;
+    const wins = filtered.filter(t => t.result === 'Win').length;
+    const loses = filtered.filter(t => t.result === 'Lose').length;
+    const bes = filtered.filter(t => t.result === 'BE').length;
+    const winDenom = wins + loses;
+    const winPct = winDenom > 0 ? (wins / winDenom * 100) : (wins > 0 ? 100 : 0);
+    const rrVals = filtered.map(t => t.rr).filter(v => v != null && v !== '').map(Number);
+    const avgRr = rrVals.length > 0 ? (rrVals.reduce((a, b) => a + b, 0) / rrVals.length) : 0;
+    summary.textContent =
+      `→ Winrate ${winPct.toFixed(1)}% | Ort. RR: ${avgRr.toFixed(2)} | ${total} trade | Win ${wins} | Lose ${loses} | BE ${bes}`;
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    // Build dynamic thead
+    const thead = $('tradesHead');
+    thead.innerHTML = '<tr>'
+      + ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR']
+        .map(h => `<th>${h}</th>`).join('')
+      + linkList.map(h => `<th>${escapeHtml(h)}</th>`).join('')
+      + ['Not', ''].map(h => `<th>${h}</th>`).join('')
+      + '</tr>';
+
+    tbody.innerHTML = filtered.map(t => {
+      const confStr = t.confirmations && t.confirmations.length
+        ? t.confirmations.map(c => `<span class="conf-chip">${escapeHtml(c)}</span>`).join('')
+        : '<span style="color:var(--text-secondary);font-size:10px">-</span>';
+      const safeResult = ['Win','BE','Lose'].includes(t.result) ? t.result.toLowerCase() : 'unknown';
+      const resultBadge = `badge-${safeResult}`;
+      const linkCells = linkList.map(title => {
+        const url = t.links && t.links[title];
+        return `<td>${url ? `<span class="preview-link" data-url="${escapeAttr(url)}">${escapeHtml(title)}</span>` : '-'}</td>`;
+      }).join('');
+      return `<tr${t._new ? ' class="new-trade"' : ''}>
+        <td style="white-space:nowrap">${escapeHtml(t.date) || '-'}</td>
+        <td><b>${escapeHtml(t.pair) || '-'}</b></td>
+        <td>${escapeHtml(t.tf) || '-'}</td>
+        <td><span class="badge badge-setup">${escapeHtml(t.setup) || '-'}</span></td>
+        <td>${confStr}</td>
+        <td><span class="badge ${resultBadge}">${escapeHtml(t.result) || '-'}</span></td>
+        <td>${t.rr != null && t.rr !== '' ? Number(t.rr).toFixed(2) : '-'}</td>
+        ${linkCells}
+        <td class="note-cell"><span class="note-display ${t.not ? 'has-note' : ''}" data-id="${t.id}">${escapeHtml(t.not) || 'Not...'}</span></td>
+        <td class="actions">
+          <button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
+          <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('[data-edit]').forEach(b => {
+      b.addEventListener('click', () => startEdit(Number(b.getAttribute('data-edit'))));
+    });
+    tbody.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', () => deleteTrade(Number(b.getAttribute('data-del'))));
+    });
+    tbody.querySelectorAll('.preview-link').forEach(el => {
+      el.addEventListener('mouseenter', () => { previewEnter(el); });
+      el.addEventListener('mouseleave', () => { previewLeave(); });
+    });
+    tbody.querySelectorAll('.note-display').forEach(el => {
+      el.addEventListener('click', () => startNoteEdit(el));
+    });
+  }
+
+  function startNoteEdit(el) {
+    const id = Number(el.getAttribute('data-id'));
+    const t = trades.find(x => x.id === id);
+    if (!t) return;
+    const td = el.closest('.note-cell');
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'note-input-inline';
+    inp.value = t.not || '';
+    td.innerHTML = '';
+    td.appendChild(inp);
+    inp.focus();
+    inp.select();
+
+    function saveNote() {
+      const val = inp.value.trim();
+      t.not = val || '';
+      t.updatedAt = Date.now();
+      save();
+      syncTradeToFirestore(t);
+      renderTrades();
+    }
+    inp.addEventListener('blur', saveNote);
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { inp.blur(); }
+      if (e.key === 'Escape') { renderTrades(); }
+    });
+  }
+
+  async function deleteTrade(id) {
+    if (!(await showConfirm('Bu trade kaydını silmek istediğinize emin misiniz?'))) return;
+    trades = trades.filter(t => t.id !== id);
+    save();
+    removeTradeFromFirestore(id);
+    renderAll();
+  }
+
+  function startEdit(id) {
+    const t = trades.find(x => x.id === id);
+    if (!t) return;
+    editingId = id;
+    fPair.style.display = 'inline-block';
+    fPairCustom.style.display = 'none';
+    fPairCustom.value = '';
+    const pairOpts = Array.from(fPair.options).map(o => o.value);
+    if (pairOpts.includes(t.pair || '')) {
+      fPair.value = t.pair || '';
+    } else {
+      fPair.value = '__custom__';
+      fPair.style.display = 'none';
+      fPairCustom.value = t.pair || '';
+      fPairCustom.style.display = 'inline-block';
+    }
+    fTf.value = t.tf || '';
+    fSetup.value = t.setup || '';
+    fResult.value = t.result || '';
+    fRr.value = t.rr != null ? t.rr : '';
+    renderLinkFields();
+    if (t.links) {
+      $('linkFields').querySelectorAll('.link-input').forEach(inp => {
+        const title = inp.getAttribute('data-link-title');
+        if (title && t.links[title]) inp.value = t.links[title];
+      });
+    }
+    fNote.value = t.not || '';
+    setConf(t.confirmations || []);
+    submitBtn.textContent = 'GÜNCELLE';
+    cancelBtn.style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function isDuplicate(pair, tf, setup, result, rr) {
+    return trades.some(t =>
+      t.pair === pair && t.tf === tf && t.setup === setup &&
+      t.result === result && (t.rr == rr || (t.rr == null && rr == null))
+    );
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (submitBtn.disabled) return;
+    if (isPreviewMode) { await showAlert('Önizleme modunda trade eklenemez.'); return; }
+    submitBtn.disabled = true;
+    const pair = getPairValue();
+    if (!pair) { await showAlert('Parite girin.'); submitBtn.disabled = false; return; }
+    const tf = fTf.value;
+    const setup = fSetup.value;
+    const result = fResult.value;
+    const rr = fRr.value !== '' ? fRr.value : null;
+    if (result === 'Win' && (rr === null || rr === '')) {
+      fRr.focus();
+      fRr.style.borderColor = 'var(--danger)';
+      fRr.style.boxShadow = '0 0 0 2px var(--danger)40';
+      setTimeout(() => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; }, 2500);
+      submitBtn.disabled = false;
+      return;
+    }
+    if (!editingId && isDuplicate(pair, tf, setup, result, rr)) {
+      await showAlert('Bu trade zaten mevcut.');
+      submitBtn.disabled = false;
+      return;
+    }
+    // Read link fields dynamically
+    const links = {};
+    if ($('linkFields')) {
+      $('linkFields').querySelectorAll('.link-input').forEach(inp => {
+        const title = inp.getAttribute('data-link-title');
+        const val = inp.value.trim();
+        if (title && val) links[title] = val;
+      });
+    }
+    const not = fNote.value.trim() || '';
+    const confirmations = getConf();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    if (editingId) {
+      const idx = trades.findIndex(t => t.id === editingId);
+      if (idx !== -1) {
+        trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations, updatedAt: Date.now() };
+        syncTradeToFirestore(trades[idx]);
+      }
+    } else {
+      const newId = Date.now();
+      const newTrade = {
+        id: newId,
+        _new: true,
+        date: dateStr,
+        pair, tf, setup, result, rr, links, not,
+        confirmations,
+        updatedAt: Date.now()
+      };
+      trades.push(newTrade);
+      syncTradeToFirestore(newTrade);
+      setTimeout(() => {
+        const t = trades.find(x => x.id === newId);
+        if (t) { delete t._new; save(); renderTrades(); }
+      }, 3200);
+    }
+
+    save();
+    resetForm();
+    renderAll();
+    submitBtn.disabled = false;
+  }
+
+  function renderAll() {
+    populateSelectors();
+    populateFilterOptions();
+    renderStats();
+    renderTrades();
+  }
+
+  fRr.addEventListener('input', () => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; });
+  fResult.addEventListener('change', () => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; });
+
+  // Events
+  $('statsGrid').addEventListener('click', (e) => {
+    if (e.target.closest('.stat-card-detail')) return;
+    const card = e.target.closest('.stat-card[data-setup]');
+    if (!card) return;
+    const setup = card.getAttribute('data-setup');
+    expandedSetup = expandedSetup === setup ? null : setup;
+    renderStats();
+  });
+
+  form.addEventListener('submit', handleSubmit);
+  cancelBtn.addEventListener('click', resetForm);
+
+  document.querySelectorAll('#filterPair,#filterTf,#filterSetup,#filterResult').forEach(el => {
+    el.addEventListener('change', renderTrades);
+  });
+
+  $('clearFilterBtn').addEventListener('click', () => {
+    ['filterPair','filterTf','filterSetup','filterResult'].forEach(id => $(id).value = '');
+    confFilterSelection = [];
+    saveConfFilterSelection();
+    buildConfFilterDropdown();
+    renderTrades();
+  });
+
+  $('deleteAllBtn').addEventListener('click', async () => {
+    if (isPreviewMode) { await showAlert('Önizleme modunda silme yapılamaz.'); return; }
+    if (!(await showConfirm('Tüm trade kayıtlarını silmek istediğinize emin misiniz?'))) return;
+    trades = [];
+    save();
+    syncAllToFirestore();
+    renderAll();
+  });
+
+  $('importBtn').addEventListener('click', async () => {
+    if (isPreviewMode) { await showAlert('Önizleme modunda içe aktarma yapılamaz.'); return; }
+    $('importInput').click();
+  });
+  $('importInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const csv = ev.target.result;
+      // Clear all current data before import
+      trades = [];
+      pairList = []; tfList = []; setupList = []; confList = []; linkList = []; confFilterSelection = [];
+      // Restore panel settings from #PANEL header if present
+      const csvPanelData = extractPanelDataFromCsv(csv);
+      if (csvPanelData) {
+        if (csvPanelData.pairList && csvPanelData.pairList.length > 0) pairList = [...csvPanelData.pairList];
+        if (csvPanelData.tfList && csvPanelData.tfList.length > 0) tfList = [...csvPanelData.tfList];
+        if (csvPanelData.setupList && csvPanelData.setupList.length > 0) setupList = [...csvPanelData.setupList];
+        if (csvPanelData.confList && csvPanelData.confList.length > 0) confList = [...csvPanelData.confList];
+        if (csvPanelData.linkList && csvPanelData.linkList.length > 0) linkList = [...csvPanelData.linkList];
+        if (csvPanelData.confFilterSelection) confFilterSelection = [...csvPanelData.confFilterSelection];
+      }
+      saveConfFilterSelection();
+      saveLists();
+      const imported = csvContentToTrades(csv);
+      if (imported.length === 0) { await showAlert('Geçersiz CSV veya hiç trade bulunamadı.'); save(); renderAll(); return; }
+      for (const t of imported) { t.updatedAt = Date.now(); trades.push(t); }
+      save();
+      syncAllToFirestore();
+      renderAll();
+      buildConfGrid();
+      buildConfFilterDropdown();
+      populateSelectors();
+      renderLinkFields();
+      renderTrades();
+      await showAlert(imported.length + ' trade içe aktarıldı.' + (csvPanelData ? ' Panel ayarları yüklendi.' : ''));
+      $('importInput').value = '';
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  $('exportBtn').addEventListener('click', () => {
+    const csv = tradesToCsv();
+    const blob = new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'trade_notlari.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  function sanitizeCsvVal(val) {
+    const s = String(val);
+    if (/^[=+\-@\t\r]/.test(s)) return "'" + s;
+    return s;
+  }
+
+  function tradesToCsv() {
+    const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList, confFilterSelection });
+    const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
+    const headers = [...fixedHeaders, ...linkList, 'Not'];
+    const rows = trades.map(t => [
+      t.date || '', t.pair || '', t.tf || '', t.setup || '',
+      (t.confirmations || []).join(', '),
+      t.result || '',
+      t.rr != null ? Number(t.rr).toFixed(2) : '',
+      ...linkList.map(title => (t.links && t.links[title]) || ''),
+      t.not || ''
+    ]);
+    return '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${sanitizeCsvVal(v)}"`).join(','))].join('\n');
+  }
+
+  // --- CSV parse utilities ---
+  function parseCsvLine(line) {
+    const r = []; let c = ''; let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { if (q && i+1 < line.length && line[i+1] === '"') { c += '"'; i++; } else { q = !q; } }
+      else if (ch === ',' && !q) { r.push(c); c = ''; }
+      else { c += ch; }
+    }
+    r.push(c); return r;
+  }
+
+  function csvContentToTrades(csv) {
+    const lines = csv.replace(/\r\n/g, '\n').split('\n').filter(l => {
+      const t = l.trim();
+      return t && !t.startsWith('#');
+    });
+    if (lines.length < 2) return [];
+    const hdrs = parseCsvLine(lines[0]).map(h => h.trim());
+    const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
+    const idx = {};
+    const linkHeaders = [];
+    hdrs.forEach((h, i) => {
+      if (fixedExpected.includes(h)) idx[h] = i;
+      else if (!['','id'].includes(h)) linkHeaders.push(h);
+    });
+    if (!idx['Parite'] || !idx['Setup']) return [];
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+      const f = parseCsvLine(lines[i]);
+      const get = (n) => f[idx[n]] || '';
+      const rrRaw = get('RR');
+      const rr = rrRaw !== '' ? parseFloat(rrRaw.replace(',','.')) : null;
+      const confRaw = get('Konfirmasyonlar');
+      const links = {};
+      linkHeaders.forEach(h => { const v = f[hdrs.indexOf(h)]; if (v && v.trim()) links[h] = v.trim(); });
+      const trade = {
+        id: Date.now() + result.length,
+        date: get('Tarih'), pair: get('Parite'), tf: get('TF'),
+        setup: get('Setup'), result: get('Sonuç'),
+        rr: !isNaN(rr) ? rr : null,
+        links: Object.keys(links).length > 0 ? links : undefined,
+        not: get('Not'),
+        confirmations: confRaw ? confRaw.split(',').map(s => s.trim()).filter(Boolean) : []
+      };
+      if (trade.pair && trade.setup && trade.result) result.push(trade);
+    }
+    return result;
+  }
+
+  function extractPanelDataFromCsv(csv) {
+    for (const line of csv.replace(/\r\n/g, '\n').split('\n')) {
+      const t = line.trim();
+      if (t.startsWith('#PANEL ')) {
+        try { return JSON.parse(t.slice(7)); } catch(e) { return null; }
+      }
+      if (t && !t.startsWith('#')) break;
+    }
+    return null;
+  }
+
+  // --- Preview / Fullscreen ---
+  const previewPopup = $('previewPopup');
+  const previewImg = $('previewImg');
+  const fullscreenModal = $('fullscreenModal');
+  const fullscreenImg = $('fullscreenImg');
+  let previewHideTimer = null;
+  let previewShowTimer = null;
+
+  function positionPreview(el) {
+    const rect = el.getBoundingClientRect();
+    const gap = 12;
+    const margin = 24;
+    const pw = Math.min(window.innerWidth * 0.5, 800);
+    const ph = Math.min(window.innerHeight * 0.5, 500);
+
+    const fitBelow = rect.bottom + gap + ph <= window.innerHeight - margin;
+    const fitAbove = rect.top - gap - ph >= margin;
+
+    let top;
+    if (fitBelow) top = rect.bottom + gap;
+    else if (fitAbove) top = rect.top - gap - ph;
+    else top = margin + (window.innerHeight - ph - 2 * margin) / 2;
+
+    const fitRight = rect.left + pw <= window.innerWidth - margin;
+    const fitLeft = rect.right - pw >= margin;
+
+    let left;
+    if (fitRight) left = rect.left;
+    else if (fitLeft) left = rect.right - pw;
+    else left = margin + (window.innerWidth - pw - 2 * margin) / 2;
+
+    left = Math.round(Math.max(margin, Math.min(left, window.innerWidth - pw - margin)));
+    top  = Math.round(Math.max(margin, Math.min(top, window.innerHeight - ph - margin)));
+
+    previewPopup.style.left = left + 'px';
+    previewPopup.style.top = top + 'px';
+    previewPopup.style.width = pw + 'px';
+    previewPopup.style.height = ph + 'px';
+  }
+
+  function showPreview(url, el) {
+    positionPreview(el);
+    previewPopup.style.display = 'block';
+    previewPopup.classList.remove('show');
+    void previewPopup.offsetHeight;
+    previewPopup.classList.add('show');
+    previewImg.onload = () => {};
+    previewImg.onerror = () => { hidePreview(); };
+    previewImg.src = url;
+  }
+
+  function hidePreview() {
+    previewPopup.classList.remove('show');
+    previewPopup.style.display = 'none';
+    previewPopup.style.width = '';
+    previewPopup.style.height = '';
+    previewImg.src = '';
+    previewImg.onload = null;
+    previewImg.onerror = null;
+  }
+
+  function previewEnter(el) {
+    clearTimeout(previewHideTimer);
+    const url = el.getAttribute('data-url');
+    if (!url) return;
+    clearTimeout(previewShowTimer);
+    previewShowTimer = setTimeout(() => showPreview(url, el), 200);
+  }
+
+  function previewLeave() {
+    clearTimeout(previewShowTimer);
+    clearTimeout(previewHideTimer);
+    previewHideTimer = setTimeout(hidePreview, 350);
+  }
+
+  previewPopup.addEventListener('mouseenter', () => {
+    clearTimeout(previewHideTimer);
+  });
+  previewPopup.addEventListener('mouseleave', () => {
+    previewLeave();
+  });
+  previewImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const url = previewImg.src;
+    if (url) openFullscreen(url);
+  });
+
+  function openFullscreen(url) {
+    fullscreenImg.src = url;
+    fullscreenModal.style.display = 'block';
+  }
+  function closeFullscreen() {
+    fullscreenModal.style.display = 'none';
+    fullscreenImg.src = '';
+  }
+  fullscreenModal.addEventListener('click', closeFullscreen);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && fullscreenModal.style.display === 'block') closeFullscreen();
+  });
+
+  // Conf filter toggle
+  $('confFilterTrigger').addEventListener('click', showConfFilter);
+
+  // Init — chat and CSV panel elements
+  const chatPanel = $('chatPanel');
+  const csvPanel = $('csvPanel');
+  const chatToggle = $('chatToggle');
+  const csvToggle = $('csvToggle');
+  let chatUnsub = null;
+  let hasUnreadChat = false;
+  let isAdmin = false;
+  let blockedUsers = [];
+  let allUsers = [];
+  const nicknameOverrideMap = {};
+  const adminPanel = $('adminPanel');
+  const adminToggle = $('adminToggle');
+
+  async function checkAdmin() {
+    if (!currentUser) return false;
+    try {
+      const snap = await getDoc(doc(db, 'admin', 'config'));
+      const admins = snap.exists() ? (snap.data().admins || snap.data().uids || []) : [];
+      isAdmin = admins.includes(currentUser.uid);
+      blockedUsers = snap.exists() ? (snap.data().blocked || []) : [];
+      if (adminToggle) adminToggle.style.display = isAdmin ? 'flex' : 'none';
+      return isAdmin;
+    } catch(e) { isAdmin = false; return false; }
+  }
+
+  async function loadAdminUsers() {
+    if (!currentUser) return;
+    try {
+      allUsers = [];
+      const collections = ['users', 'trades', 'csv_storage', 'user_settings'];
+      for (const col of collections) {
+        try {
+          const snap = await getDocs(collection(db, col));
+          snap.forEach(doc => {
+            if (!allUsers.find(u => u.uid === doc.id)) {
+              allUsers.push({ uid: doc.id });
+            }
+          });
+        } catch(e) { /* skip collection */ }
+      }
+      // Fetch email and nickname for each user
+      const emailMap = {};
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        usersSnap.forEach(d => { emailMap[d.id] = d.data().email || ''; });
+      } catch(e) { /* skip */ }
+      const nickMap = {};
+      const nickAdminMap = {};
+      try {
+        const csvSnap = await getDocs(collection(db, 'csv_storage'));
+        csvSnap.forEach(d => {
+          nickMap[d.id] = d.data().nickname || '';
+          nickAdminMap[d.id] = d.data().nickname_admin || '';
+          const override = d.data().nickname_admin || d.data().nickname;
+          if (override) nicknameOverrideMap[d.id] = override;
+        });
+      } catch(e) { /* skip */ }
+      allUsers.forEach(u => {
+        u.email = emailMap[u.uid] || '';
+        u.nickname = nickMap[u.uid] || '';
+        u.nickname_admin = nickAdminMap[u.uid] || '';
+      });
+    } catch(e) { console.error('Admin load error:', e); }
+    renderAdminUserList();
+  }
+
+  function renderAdminUserList() {
+    const container = $('adminUserList');
+    if (!container) return;
+    if (allUsers.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:20px">Henüz kullanıcı yok.</div>';
+      return;
+    }
+    container.innerHTML = allUsers.map(u => {
+      const isBlocked = blockedUsers.includes(u.uid);
+      const shortUid = u.uid.slice(0, 8) + '...';
+      const displayNick = u.nickname_admin || u.nickname;
+      const info = displayNick ? escapeHtml(displayNick + ':' + u.email + ':' + shortUid) : escapeHtml(u.email + ':' + shortUid);
+      const nickLabel = displayNick ? escapeHtml(displayNick) : 'Nick +';
+      return `<div class="admin-user-row">
+        <span title="${escapeHtml(u.uid)}">${info} ${isBlocked ? '🚫' : ''}</span>
+        <div class="admin-actions">
+          <button data-uid="${u.uid}" data-action="edit-nick">${nickLabel}</button>
+          <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
+          <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
+          <button data-uid="${u.uid}" data-action="${isBlocked ? 'unblock-user' : 'block-user'}" ${isBlocked ? 'style="background:var(--danger);color:#fff"' : ''}>${isBlocked ? 'Aç' : 'Engelle'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  $('adminBody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const uid = btn.getAttribute('data-uid');
+    const action = btn.getAttribute('data-action');
+    if (action === 'view-csv') {
+      try {
+        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        if (filesSnap.empty) {
+          // Fallback: try reading trades from the trades collection
+          const tradeSnap = await getDocs(collection(db, 'trades', uid, 'items'));
+          if (tradeSnap.empty) {
+            await showAlert('Bu kullanıcının CSV veya trade verisi yok.');
+            return;
+          }
+          const tmpTrades = tradeSnap.docs.map(d => d.data());
+          // Check if trades have required fields (same as csvContentToTrades validation)
+          const validTrades = tmpTrades.filter(t => t.pair && t.setup && t.result);
+          if (validTrades.length === 0) {
+            await showAlert('Bu kullanıcının geçerli trade verisi yok.');
+            return;
+          }
+          // Read user's panel settings for full #PANEL data (includes unused list items)
+          let settings = {};
+          try {
+            const sSnap = await getDoc(doc(db, 'user_settings', uid));
+            if (sSnap.exists()) settings = sSnap.data();
+          } catch(e) {}
+          // Build CSV content with #PANEL header (same format as tradesToCsv)
+          const panelJson = JSON.stringify({
+            pairList: settings.pairList || [],
+            tfList: settings.tfList || [],
+            setupList: settings.setupList || [],
+            confList: settings.confList || [],
+            linkList: settings.linkList || [],
+            confFilterSelection: settings.confFilterSelection || []
+          });
+          const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
+          const allLinkTitles = settings.linkList || [];
+          const headers = [...fixedHeaders, ...allLinkTitles, 'Not'];
+          const rows = validTrades.map(t => [
+            t.date || '', t.pair || '', t.tf || '', t.setup || '',
+            (t.confirmations || []).join(', '),
+            t.result || '',
+            t.rr != null ? Number(t.rr).toFixed(2) : '',
+            ...allLinkTitles.map(title => (t.links && t.links[title]) || ''),
+            t.not || ''
+          ]);
+          const csvContent = '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${sanitizeCsvVal(v)}"`).join(','))].join('\n');
+          adminPanel.classList.remove('open');
+          adminToggle.classList.remove('active');
+          await showAlert('Bu kullanıcı buluta CSV kaydetmemiş. Trade verilerinden oluşturuldu.');
+          startPreview(csvContent, null);
+          return;
+        }
+        // Find the latest file by updatedAt
+        const latest = filesSnap.docs.sort((a, b) => {
+          const au = a.data().updatedAt?.seconds || 0;
+          const bu = b.data().updatedAt?.seconds || 0;
+          return bu - au;
+        })[0];
+        const d = latest.data();
+        const csvContent = d.content || '';
+        if (!csvContent) { await showAlert('CSV içeriği boş.'); return; }
+        // Close admin panel before preview
+        adminPanel.classList.remove('open');
+        adminToggle.classList.remove('active');
+        startPreview(csvContent, d);
+      } catch(e) { await showAlert('CSV yüklenemedi: ' + e.message); }
+    } else if (action === 'view-info') {
+      await showAlert('UID: ' + uid);
+    } else if (action === 'block-user' || action === 'unblock-user') {
+      try {
+        const snap = await getDoc(doc(db, 'admin', 'config'));
+        if (!snap.exists()) { await showAlert('Admin config bulunamadı.'); return; }
+        const data = snap.data();
+        let blocked = data.blocked || [];
+        if (action === 'block-user') {
+          if (!blocked.includes(uid)) blocked.push(uid);
+        } else {
+          blocked = blocked.filter(id => id !== uid);
+        }
+        await setDoc(doc(db, 'admin', 'config'), { ...data, blocked });
+        blockedUsers = blocked;
+        renderAdminUserList();
+        await showAlert(action === 'block-user' ? 'Kullanıcı engellendi.' : 'Kullanıcı engeli kaldırıldı.');
+      } catch(e) { await showAlert('İşlem başarısız: ' + e.message); }
+    } else if (action === 'edit-nick') {
+      const currentNick = btn.textContent === 'Nick +' ? '' : btn.textContent;
+      btn.innerHTML = '';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = currentNick;
+      inp.style.cssText = 'width:70px;padding:2px 4px;border-radius:4px;border:1px solid var(--border-light);background:var(--bg-card);color:var(--text);font-size:11px;outline:none';
+      btn.appendChild(inp);
+      inp.focus();
+      inp.select();
+      const finish = async (save) => {
+        if (save) {
+          const val = inp.value.trim();
+          if (val) {
+                try {
+              await setDoc(doc(db, 'csv_storage', uid), { nickname_admin: val, nickname: val }, { merge: true });
+              nicknameOverrideMap[uid] = val;
+              if (uid === currentUser.uid) localStorage.setItem('chatNickname', val);
+            } catch(e) { /* skip */ }
+          }
+        }
+        renderAdminUserList();
+      };
+      inp.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+      });
+      inp.addEventListener('blur', () => finish(true));
+    }
+  });
+
+  function openPopup(type) {
+    const getPanel = (t) => t === 'chat' ? chatPanel : t === 'csv' ? csvPanel : adminPanel;
+    const getToggle = (t) => t === 'chat' ? chatToggle : t === 'csv' ? csvToggle : adminToggle;
+    const openPanel = getPanel(type);
+    const openTgl = getToggle(type);
+    const closePanels = [chatPanel, csvPanel, adminPanel].filter(p => p !== openPanel);
+    const closeTgls = [chatToggle, csvToggle, adminToggle].filter(t => t !== openTgl);
+    const alreadyOpen = openPanel.classList.contains('open');
+    if (alreadyOpen) {
+      openPanel.classList.remove('open');
+      openTgl.classList.remove('active');
+      if (type === 'chat') localStorage.setItem('chatLastSeen', Date.now().toString());
+      else if (type === 'csv') localStorage.setItem('csvLastSeen', Date.now().toString());
+      return;
+    }
+    closePanels.forEach(p => p.classList.remove('open'));
+    closeTgls.forEach(t => t.classList.remove('active'));
+    openPanel.classList.add('open');
+    openTgl.classList.add('active');
+    if (type === 'chat') {
+      const nickname = localStorage.getItem('chatNickname');
+      const nicknameWrap = $('chatNicknameWrap');
+      const chatBody = $('chatBody');
+      const chatFooter = $('chatFooter');
+      if (!nickname) {
+        nicknameWrap.style.display = 'flex';
+        chatBody.style.display = 'none';
+        chatFooter.style.display = 'none';
+      } else {
+        nicknameWrap.style.display = 'none';
+        chatBody.style.display = 'flex';
+        chatFooter.style.display = 'flex';
+        if (chatUnsub) chatUnsub();
+        initChat();
+      }
+      restoreChatSize();
+      chatToggle.classList.remove('has-unread');
+      hasUnreadChat = false;
+      localStorage.setItem('chatLastSeen', Date.now().toString());
+    } else if (type === 'csv') {
+      csvToggle.classList.remove('has-unread');
+      loadCsvMeta();
+      loadMyCsvFiles();
+    } else if (type === 'admin') {
+      loadAdminUsers();
+    }
+  }
+
+  $('popupContainer').addEventListener('click', (e) => {
+    const close = e.target.closest('.pp-close');
+    if (!close) return;
+    const type = close.getAttribute('data-popup');
+    if (type === 'chat') { chatPanel.classList.remove('open'); chatToggle.classList.remove('active'); localStorage.setItem('chatLastSeen', Date.now().toString()); }
+    else if (type === 'csv') { csvPanel.classList.remove('open'); csvToggle.classList.remove('active'); isWatchingPublic = false; localStorage.setItem('csvLastSeen', Date.now().toString()); }
+    else if (type === 'admin') { adminPanel.classList.remove('open'); adminToggle.classList.remove('active'); }
+  });
+  chatToggle.addEventListener('click', () => openPopup('chat'));
+  csvToggle.addEventListener('click', () => openPopup('csv'));
+  adminToggle.addEventListener('click', () => openPopup('admin'));
+
+  // Auth guard and init
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUser = user;
+    // Register user doc for admin panel visibility
+    setDoc(doc(db, 'users', user.uid), {
+      email: user.email, uid: user.uid, lastSeen: serverTimestamp()
+    }).catch(() => {});
+    const ui = $('userInfo');
+    ui.style.display = 'flex';
+    $('userEmail').textContent = user.email;
+    $('logoutBtn').addEventListener('click', () => {
+      if (chatUnsub) chatUnsub();
+      if (csvPublicUnsub) csvPublicUnsub();
+      signOut(auth);
+      window.location.href = 'index.html';
+    });
+
+    // Load trades from Firestore (source of truth), fall back to localStorage cache
+    const ok = await loadFromFirestore();
+    if (!ok) {
+      load(); // localStorage'tan yükle (Firestore boşsa)
+    }
+    syncAllToFirestore(); // her login'de Firestore güncel kalır
+
+    loadBgPref();
+    loadThemePref();
+    loadLists();
+    loadCustomDefaults();
+    await loadUserSettings();
+    loadConfFilterSelection();
+    buildConfGrid();
+    buildConfFilterDropdown();
+    populateSelectors();
+    renderAll();
+    resetForm();
+    if (editMode) {
+      tradeCard.classList.add('edit-active');
+      renderAllChips();
+    }
+    checkAdmin();
+    // Read nickname_admin override from Firestore
+    try {
+      const metaSnap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+      if (metaSnap.exists()) {
+        const meta = metaSnap.data();
+        const override = meta.nickname_admin || meta.nickname;
+        if (override) {
+          nicknameOverrideMap[currentUser.uid] = override;
+          localStorage.setItem('chatNickname', override);
+        }
+      }
+    } catch(e) { /* skip */ }
+    // Ensure nickname in meta at login
+    const savedNick = localStorage.getItem('chatNickname');
+    if (savedNick) {
+      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: savedNick }, { merge: true }).catch(() => {});
+    }
+    restoreChatPosition();
+    initChatDrag();
+    initChatResize();
+    restoreCsvPosition();
+    restoreCsvSize();
+    initCsvDrag();
+    initCsvResize();
+    restoreAdminPosition();
+    restoreAdminSize();
+    initAdminDrag();
+    initAdminResize();
+    if (!chatUnsub) initChat();
+    initCsvPublicWatcher();
+  });
+
+  // ====== CHAT ======
+  let chatMessages = null;
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // --- Custom modal ---
+  const modalOverlay = $('modalOverlay');
+  const modalTitle = $('modalTitle');
+  const modalMsg = $('modalMsg');
+  const modalBtns = $('modalBtns');
+
+  function showModal(title, msg, buttons) {
+    return new Promise(resolve => {
+      modalTitle.textContent = title;
+      modalMsg.textContent = msg;
+      modalBtns.innerHTML = '';
+      buttons.forEach((b, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = b.label;
+        if (b.primary) btn.className = 'btn-primary';
+        if (b.danger) btn.className = 'btn-danger';
+        btn.addEventListener('click', () => {
+          closeModal();
+          resolve(b.value);
+        });
+        modalBtns.appendChild(btn);
+      });
+      modalOverlay.classList.add('open');
+    });
+  }
+
+  function closeModal() { modalOverlay.classList.remove('open'); }
+
+  function showAlert(msg) {
+    return showModal('Bilgi', msg, [{ label: 'Tamam', value: undefined, primary: true }]);
+  }
+
+  function showConfirm(msg) {
+    return showModal('Onay', msg, [
+      { label: 'İptal', value: false },
+      { label: 'Tamam', value: true, danger: true }
+    ]);
+  }
+
+  function initChat() {
+    chatMessages = $('chatBody');
+    chatUnsub = onSnapshot(
+      query(collection(db, 'messages'), orderBy('createdAt', 'desc'), limit(200)),
+      (snap) => {
+        // Update unread badge BEFORE early return (panel closed while message arrives)
+        if (!chatPanel.classList.contains('open')) {
+          if (snap.empty) {
+            chatToggle.classList.remove('has-unread');
+            hasUnreadChat = false;
+          } else {
+            const lastSeen = parseInt(localStorage.getItem('chatLastSeen'));
+            let hasNew = false;
+            if (lastSeen) {
+              snap.forEach(d => {
+                const m = d.data();
+                const t = m.createdAt?.seconds ? m.createdAt.seconds * 1000 : 0;
+                if (t > lastSeen) hasNew = true;
+              });
+            }
+            if (hasNew) {
+              chatToggle.classList.add('has-unread');
+              hasUnreadChat = true;
+            } else {
+              chatToggle.classList.remove('has-unread');
+              hasUnreadChat = false;
+            }
+          }
+        } else {
+          chatToggle.classList.remove('has-unread');
+          hasUnreadChat = false;
+        }
+        if (!chatPanel.classList.contains('open')) return;
+        chatMessages.innerHTML = '';
+        let hasMsg = false;
+        const docs = [];
+        snap.forEach(d => docs.push(d));
+        docs.reverse();
+        docs.forEach((d) => {
+          hasMsg = true;
+          const m = d.data();
+          const isOwn = m.uid === currentUser.uid;
+          const time = m.createdAt
+            ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+            : '';
+          const overriddenNick = nicknameOverrideMap[m.uid];
+          const sender = overriddenNick || m.nickname || (m.uid ? m.uid.slice(0, 6) + '..' : 'Anonim');
+          chatMessages.innerHTML +=
+            `<div class="chat-msg ${isOwn ? 'own' : 'other'}">` +
+            (isOwn ? '' : `<div class="msg-sender">${escapeHtml(sender)}</div>`) +
+            `<div class="bubble">${escapeHtml(m.text || '')}</div>` +
+            `<div class="msg-time">${time}</div></div>`;
+        });
+        if (!hasMsg) chatMessages.innerHTML = '<div class="chat-empty">Henüz mesaj yok.</div>';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      },
+      (err) => { console.error('Chat error:', err); }
+    );
+  }
+
+  async function sendChatMessage() {
+    const inp = $('chatInput');
+    const text = inp.value.trim();
+    if (!text || !currentUser) return;
+    inp.value = '';
+
+    // /clean command for admins
+    if (isAdmin && text === '/clean') {
+      if (!(await showConfirm('Tüm chat mesajlarını silmek istediğinize emin misiniz?'))) return;
+      try {
+        const snap = await getDocs(collection(db, 'messages'));
+        let count = 0;
+        for (const d of snap.docs) {
+          await deleteDoc(d.ref);
+          count++;
+        }
+        await showAlert('Chat temizlendi. ' + count + ' mesaj silindi.');
+      } catch(e) { await showAlert('Temizlik başarısız: ' + e.message); }
+      return;
+    }
+
+    // Blocked check
+    if (blockedUsers.includes(currentUser.uid)) {
+      await showAlert('Sohbet engellenmiş durumdasınız.');
+      return;
+    }
+
+    const nickname = localStorage.getItem('chatNickname') || currentUser.email;
+    if (text.length > 500) { await showAlert('Mesaj çok uzun (maks 500 karakter).'); return; }
+    try {
+      await addDoc(collection(db, 'messages'), {
+        uid: currentUser.uid,
+        nickname: nickname,
+        text: text,
+        createdAt: serverTimestamp()
+      });
+    } catch(e) { console.error('Send error:', e); }
+  }
+
+  $('chatSendBtn').addEventListener('click', sendChatMessage);
+  $('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+  $('chatNicknameBtn').addEventListener('click', async () => {
+    const inp = $('chatNicknameInput');
+    const val = inp.value.trim();
+    if (!val) { await showAlert('Lütfen bir rumuz girin.'); return; }
+    localStorage.setItem('chatNickname', val);
+    if (currentUser) {
+      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: val }, { merge: true }).catch(() => {});
+    }
+    inp.value = '';
+    const nicknameWrap = $('chatNicknameWrap');
+    const chatBody = $('chatBody');
+    const chatFooter = $('chatFooter');
+    nicknameWrap.style.display = 'none';
+    chatBody.style.display = 'flex';
+    chatFooter.style.display = 'flex';
+    if (!chatUnsub) initChat();
+  });
+
+  $('chatNicknameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('chatNicknameBtn').click();
+  });
+
+  function saveChatSize() {
+    const w = chatPanel.offsetWidth;
+    const h = chatPanel.offsetHeight;
+    localStorage.setItem('chatPanelWidth', w);
+    localStorage.setItem('chatPanelHeight', h);
+  }
+
+  function restoreChatSize() {
+    const w = localStorage.getItem('chatPanelWidth');
+    const h = localStorage.getItem('chatPanelHeight');
+    if (w) chatPanel.style.width = w + 'px';
+    if (h) chatPanel.style.height = h + 'px';
+  }
+
+  function restoreChatPosition() {
+    const l = localStorage.getItem('chatPanelLeft');
+    const t = localStorage.getItem('chatPanelTop');
+    if (l && t) {
+      chatPanel.style.bottom = 'auto';
+      chatPanel.style.right = 'auto';
+      chatPanel.style.left = l + 'px';
+      chatPanel.style.top = t + 'px';
+    }
+  }
+
+  let chatDragOffset = { x: 0, y: 0 };
+  let chatIsDragging = false;
+
+  function initChatDrag() {
+    const header = chatPanel.querySelector('.pp-header');
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.pp-close')) return;
+      chatIsDragging = true;
+      chatPanel.style.bottom = 'auto';
+      chatPanel.style.right = 'auto';
+      const rect = chatPanel.getBoundingClientRect();
+      chatDragOffset.x = e.clientX - rect.left;
+      chatDragOffset.y = e.clientY - rect.top;
+    });
+  }
+
+  let chatIsResizing = false;
+  let chatResizeStart = { w: 0, h: 0, x: 0, y: 0 };
+
+  function initChatResize() {
+    const handle = document.getElementById('chatResizeHandle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      chatIsResizing = true;
+      const rect = chatPanel.getBoundingClientRect();
+      chatResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
+    });
+  }
+
+  // Clamp chat panel within viewport on resize
+  window.addEventListener('resize', () => {
+    const rect = chatPanel.getBoundingClientRect();
+    const pad = 10;
+    let left = parseInt(chatPanel.style.left) || rect.left;
+    let top = parseInt(chatPanel.style.top) || rect.top;
+    const maxLeft = window.innerWidth - rect.width - pad;
+    const maxTop = window.innerHeight - rect.height - pad;
+    if (left > maxLeft || top > maxTop || left < pad || top < pad) {
+      chatPanel.style.left = Math.max(pad, Math.min(left, maxLeft)) + 'px';
+      chatPanel.style.top = Math.max(pad, Math.min(top, maxTop)) + 'px';
+      localStorage.setItem('chatPanelLeft', chatPanel.style.left.replace('px',''));
+      localStorage.setItem('chatPanelTop', chatPanel.style.top.replace('px',''));
+    }
+    // Also clamp CSV panel
+    const crect = csvPanel.getBoundingClientRect();
+    let cleft = parseInt(csvPanel.style.left) || crect.left;
+    let ctop = parseInt(csvPanel.style.top) || crect.top;
+    const cmaxLeft = window.innerWidth - crect.width - pad;
+    const cmaxTop = window.innerHeight - crect.height - pad;
+    if (cleft > cmaxLeft || ctop > cmaxTop || cleft < pad || ctop < pad) {
+      csvPanel.style.left = Math.max(pad, Math.min(cleft, cmaxLeft)) + 'px';
+      csvPanel.style.top = Math.max(pad, Math.min(ctop, cmaxTop)) + 'px';
+      localStorage.setItem('csvPanelLeft', csvPanel.style.left.replace('px',''));
+      localStorage.setItem('csvPanelTop', csvPanel.style.top.replace('px',''));
+    }
+    // Also clamp admin panel
+    const arect = adminPanel.getBoundingClientRect();
+    let aleft = parseInt(adminPanel.style.left) || arect.left;
+    let atop = parseInt(adminPanel.style.top) || arect.top;
+    const amaxLeft = window.innerWidth - arect.width - pad;
+    const amaxTop = window.innerHeight - arect.height - pad;
+    if (aleft > amaxLeft || atop > amaxTop || aleft < pad || atop < pad) {
+      adminPanel.style.left = Math.max(pad, Math.min(aleft, amaxLeft)) + 'px';
+      adminPanel.style.top = Math.max(pad, Math.min(atop, amaxTop)) + 'px';
+      localStorage.setItem('adminPanelLeft', adminPanel.style.left.replace('px',''));
+      localStorage.setItem('adminPanelTop', adminPanel.style.top.replace('px',''));
+    }
+  });
+
+  // CSV drag
+  let csvDragOffset = { x: 0, y: 0 };
+  let csvIsDragging = false;
+
+  function initCsvDrag() {
+    const header = csvPanel.querySelector('.pp-header');
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.pp-close')) return;
+      csvIsDragging = true;
+      csvPanel.style.bottom = 'auto';
+      csvPanel.style.right = 'auto';
+      const rect = csvPanel.getBoundingClientRect();
+      csvDragOffset.x = e.clientX - rect.left;
+      csvDragOffset.y = e.clientY - rect.top;
+    });
+  }
+
+  // CSV resize
+  let csvIsResizing = false;
+  let csvResizeStart = { w: 0, h: 0, x: 0, y: 0 };
+
+  function initCsvResize() {
+    const handle = document.getElementById('csvResizeHandle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      csvIsResizing = true;
+      const rect = csvPanel.getBoundingClientRect();
+      csvResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
+    });
+  }
+
+  function saveCsvSize() {
+    localStorage.setItem('csvPanelWidth', csvPanel.offsetWidth);
+    localStorage.setItem('csvPanelHeight', csvPanel.offsetHeight);
+  }
+
+  function restoreCsvSize() {
+    const w = localStorage.getItem('csvPanelWidth');
+    const h = localStorage.getItem('csvPanelHeight');
+    if (w) csvPanel.style.width = w + 'px';
+    if (h) csvPanel.style.height = h + 'px';
+  }
+
+  function restoreCsvPosition() {
+    const l = localStorage.getItem('csvPanelLeft');
+    const t = localStorage.getItem('csvPanelTop');
+    if (l && t) {
+      csvPanel.style.bottom = 'auto';
+      csvPanel.style.right = 'auto';
+      csvPanel.style.left = l + 'px';
+      csvPanel.style.top = t + 'px';
+    }
+  }
+
+  // Admin drag
+  let adminDragOffset = { x: 0, y: 0 };
+  let adminIsDragging = false;
+
+  function initAdminDrag() {
+    const header = adminPanel.querySelector('.pp-header');
+    header.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.pp-close')) return;
+      adminIsDragging = true;
+      adminPanel.style.bottom = 'auto';
+      adminPanel.style.right = 'auto';
+      const rect = adminPanel.getBoundingClientRect();
+      adminDragOffset.x = e.clientX - rect.left;
+      adminDragOffset.y = e.clientY - rect.top;
+    });
+  }
+
+  // Admin resize
+  let adminIsResizing = false;
+  let adminResizeStart = { w: 0, h: 0, x: 0, y: 0 };
+
+  function initAdminResize() {
+    const handle = document.getElementById('adminResizeHandle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      adminIsResizing = true;
+      const rect = adminPanel.getBoundingClientRect();
+      adminResizeStart = { w: rect.width, h: rect.height, x: e.clientX, y: e.clientY };
+    });
+  }
+
+  function saveAdminSize() {
+    localStorage.setItem('adminPanelWidth', adminPanel.offsetWidth);
+    localStorage.setItem('adminPanelHeight', adminPanel.offsetHeight);
+  }
+
+  function restoreAdminSize() {
+    const w = localStorage.getItem('adminPanelWidth');
+    const h = localStorage.getItem('adminPanelHeight');
+    if (w) adminPanel.style.width = w + 'px';
+    if (h) adminPanel.style.height = h + 'px';
+  }
+
+  function restoreAdminPosition() {
+    const l = localStorage.getItem('adminPanelLeft');
+    const t = localStorage.getItem('adminPanelTop');
+    if (l && t) {
+      adminPanel.style.bottom = 'auto';
+      adminPanel.style.right = 'auto';
+      adminPanel.style.left = l + 'px';
+      adminPanel.style.top = t + 'px';
+    }
+  }
+
+  // Global mousemove: drag/resize with viewport clamping
+  document.addEventListener('mousemove', (e) => {
+    const pad = 10;
+    if (chatIsDragging) {
+      const maxLeft = window.innerWidth - chatPanel.offsetWidth - pad;
+      const maxTop = window.innerHeight - chatPanel.offsetHeight - pad;
+      chatPanel.style.left = Math.max(pad, Math.min(e.clientX - chatDragOffset.x, maxLeft)) + 'px';
+      chatPanel.style.top = Math.max(pad, Math.min(e.clientY - chatDragOffset.y, maxTop)) + 'px';
+    } else if (chatIsResizing) {
+      const cl = parseInt(chatPanel.style.left) || pad;
+      const ct = parseInt(chatPanel.style.top) || pad;
+      const dw = e.clientX - chatResizeStart.x;
+      const dh = e.clientY - chatResizeStart.y;
+      const newW = Math.max(280, Math.min(chatResizeStart.w + dw, window.innerWidth - cl - pad));
+      const newH = Math.max(200, Math.min(chatResizeStart.h + dh, window.innerHeight - ct - pad));
+      chatPanel.style.width = newW + 'px';
+      chatPanel.style.height = newH + 'px';
+    } else if (csvIsDragging) {
+      const maxLeft = window.innerWidth - csvPanel.offsetWidth - pad;
+      const maxTop = window.innerHeight - csvPanel.offsetHeight - pad;
+      csvPanel.style.left = Math.max(pad, Math.min(e.clientX - csvDragOffset.x, maxLeft)) + 'px';
+      csvPanel.style.top = Math.max(pad, Math.min(e.clientY - csvDragOffset.y, maxTop)) + 'px';
+    } else if (csvIsResizing) {
+      const cl = parseInt(csvPanel.style.left) || pad;
+      const ct = parseInt(csvPanel.style.top) || pad;
+      const dw = e.clientX - csvResizeStart.x;
+      const dh = e.clientY - csvResizeStart.y;
+      const newW = Math.max(340, Math.min(csvResizeStart.w + dw, window.innerWidth - cl - pad));
+      const newH = Math.max(260, Math.min(csvResizeStart.h + dh, window.innerHeight - ct - pad));
+      csvPanel.style.width = newW + 'px';
+      csvPanel.style.height = newH + 'px';
+    } else if (adminIsDragging) {
+      const maxLeft = window.innerWidth - adminPanel.offsetWidth - pad;
+      const maxTop = window.innerHeight - adminPanel.offsetHeight - pad;
+      adminPanel.style.left = Math.max(pad, Math.min(e.clientX - adminDragOffset.x, maxLeft)) + 'px';
+      adminPanel.style.top = Math.max(pad, Math.min(e.clientY - adminDragOffset.y, maxTop)) + 'px';
+    } else if (adminIsResizing) {
+      const cl = parseInt(adminPanel.style.left) || pad;
+      const ct = parseInt(adminPanel.style.top) || pad;
+      const dw = e.clientX - adminResizeStart.x;
+      const dh = e.clientY - adminResizeStart.y;
+      const newW = Math.max(300, Math.min(adminResizeStart.w + dw, window.innerWidth - cl - pad));
+      const newH = Math.max(200, Math.min(adminResizeStart.h + dh, window.innerHeight - ct - pad));
+      adminPanel.style.width = newW + 'px';
+      adminPanel.style.height = newH + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (chatIsDragging) {
+      chatIsDragging = false;
+      const rect = chatPanel.getBoundingClientRect();
+      localStorage.setItem('chatPanelLeft', rect.left);
+      localStorage.setItem('chatPanelTop', rect.top);
+    } else if (chatIsResizing) {
+      chatIsResizing = false;
+      saveChatSize();
+    } else if (csvIsDragging) {
+      csvIsDragging = false;
+      const rect = csvPanel.getBoundingClientRect();
+      localStorage.setItem('csvPanelLeft', rect.left);
+      localStorage.setItem('csvPanelTop', rect.top);
+    } else if (csvIsResizing) {
+      csvIsResizing = false;
+      saveCsvSize();
+    } else if (adminIsDragging) {
+      adminIsDragging = false;
+      const rect = adminPanel.getBoundingClientRect();
+      localStorage.setItem('adminPanelLeft', rect.left);
+      localStorage.setItem('adminPanelTop', rect.top);
+    } else if (adminIsResizing) {
+      adminIsResizing = false;
+      saveAdminSize();
+    }
+  });
+
+  // Restore CSV position/size on login
+  restoreCsvPosition();
+  restoreCsvSize();
+
+  // ====== CSV ======
+  const csvNameInput = $('csvNameInput');
+  const csvMyList = $('csvMyList');
+  const csvPublicList = $('csvPublicList');
+  const csvTabMy = $('csvTabMy');
+  const csvTabPublic = $('csvTabPublic');
+  let csvCurrentFileId = null;
+  let csvMyFiles = [];
+  let isPreviewMode = false;
+  let previewBackup = null;
+
+  function getDefaultCsvName() {
+    const nick = nicknameOverrideMap[currentUser.uid] || localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+    return `${nick}_${ts}`;
+  }
+
+  function sanitizeName(str) {
+    return str.replace(/[\/\\:\*\?"<>\|\.]/g, '_').substring(0, 100);
+  }
+
+  async function loadCsvMeta() {
+    if (!currentUser) return {};
+    try {
+      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+      if (snap.exists()) return snap.data();
+    } catch(e) { console.warn('CSV meta load error:', e); }
+    return {};
+  }
+
+  async function saveCsvMeta(data) {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), data);
+    } catch(e) { console.warn('CSV meta save error:', e); }
+  }
+
+  async function loadMyCsvFiles() {
+    if (!currentUser) return;
+    try {
+      const snap = await getDocs(collection(db, 'csv_storage', currentUser.uid, 'files'));
+      csvMyFiles = [];
+      snap.forEach(d => {
+        const d2 = d.data();
+        csvMyFiles.push({ id: d.id, name: d2.name || 'isimsiz', content: d2.content || '', createdAt: d2.createdAt });
+      });
+      csvMyFiles.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      renderCsvMyList();
+    } catch(e) { console.warn('CSV files load error:', e); }
+  }
+
+  function renderCsvMyList() {
+    if (!csvMyList) return;
+    if (csvMyFiles.length === 0) {
+      csvMyList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:10px">Henüz kayıtlı CSV yok.</div>';
+      return;
+    }
+    csvMyList.innerHTML = csvMyFiles.map(f => {
+      const dateStr = f.createdAt ? new Date(f.createdAt.seconds * 1000).toLocaleString('tr-TR') : '';
+      const dispName = sanitizeName(f.name || 'isimsiz');
+      return `<div class="csv-list-item">
+        <div class="csv-item-info">
+          <div class="csv-item-name" title="${escapeHtml(dispName)}">${escapeHtml(dispName)}</div>
+          <div class="csv-item-date">${dateStr}</div>
+        </div>
+        <div class="csv-item-actions">
+          <button class="csv-open" data-id="${f.id}">Aç</button>
+          <button class="csv-delete danger" data-id="${f.id}">Sil</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function openCsvFile(id) {
+    try {
+      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
+      if (!snap.exists()) { await showAlert('CSV bulunamadı.'); return; }
+      const data = snap.data();
+      csvNameInput.value = data.name || '';
+      csvCurrentFileId = id;
+    } catch(e) { await showAlert('CSV açılamadı: ' + e.message); }
+  }
+
+  async function deleteCsvFile(id) {
+    if (!(await showConfirm('Bu CSV\'yi silmek istediğinize emin misiniz?'))) return;
+    try {
+      await deleteDoc(doc(db, 'csv_storage', currentUser.uid, 'files', id));
+      await showAlert('CSV silindi.');
+      await loadMyCsvFiles();
+      if (csvCurrentFileId === id) {
+        csvNameInput.value = '';
+        csvCurrentFileId = null;
+      }
+    } catch(e) { await showAlert('CSV silinemedi: ' + e.message); }
+  }
+
+  async function saveCsvToFirestore() {
+    if (!currentUser) return;
+    if (isPreviewMode) { await showAlert('Önizleme modunda kayıt yapılamaz.'); return; }
+    let name = csvNameInput.value.trim();
+    if (!name) {
+      name = getDefaultCsvName();
+      csvNameInput.value = name;
+    }
+    name = sanitizeName(name);
+    const content = tradesToCsv();
+
+    if (content.length > CSV_MAX_SIZE) {
+      await showAlert('CSV dosyası çok büyük. Maksimum 5MB olabilir. (Şu an: ' + (content.length / 1000000).toFixed(1) + 'MB)');
+      return;
+    }
+
+    // Rate limit check
+    if (!isAdmin) {
+      try {
+        const metaSnap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+        const now = Date.now();
+        let saveCount = 0, saveResetAt = 0;
+        if (metaSnap.exists()) {
+          const d = metaSnap.data();
+          saveCount = d.saveCount || 0;
+          saveResetAt = d.saveResetAt || 0;
+        }
+        if (now > saveResetAt) { saveCount = 0; saveResetAt = now + CSV_SAVE_WINDOW; }
+        if (saveCount >= CSV_SAVE_LIMIT) {
+          const remaining = Math.ceil((saveResetAt - now) / 60000);
+          await showAlert('15 dakika içinde maksimum 3 kayıt yapabilirsiniz. Kalan süre: ' + remaining + ' dakika.');
+          return;
+        }
+        const nickSave = localStorage.getItem('chatNickname') || '';
+        await setDoc(doc(db, 'csv_storage', currentUser.uid), {
+          saveCount: saveCount + 1, saveResetAt, nickname: nickSave,
+          public: true, updatedAt: serverTimestamp()
+        }, { merge: true });
+      } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); return; }
+    } else {
+      // Admin path: ensure nickname in meta and make visible to all
+      const nickSave = localStorage.getItem('chatNickname') || '';
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), {
+        ...(nickSave ? { nickname: nickSave } : {}),
+        public: true
+      }, { merge: true });
+    }
+
+    // Save panel settings alongside content
+    const panelData = { pairList, tfList, setupList, confList, linkList, confFilterSelection };
+
+    // Save file
+    try {
+      if (csvCurrentFileId) {
+        // Update existing
+        await updateDoc(doc(db, 'csv_storage', currentUser.uid, 'files', csvCurrentFileId), {
+          name, content, ...panelData, updatedAt: serverTimestamp()
+        });
+      } else {
+        // New file
+        const newId = crypto.randomUUID();
+        await setDoc(doc(db, 'csv_storage', currentUser.uid, 'files', newId), {
+          name, content, ...panelData, createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        csvCurrentFileId = newId;
+      }
+      // Trigger parent update so public watchers detect the change
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), { updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
+      await showAlert('CSV kaydedildi.');
+      await loadMyCsvFiles();
+    } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); }
+  }
+
+  let csvPublicUnsub = null;
+  let csvPublicCache = [];
+  const csvPublicContentMap = new Map();
+
+  function initCsvPublicWatcher() {
+    if (csvPublicUnsub || !currentUser) return;
+    const q = isAdmin
+      ? collection(db, 'csv_storage')
+      : query(collection(db, 'csv_storage'), where('public', '==', true));
+    csvPublicUnsub = onSnapshot(q, (snap) => {
+      const publicUsers = [];
+      snap.forEach(doc => {
+        if (doc.data().public === true || isAdmin) publicUsers.push({ uid: doc.id, meta: doc.data() });
+      });
+      fetchPublicCsvFiles(publicUsers);
+    });
+  }
+
+  async function fetchPublicCsvFiles(publicUsers) {
+    csvPublicContentMap.clear();
+    let items = [];
+    await Promise.all(publicUsers.map(async ({ uid, meta }) => {
+      try {
+        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        filesSnap.forEach(fd => {
+          const d = fd.data();
+          const key = uid + '_' + fd.id;
+          csvPublicContentMap.set(key, {
+            uid, fileId: fd.id,
+            content: d.content || '',
+            name: d.name || '',
+            pairList: d.pairList || [],
+            tfList: d.tfList || [],
+            setupList: d.setupList || [],
+            confList: d.confList || [],
+            linkList: d.linkList || [],
+            confFilterSelection: d.confFilterSelection || []
+          });
+          const fileTime = d.updatedAt || d.createdAt || null;
+          items.push({
+            uid, fileId: fd.id, key,
+            userName: meta.nickname_admin || meta.nickname || uid.slice(0, 8),
+            name: d.name || 'isimsiz',
+            fileUpdatedAt: fileTime
+          });
+        });
+      } catch(e) { /* skip */ }
+    }));
+    const seen = new Set();
+    items = items.filter(item => {
+      if (seen.has(item.key)) return false;
+      seen.add(item.key);
+      return true;
+    });
+    items.sort((a, b) => {
+      const aTime = a.fileUpdatedAt?.seconds || 0;
+      const bTime = b.fileUpdatedAt?.seconds || 0;
+      return bTime - aTime;
+    });
+    csvPublicCache = items;
+    if (isWatchingPublic) {
+      renderCsvPublicList(items);
+      csvToggle.classList.remove('has-unread');
+    } else if (items.length > 0) {
+      const lastSeen = parseInt(localStorage.getItem('csvLastSeen'));
+      let hasNew = false;
+      if (lastSeen) {
+        for (const item of items) {
+          const t = item.fileUpdatedAt;
+          const fileTime = t?.seconds ? t.seconds * 1000 : (typeof t === 'number' ? t : 0);
+          if (fileTime > lastSeen) { hasNew = true; break; }
+        }
+      }
+      if (hasNew) {
+        csvToggle.classList.add('has-unread');
+      }
+    }
+  }
+
+  function renderCsvPublicList(items) {
+    if (!csvPublicList) return;
+    if (items.length === 0) {
+      csvPublicList.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:10px">Henüz public CSV bulunamadı.</div>';
+      return;
+    }
+    csvPublicList.innerHTML = items.map(item => `
+      <div class="csv-public-item">
+        <div>
+          <div class="csv-pub-user">${escapeHtml(item.userName)}</div>
+          <div class="csv-pub-name">${escapeHtml(sanitizeName(item.name))}</div>
+        </div>
+        <div class="csv-pub-actions">
+          <button class="csv-pub-view" data-key="${item.key}">Önizle</button>
+          ${isAdmin ? `<button class="csv-pub-delete" data-key="${item.key}" style="background:var(--danger);color:#fff">CSV Sil</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Tab switching
+  let isWatchingPublic = false;
+
+  csvTabMy.addEventListener('click', async () => {
+    csvTabMy.classList.add('active');
+    csvTabPublic.classList.remove('active');
+    document.getElementById('csvMyBody').style.display = 'flex';
+    document.getElementById('csvPublicBody').style.display = 'none';
+    if (isWatchingPublic) {
+      isWatchingPublic = false;
+      $('csvSaveBtn').disabled = false;
+      // Restore own settings if backup exists
+      if (window._ownSettingsBackup) {
+        const b = window._ownSettingsBackup;
+        pairList = b.pairList; tfList = b.tfList; setupList = b.setupList;
+        confList = b.confList; linkList = b.linkList;
+        saveLists();
+        if (editMode) renderAllChips();
+        buildConfGrid(); buildConfFilterDropdown(); populateSelectors();
+        renderLinkFields(); renderTrades();
+      } else {
+        await loadUserSettings();
+      }
+    }
+    // Set public=false (skip for admin — admin's CSVs are always public)
+    if (!isAdmin) {
+      try {
+        const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+        if (snap.exists()) {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: false });
+        } else {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: false });
+        }
+      } catch(e) { /* ignore */ }
+    }
+  });
+
+  csvTabPublic.addEventListener('click', async () => {
+    csvTabPublic.classList.add('active');
+    csvTabMy.classList.remove('active');
+    document.getElementById('csvMyBody').style.display = 'none';
+    document.getElementById('csvPublicBody').style.display = 'flex';
+    isWatchingPublic = true;
+    $('csvSaveBtn').disabled = true;
+    // Backup own settings
+    window._ownSettingsBackup = {
+      pairList: [...pairList], tfList: [...tfList], setupList: [...setupList],
+      confList: [...confList], linkList: [...linkList]
+    };
+    // Set public=true (skip for admin — admin's CSVs are always public)
+    if (!isAdmin) {
+      try {
+        const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+        if (snap.exists()) {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: true });
+        } else {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: true });
+        }
+      } catch(e) { /* ignore */ }
+    }
+    // Render from cache immediately, watcher updates in background
+    localStorage.setItem('csvLastSeen', Date.now().toString());
+    if (csvPublicCache.length > 0) {
+      renderCsvPublicList(csvPublicCache);
+      csvToggle.classList.remove('has-unread');
+    }
+  });
+
+  // List event delegation
+  csvMyList.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (btn.classList.contains('csv-open')) openCsvFile(id);
+    else if (btn.classList.contains('csv-delete')) deleteCsvFile(id);
+  });
+
+  function startPreview(csvContent, fallbackPanelData) {
+    if (isPreviewMode) return;
+
+    // Backup current state
+    previewBackup = {
+      trades: JSON.parse(JSON.stringify(trades)),
+      pairList: [...pairList], tfList: [...tfList],
+      setupList: [...setupList], confList: [...confList],
+      linkList: [...linkList],
+      confFilterSelection: [...confFilterSelection]
+    };
+
+    // Parse CSV and load trades
+    const previewTrades = csvContentToTrades(csvContent);
+    if (previewTrades.length === 0) return;
+    trades = previewTrades;
+
+    // Load panel settings: #PANEL header (non-empty) > Firestore fallback > derive from trades
+    const csvPanelData = extractPanelDataFromCsv(csvContent);
+    const csvHasPanel = csvPanelData && (csvPanelData.pairList?.length || csvPanelData.tfList?.length || csvPanelData.setupList?.length || csvPanelData.confList?.length || csvPanelData.linkList?.length);
+    const panelSrc = csvHasPanel ? csvPanelData : (fallbackPanelData || {});
+    pairList = panelSrc.pairList && panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
+    tfList = panelSrc.tfList && panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
+    setupList = panelSrc.setupList && panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
+    confList = panelSrc.confList && panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
+    linkList = panelSrc.linkList && panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
+    confFilterSelection = panelSrc.confFilterSelection && panelSrc.confFilterSelection.length > 0 ? [...panelSrc.confFilterSelection] : [];
+
+    renderAll();
+    buildConfGrid();
+    buildConfFilterDropdown();
+    populateSelectors();
+    renderLinkFields();
+    if (editMode) renderAllChips();
+    renderTrades();
+
+    // Enter preview mode
+    isPreviewMode = true;
+    $('exitPreviewBtn').style.display = 'inline-block';
+    $('importBtn').disabled = true;
+    $('csvSaveBtn').disabled = true;
+
+    // Close CSV panel
+    csvPanel.classList.remove('open');
+    csvToggle.classList.remove('active');
+  }
+
+  csvPublicList.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (isPreviewMode) return;
+
+    if (btn.classList.contains('csv-pub-view')) {
+      const key = btn.getAttribute('data-key');
+      const data = csvPublicContentMap.get(key);
+      if (!data) return;
+      const csvContent = data.content || '';
+      startPreview(csvContent, data);
+    } else if (btn.classList.contains('csv-pub-delete')) {
+      const key = btn.getAttribute('data-key');
+      const data = csvPublicContentMap.get(key);
+      if (!data) return;
+      const name = data.name || 'isimsiz';
+      if (!(await showConfirm(`"${name}" adlı CSV'yi silmek istediğinize emin misiniz?`))) return;
+      try {
+        await deleteDoc(doc(db, 'csv_storage', data.uid, 'files', data.fileId));
+        await showAlert('CSV silindi.');
+      } catch(e) { await showAlert('CSV silinemedi: ' + e.message); }
+    }
+  });
+
+  // Exit preview
+  $('exitPreviewBtn').addEventListener('click', () => {
+    if (!previewBackup) return;
+    const b = previewBackup;
+    trades = b.trades;
+    pairList = b.pairList; tfList = b.tfList;
+    setupList = b.setupList; confList = b.confList;
+    linkList = b.linkList;
+    confFilterSelection = b.confFilterSelection || [];
+    saveConfFilterSelection();
+    save();
+    saveLists();
+    renderAll();
+    if (editMode) renderAllChips();
+    buildConfGrid(); buildConfFilterDropdown(); populateSelectors();
+    renderLinkFields(); renderTrades();
+    syncAllToFirestore();
+
+    isPreviewMode = false;
+    previewBackup = null;
+    $('exitPreviewBtn').style.display = 'none';
+    $('importBtn').disabled = false;
+    $('csvSaveBtn').disabled = false;
+  });
+
+  // Tab initial state
+  csvTabMy.classList.add('active');
+  document.getElementById('csvMyBody').style.display = 'flex';
+  document.getElementById('csvPublicBody').style.display = 'none';
+
+  // Save button
+  $('csvSaveBtn').addEventListener('click', saveCsvToFirestore);
+
+  // Override openPopup CSV init
+  // (keep the original function, just add the CSV load)
+
+
+
+})();
 </script>
+
+<!-- Pop-ups -->
+<div class="popup-container" id="popupContainer">
+  <!-- Chat panel -->
+  <div class="popup-panel" id="chatPanel">
+    <div class="pp-header">
+      <span>Canlı Sohbet</span>
+      <span class="pp-close" data-popup="chat">✕</span>
+    </div>
+    <div class="pp-body" id="chatBody">
+      <div class="chat-empty" id="chatEmpty">Henüz mesaj yok.</div>
+    </div>
+    <div class="pp-body" id="chatNicknameWrap" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;font-size:13px">
+      <div style="color:var(--text)">Sohbette görünecek rumuzunuzu girin:</div>
+      <div style="color:var(--text-secondary);font-size:11px">Sohbette görünen rumuzunuz.</div>
+      <input type="text" id="chatNicknameInput" maxlength="20" placeholder="Rumuz..." style="width:100%;max-width:200px;background:var(--bg-surface);border:1px solid var(--border-light);color:var(--text);padding:6px 8px;border-radius:4px;font-size:12px;text-align:center">
+      <button class="btn btn-sm btn-primary" id="chatNicknameBtn">Onayla</button>
+    </div>
+    <div class="pp-footer" id="chatFooter">
+      <input type="text" id="chatInput" placeholder="Mesaj yaz..." maxlength="500">
+      <button class="btn btn-sm btn-primary" id="chatSendBtn">Gönder</button>
+    </div>
+    <div class="chat-resize-handle" id="chatResizeHandle"></div>
+  </div>
+
+  <!-- CSV panel -->
+  <div class="popup-panel" id="csvPanel">
+    <div class="pp-header">
+      <span>CSV Yönetimi</span>
+      <span class="pp-close" data-popup="csv">✕</span>
+    </div>
+    
+    <!-- Tab navigation -->
+    <div class="csv-tabs">
+      <button class="csv-tab active" id="csvTabMy">CSV Listem</button>
+      <button class="csv-tab" id="csvTabPublic">Buluttan İzle</button>
+    </div>
+
+    <!-- Tab: My CSV List -->
+    <div class="pp-body csv-tab-body" id="csvMyBody" style="display:flex;flex-direction:column;gap:6px">
+      <div class="csv-name-row">
+        <input type="text" id="csvNameInput" placeholder="CSV adı..." maxlength="100" style="flex:1;background:var(--bg-surface);border:1px solid var(--border-light);color:var(--text);padding:6px 8px;border-radius:4px;font-size:12px">
+        <button class="btn btn-sm btn-primary" id="csvSaveBtn">Buluta Kaydet</button>
+      </div>
+      <div class="csv-list-label">Kayıtlı CSV'leriniz:</div>
+      <div id="csvMyList" style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+        <div style="color:var(--text-secondary);text-align:center;padding:10px">Henüz kayıtlı CSV yok.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Public CSV List -->
+    <div class="pp-body csv-tab-body" id="csvPublicBody" style="display:none;flex-direction:column;gap:6px">
+      <div class="csv-list-label">Diğer kullanıcıların açık CSV'leri:</div>
+      <div id="csvPublicList" style="display:flex;flex-direction:column;gap:4px;font-size:12px">
+        <div style="color:var(--text-secondary);text-align:center;padding:10px">Henüz public CSV bulunamadı.</div>
+      </div>
+    </div>
+    <div class="csv-resize-handle" id="csvResizeHandle"></div>
+  </div>
+
+  <!-- Admin panel -->
+  <div class="popup-panel" id="adminPanel">
+    <div class="pp-header">
+      <span>Admin Panel</span>
+      <span class="pp-close" data-popup="admin">✕</span>
+    </div>
+    <div class="pp-body" id="adminBody" style="display:flex;flex-direction:column;gap:8px;padding:12px;font-size:12px;min-height:200px">
+      <div id="adminUserList" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+    <div class="admin-resize-handle" id="adminResizeHandle"></div>
+  </div>
+
+  <!-- Toggle buttons -->
+  <div class="popup-toggles">
+    <button class="popup-tgl" id="chatToggle" title="Canlı Sohbet">💬</button>
+    <button class="popup-tgl" id="csvToggle" title="CSV Yönetimi">📋</button>
+    <button class="popup-tgl" id="adminToggle" title="Admin Panel" style="display:none">🔧</button>
+  </div>
+</div>
+
+<div class="sig-wrap">
+  <div class="sig-popup">"Dışa Aktar" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
+  <div class="sig-ice"><span class="sig-emoji">🧊</span> <span class="sig-text">BUZ</span></div>
+</div>
+
+<!-- Custom modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
 </body>
 </html>
