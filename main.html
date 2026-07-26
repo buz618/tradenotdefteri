@@ -2246,21 +2246,28 @@ let currentUser = null;
             await showAlert('Bu kullanıcının geçerli trade verisi yok.');
             return;
           }
-          // Build CSV content from trades
-          const header = '#PANEL {}';
-          const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
+          // Build CSV content from trades (include link columns for full fidelity)
+          const derivedLinkTitles = [...new Set(validTrades.flatMap(t => Object.keys(t.links || {})))];
+          const headers = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR', ...derivedLinkTitles, 'Not'];
           const rows = validTrades.map(t => [
             t.date || '', t.pair || '', t.tf || '', t.setup || '',
             (t.confirmations || []).join(', '),
             t.result || '',
             t.rr != null ? Number(t.rr).toFixed(2) : '',
+            ...derivedLinkTitles.map(title => (t.links && t.links[title]) || ''),
             t.not || ''
           ]);
-          const csvContent = header + '\n' + [fixedHeaders.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+          const csvContent = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+          // Read user's panel settings for fallbackPanelData
+          let settings = {};
+          try {
+            const sSnap = await getDoc(doc(db, 'user_settings', uid));
+            if (sSnap.exists()) settings = sSnap.data();
+          } catch(e) {}
           adminPanel.classList.remove('open');
           adminToggle.classList.remove('active');
           await showAlert('Bu kullanıcı buluta CSV kaydetmemiş. Trade verilerinden oluşturuldu.');
-          startPreview(csvContent, null);
+          startPreview(csvContent, settings);
           return;
         }
         // Find the latest file by updatedAt
@@ -2518,21 +2525,26 @@ let currentUser = null;
       (snap) => {
         // Update unread badge BEFORE early return (panel closed while message arrives)
         if (!chatPanel.classList.contains('open')) {
-          const lastSeen = parseInt(localStorage.getItem('chatLastSeen'));
-          let hasNew = false;
-          if (lastSeen) {
-            snap.forEach(d => {
-              const m = d.data();
-              const t = m.createdAt?.seconds ? m.createdAt.seconds * 1000 : 0;
-              if (t > lastSeen) hasNew = true;
-            });
-          }
-          if (hasNew) {
-            chatToggle.classList.add('has-unread');
-            hasUnreadChat = true;
-          } else {
+          if (snap.empty) {
             chatToggle.classList.remove('has-unread');
             hasUnreadChat = false;
+          } else {
+            const lastSeen = parseInt(localStorage.getItem('chatLastSeen'));
+            let hasNew = false;
+            if (lastSeen) {
+              snap.forEach(d => {
+                const m = d.data();
+                const t = m.createdAt?.seconds ? m.createdAt.seconds * 1000 : 0;
+                if (t > lastSeen) hasNew = true;
+              });
+            }
+            if (hasNew) {
+              chatToggle.classList.add('has-unread');
+              hasUnreadChat = true;
+            } else {
+              chatToggle.classList.remove('has-unread');
+              hasUnreadChat = false;
+            }
           }
         } else {
           chatToggle.classList.remove('has-unread');
@@ -3078,6 +3090,8 @@ let currentUser = null;
         });
         csvCurrentFileId = newId;
       }
+      // Trigger parent update so public watchers detect the change
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), { updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
       await showAlert('CSV kaydedildi.');
       await loadMyCsvFiles();
     } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); }
@@ -3267,9 +3281,10 @@ let currentUser = null;
     if (previewTrades.length === 0) return;
     trades = previewTrades;
 
-    // Load panel settings: #PANEL header > Firestore fallback > derive from trades
+    // Load panel settings: #PANEL header (non-empty) > Firestore fallback > derive from trades
     const csvPanelData = extractPanelDataFromCsv(csvContent);
-    const panelSrc = csvPanelData || fallbackPanelData || {};
+    const csvHasPanel = csvPanelData && (csvPanelData.pairList || csvPanelData.tfList || csvPanelData.setupList);
+    const panelSrc = csvHasPanel ? csvPanelData : (fallbackPanelData || {});
     pairList = panelSrc.pairList && panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
     tfList = panelSrc.tfList && panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
     setupList = panelSrc.setupList && panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
