@@ -3161,6 +3161,11 @@ let currentUser = null;
       seen.add(item.key);
       return true;
     });
+    items.sort((a, b) => {
+      const aTime = a.fileUpdatedAt?.seconds || 0;
+      const bTime = b.fileUpdatedAt?.seconds || 0;
+      return bTime - aTime;
+    });
     csvPublicCache = items;
     if (isWatchingPublic) {
       renderCsvPublicList(items);
