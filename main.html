@@ -945,9 +945,6 @@ let currentUser = null;
   const fSetup = $('fSetup');
   const fResult = $('fResult');
   const fRr = $('fRr');
-  const fHtf = $('fHtf');
-  const fLtf = $('fLtf');
-  const fEsPair = $('fEsPair');
   const fNote = $('fNote');
   const submitBtn = $('submitBtn');
   const cancelBtn = $('cancelEditBtn');
@@ -1638,7 +1635,8 @@ let currentUser = null;
       const confStr = t.confirmations && t.confirmations.length
         ? t.confirmations.map(c => `<span class="conf-chip">${escapeHtml(c)}</span>`).join('')
         : '<span style="color:#787b86;font-size:10px">-</span>';
-      const resultBadge = `badge-${t.result.toLowerCase()}`;
+      const safeResult = ['Win','BE','Lose'].includes(t.result) ? t.result.toLowerCase() : 'unknown';
+      const resultBadge = `badge-${safeResult}`;
       const linkCells = linkList.map(title => {
         const url = t.links && t.links[title];
         return `<td>${url ? `<span class="preview-link" data-url="${escapeAttr(url)}">${escapeHtml(title)}</span>` : '-'}</td>`;
@@ -2337,6 +2335,7 @@ let currentUser = null;
     $('userEmail').textContent = user.email;
     $('logoutBtn').addEventListener('click', () => {
       if (chatUnsub) chatUnsub();
+      if (csvPublicUnsub) csvPublicUnsub();
       signOut(auth);
       window.location.href = 'index.html';
     });
