@@ -2337,6 +2337,8 @@ let currentUser = null;
     if (alreadyOpen) {
       openPanel.classList.remove('open');
       openTgl.classList.remove('active');
+      if (type === 'chat') localStorage.setItem('chatLastSeen', Date.now().toString());
+      else if (type === 'csv') localStorage.setItem('csvLastSeen', Date.now().toString());
       return;
     }
     closePanels.forEach(p => p.classList.remove('open'));
@@ -2362,6 +2364,7 @@ let currentUser = null;
       restoreChatSize();
       chatToggle.classList.remove('has-unread');
       hasUnreadChat = false;
+      localStorage.setItem('chatLastSeen', Date.now().toString());
     } else if (type === 'csv') {
       csvToggle.classList.remove('has-unread');
       loadCsvMeta();
@@ -2375,8 +2378,8 @@ let currentUser = null;
     const close = e.target.closest('.pp-close');
     if (!close) return;
     const type = close.getAttribute('data-popup');
-    if (type === 'chat') { chatPanel.classList.remove('open'); chatToggle.classList.remove('active'); }
-    else if (type === 'csv') { csvPanel.classList.remove('open'); csvToggle.classList.remove('active'); isWatchingPublic = false; }
+    if (type === 'chat') { chatPanel.classList.remove('open'); chatToggle.classList.remove('active'); localStorage.setItem('chatLastSeen', Date.now().toString()); }
+    else if (type === 'csv') { csvPanel.classList.remove('open'); csvToggle.classList.remove('active'); isWatchingPublic = false; localStorage.setItem('csvLastSeen', Date.now().toString()); }
     else if (type === 'admin') { adminPanel.classList.remove('open'); adminToggle.classList.remove('active'); }
   });
   chatToggle.addEventListener('click', () => openPopup('chat'));
@@ -2515,8 +2518,22 @@ let currentUser = null;
       (snap) => {
         // Update unread badge BEFORE early return (panel closed while message arrives)
         if (!chatPanel.classList.contains('open')) {
-          chatToggle.classList.add('has-unread');
-          hasUnreadChat = true;
+          const lastSeen = parseInt(localStorage.getItem('chatLastSeen'));
+          let hasNew = false;
+          if (lastSeen) {
+            snap.forEach(d => {
+              const m = d.data();
+              const t = m.createdAt?.seconds ? m.createdAt.seconds * 1000 : 0;
+              if (t > lastSeen) hasNew = true;
+            });
+          }
+          if (hasNew) {
+            chatToggle.classList.add('has-unread');
+            hasUnreadChat = true;
+          } else {
+            chatToggle.classList.remove('has-unread');
+            hasUnreadChat = false;
+          }
         } else {
           chatToggle.classList.remove('has-unread');
           hasUnreadChat = false;
@@ -3104,10 +3121,12 @@ let currentUser = null;
             linkList: d.linkList || [],
             confFilterSelection: d.confFilterSelection || []
           });
+          const fileTime = d.updatedAt || d.createdAt || null;
           items.push({
             uid, fileId: fd.id, key,
             userName: meta.nickname_admin || meta.nickname || uid.slice(0, 8),
-            name: d.name || 'isimsiz'
+            name: d.name || 'isimsiz',
+            fileUpdatedAt: fileTime
           });
         });
       } catch(e) { /* skip */ }
@@ -3123,7 +3142,18 @@ let currentUser = null;
       renderCsvPublicList(items);
       csvToggle.classList.remove('has-unread');
     } else if (items.length > 0) {
-      csvToggle.classList.add('has-unread');
+      const lastSeen = parseInt(localStorage.getItem('csvLastSeen'));
+      let hasNew = false;
+      if (lastSeen) {
+        for (const item of items) {
+          const t = item.fileUpdatedAt;
+          const fileTime = t?.seconds ? t.seconds * 1000 : (typeof t === 'number' ? t : 0);
+          if (fileTime > lastSeen) { hasNew = true; break; }
+        }
+      }
+      if (hasNew) {
+        csvToggle.classList.add('has-unread');
+      }
     }
   }
 
@@ -3204,6 +3234,7 @@ let currentUser = null;
       }
     } catch(e) { /* ignore */ }
     // Render from cache immediately, watcher updates in background
+    localStorage.setItem('csvLastSeen', Date.now().toString());
     if (csvPublicCache.length > 0) {
       renderCsvPublicList(csvPublicCache);
       csvToggle.classList.remove('has-unread');
