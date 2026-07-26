@@ -1365,6 +1365,22 @@ let currentUser = null;
       } catch(e) {}
       if (firestoreTrades.length > 0) {
         // Merge: Firestore base + localStorage-only trades (offline creations)
+        // For same-ID trades, compare timestamps — newer wins
+        const localMap = new Map(localTrades.map(t => [String(t.id), t]));
+        const firestoreMap = new Map(firestoreTrades.map(t => [String(t.id), t]));
+        for (const [id, ft] of firestoreMap) {
+          const lt = localMap.get(id);
+          if (lt) {
+            const ltTime = lt.updatedAt || 0;
+            const ftTime = typeof ft.updatedAt?.toMillis === 'function' ? ft.updatedAt.toMillis() : (ft.updatedAt || 0);
+            if (ltTime > ftTime) {
+              // localStorage is newer (offline edit)
+              const idx = firestoreTrades.findIndex(t => String(t.id) === id);
+              if (idx !== -1) firestoreTrades[idx] = lt;
+            }
+          }
+        }
+        // Add localStorage-only trades (offline creations)
         const firestoreIds = new Set(firestoreTrades.map(t => String(t.id)));
         for (const t of localTrades) {
           if (!firestoreIds.has(String(t.id))) firestoreTrades.push(t);
@@ -1706,6 +1722,7 @@ let currentUser = null;
     function saveNote() {
       const val = inp.value.trim();
       t.not = val || '';
+      t.updatedAt = Date.now();
       save();
       syncTradeToFirestore(t);
       renderTrades();
@@ -1807,7 +1824,7 @@ let currentUser = null;
     if (editingId) {
       const idx = trades.findIndex(t => t.id === editingId);
       if (idx !== -1) {
-        trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations };
+        trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations, updatedAt: Date.now() };
         syncTradeToFirestore(trades[idx]);
       }
     } else {
@@ -1817,7 +1834,8 @@ let currentUser = null;
         _new: true,
         date: dateStr,
         pair, tf, setup, result, rr, links, not,
-        confirmations
+        confirmations,
+        updatedAt: Date.now()
       };
       trades.push(newTrade);
       syncTradeToFirestore(newTrade);
@@ -1904,7 +1922,7 @@ let currentUser = null;
       saveLists();
       const imported = csvContentToTrades(csv);
       if (imported.length === 0) { await showAlert('Geçersiz CSV veya hiç trade bulunamadı.'); save(); renderAll(); return; }
-      for (const t of imported) trades.push(t);
+      for (const t of imported) { t.updatedAt = Date.now(); trades.push(t); }
       save();
       syncAllToFirestore();
       renderAll();
