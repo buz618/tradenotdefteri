@@ -3074,11 +3074,12 @@ let currentUser = null;
         }, { merge: true });
       } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); return; }
     } else {
-      // Admin path: ensure nickname in meta
+      // Admin path: ensure nickname in meta and make visible to all
       const nickSave = localStorage.getItem('chatNickname') || '';
-      if (nickSave) {
-        await setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: nickSave }, { merge: true });
-      }
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), {
+        ...(nickSave ? { nickname: nickSave } : {}),
+        public: true
+      }, { merge: true });
     }
 
     // Save panel settings alongside content
@@ -3224,15 +3225,17 @@ let currentUser = null;
         await loadUserSettings();
       }
     }
-    // Set public=false
-    try {
-      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
-      if (snap.exists()) {
-        await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: false });
-      } else {
-        await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: false });
-      }
-    } catch(e) { /* ignore */ }
+    // Set public=false (skip for admin — admin's CSVs are always public)
+    if (!isAdmin) {
+      try {
+        const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+        if (snap.exists()) {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: false });
+        } else {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: false });
+        }
+      } catch(e) { /* ignore */ }
+    }
   });
 
   csvTabPublic.addEventListener('click', async () => {
@@ -3247,15 +3250,17 @@ let currentUser = null;
       pairList: [...pairList], tfList: [...tfList], setupList: [...setupList],
       confList: [...confList], linkList: [...linkList]
     };
-    // Set public=true
-    try {
-      const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
-      if (snap.exists()) {
-        await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: true });
-      } else {
-        await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: true });
-      }
-    } catch(e) { /* ignore */ }
+    // Set public=true (skip for admin — admin's CSVs are always public)
+    if (!isAdmin) {
+      try {
+        const snap = await getDoc(doc(db, 'csv_storage', currentUser.uid));
+        if (snap.exists()) {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { ...snap.data(), public: true });
+        } else {
+          await setDoc(doc(db, 'csv_storage', currentUser.uid), { public: true });
+        }
+      } catch(e) { /* ignore */ }
+    }
     // Render from cache immediately, watcher updates in background
     localStorage.setItem('csvLastSeen', Date.now().toString());
     if (csvPublicCache.length > 0) {
