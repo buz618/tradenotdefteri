@@ -1354,11 +1354,6 @@ let currentUser = null;
   async function loadFromFirestore() {
     if (!currentUser) return false;
     try {
-      const localRaw = localStorage.getItem(STORAGE_KEY);
-      if (localRaw) {
-        const localData = JSON.parse(localRaw);
-        if (localData.length > 0) return false; // prefer localStorage data
-      }
       const snap = await getDocs(collection(db, 'trades', currentUser.uid, 'items'));
       const data = snap.docs.map(d => d.data());
       if (data.length > 0) {
@@ -1367,6 +1362,15 @@ let currentUser = null;
         return true;
       }
     } catch(e) { console.warn('Firestore load failed:', e); }
+    // Fallback: localStorage (offline cache)
+    const localRaw = localStorage.getItem(STORAGE_KEY);
+    if (localRaw) {
+      const localData = JSON.parse(localRaw);
+      if (localData.length > 0) {
+        trades = localData;
+        return true;
+      }
+    }
     return false;
   }
 
@@ -2183,7 +2187,6 @@ let currentUser = null;
         <div class="admin-actions">
           <button data-uid="${u.uid}" data-action="edit-nick">${nickLabel}</button>
           <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
-          <button data-uid="${u.uid}" data-action="delete-user-csv" style="background:#f7525a;color:#fff">CSV Sil</button>
           <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
           <button data-uid="${u.uid}" data-action="${isBlocked ? 'unblock-user' : 'block-user'}" ${isBlocked ? 'style="background:#f7525a;color:#fff"' : ''}>${isBlocked ? 'Aç' : 'Engelle'}</button>
         </div>
@@ -2200,40 +2203,50 @@ let currentUser = null;
       try {
         const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
         if (filesSnap.empty) {
-          await showAlert('Bu kullanıcının CSV verisi yok.');
-        } else {
-          // Find the latest file by updatedAt
-          const latest = filesSnap.docs.sort((a, b) => {
-            const au = a.data().updatedAt?.seconds || 0;
-            const bu = b.data().updatedAt?.seconds || 0;
-            return bu - au;
-          })[0];
-          const d = latest.data();
-          const csvContent = d.content || '';
-          if (!csvContent) { await showAlert('CSV içeriği boş.'); return; }
-          // Close admin panel before preview
+          // Fallback: try reading trades from the trades collection
+          const tradeSnap = await getDocs(collection(db, 'trades', uid, 'items'));
+          if (tradeSnap.empty) {
+            await showAlert('Bu kullanıcının CSV veya trade verisi yok.');
+            return;
+          }
+          const tmpTrades = tradeSnap.docs.map(d => d.data());
+          // Check if trades have required fields (same as csvContentToTrades validation)
+          const validTrades = tmpTrades.filter(t => t.pair && t.setup && t.result);
+          if (validTrades.length === 0) {
+            await showAlert('Bu kullanıcının geçerli trade verisi yok.');
+            return;
+          }
+          // Build CSV content from trades
+          const header = '#PANEL {}';
+          const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
+          const rows = validTrades.map(t => [
+            t.date || '', t.pair || '', t.tf || '', t.setup || '',
+            (t.confirmations || []).join(', '),
+            t.result || '',
+            t.rr != null ? Number(t.rr).toFixed(2) : '',
+            t.not || ''
+          ]);
+          const csvContent = header + '\n' + [fixedHeaders.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
           adminPanel.classList.remove('open');
           adminToggle.classList.remove('active');
-          startPreview(csvContent, d);
+          await showAlert('Bu kullanıcı buluta CSV kaydetmemiş. Trade verilerinden oluşturuldu.');
+          startPreview(csvContent, null);
+          return;
         }
+        // Find the latest file by updatedAt
+        const latest = filesSnap.docs.sort((a, b) => {
+          const au = a.data().updatedAt?.seconds || 0;
+          const bu = b.data().updatedAt?.seconds || 0;
+          return bu - au;
+        })[0];
+        const d = latest.data();
+        const csvContent = d.content || '';
+        if (!csvContent) { await showAlert('CSV içeriği boş.'); return; }
+        // Close admin panel before preview
+        adminPanel.classList.remove('open');
+        adminToggle.classList.remove('active');
+        startPreview(csvContent, d);
       } catch(e) { await showAlert('CSV yüklenemedi: ' + e.message); }
-    } else if (action === 'delete-user-csv') {
-      try {
-        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
-        if (filesSnap.empty) { await showAlert('Bu kullanıcının silinecek CSV verisi yok.'); return; }
-        let msg = 'Kullanıcının CSV dosyaları:\n';
-        const fileList = [];
-        filesSnap.forEach(d => { fileList.push({ id: d.id, name: d.data().name || 'isimsiz' }); });
-        fileList.forEach((f, i) => { msg += `${i+1}. ${f.name}\n`; });
-        msg += '\nTümünü silmek istediğinize emin misiniz?';
-        if (!(await showConfirm(msg))) return;
-        let count = 0;
-        for (const f of fileList) {
-          await deleteDoc(doc(db, 'csv_storage', uid, 'files', f.id));
-          count++;
-        }
-        await showAlert(count + ' CSV dosyası silindi.');
-      } catch(e) { await showAlert('CSV silinemedi: ' + e.message); }
     } else if (action === 'view-info') {
       await showAlert('UID: ' + uid);
     } else if (action === 'block-user' || action === 'unblock-user') {
@@ -2358,12 +2371,12 @@ let currentUser = null;
       window.location.href = 'index.html';
     });
 
-    // Load trades from Firestore, fall back to localStorage
+    // Load trades from Firestore (source of truth), fall back to localStorage cache
     const ok = await loadFromFirestore();
     if (!ok) {
-      load();
-      syncAllToFirestore(); // ensure Firestore matches localStorage
+      load(); // localStorage'tan yükle (Firestore boşsa)
     }
+    syncAllToFirestore(); // her login'de Firestore güncel kalır
 
     loadBgPref();
     initBgCanvas();
@@ -3051,7 +3064,9 @@ let currentUser = null;
           const d = fd.data();
           const key = uid + '_' + fd.id;
           csvPublicContentMap.set(key, {
+            uid, fileId: fd.id,
             content: d.content || '',
+            name: d.name || '',
             pairList: d.pairList || [],
             tfList: d.tfList || [],
             setupList: d.setupList || [],
@@ -3096,6 +3111,7 @@ let currentUser = null;
         </div>
         <div class="csv-pub-actions">
           <button class="csv-pub-view" data-key="${item.key}">Önizle</button>
+          ${isAdmin ? `<button class="csv-pub-delete" data-key="${item.key}" style="background:#f7525a;color:#fff">CSV Sil</button>` : ''}
         </div>
       </div>
     `).join('');
@@ -3222,15 +3238,25 @@ let currentUser = null;
   csvPublicList.addEventListener('click', async (e) => {
     const btn = e.target.closest('button');
     if (!btn) return;
-    if (!btn.classList.contains('csv-pub-view')) return;
     if (isPreviewMode) return;
 
-    const key = btn.getAttribute('data-key');
-    const data = csvPublicContentMap.get(key);
-    if (!data) return;
-    const csvContent = data.content || '';
-
-    startPreview(csvContent, data);
+    if (btn.classList.contains('csv-pub-view')) {
+      const key = btn.getAttribute('data-key');
+      const data = csvPublicContentMap.get(key);
+      if (!data) return;
+      const csvContent = data.content || '';
+      startPreview(csvContent, data);
+    } else if (btn.classList.contains('csv-pub-delete')) {
+      const key = btn.getAttribute('data-key');
+      const data = csvPublicContentMap.get(key);
+      if (!data) return;
+      const name = data.name || 'isimsiz';
+      if (!(await showConfirm(`"${name}" adlı CSV'yi silmek istediğinize emin misiniz?`))) return;
+      try {
+        await deleteDoc(doc(db, 'csv_storage', data.uid, 'files', data.fileId));
+        await showAlert('CSV silindi.');
+      } catch(e) { await showAlert('CSV silinemedi: ' + e.message); }
+    }
   });
 
   // Exit preview
