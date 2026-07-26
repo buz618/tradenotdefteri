@@ -2116,7 +2116,7 @@ let currentUser = null;
     if (!currentUser) return false;
     try {
       const snap = await getDoc(doc(db, 'admin', 'config'));
-      const admins = snap.exists() ? (snap.data().uids || []) : [];
+      const admins = snap.exists() ? (snap.data().admins || snap.data().uids || []) : [];
       isAdmin = admins.includes(currentUser.uid);
       blockedUsers = snap.exists() ? (snap.data().blocked || []) : [];
       if (adminToggle) adminToggle.style.display = isAdmin ? 'flex' : 'none';
