@@ -2246,28 +2246,37 @@ let currentUser = null;
             await showAlert('Bu kullanıcının geçerli trade verisi yok.');
             return;
           }
-          // Build CSV content from trades (include link columns for full fidelity)
-          const derivedLinkTitles = [...new Set(validTrades.flatMap(t => Object.keys(t.links || {})))];
-          const headers = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR', ...derivedLinkTitles, 'Not'];
-          const rows = validTrades.map(t => [
-            t.date || '', t.pair || '', t.tf || '', t.setup || '',
-            (t.confirmations || []).join(', '),
-            t.result || '',
-            t.rr != null ? Number(t.rr).toFixed(2) : '',
-            ...derivedLinkTitles.map(title => (t.links && t.links[title]) || ''),
-            t.not || ''
-          ]);
-          const csvContent = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
-          // Read user's panel settings for fallbackPanelData
+          // Read user's panel settings for full #PANEL data (includes unused list items)
           let settings = {};
           try {
             const sSnap = await getDoc(doc(db, 'user_settings', uid));
             if (sSnap.exists()) settings = sSnap.data();
           } catch(e) {}
+          // Build CSV content with #PANEL header (same format as tradesToCsv)
+          const panelJson = JSON.stringify({
+            pairList: settings.pairList || [],
+            tfList: settings.tfList || [],
+            setupList: settings.setupList || [],
+            confList: settings.confList || [],
+            linkList: settings.linkList || [],
+            confFilterSelection: settings.confFilterSelection || []
+          });
+          const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
+          const allLinkTitles = settings.linkList || [];
+          const headers = [...fixedHeaders, ...allLinkTitles, 'Not'];
+          const rows = validTrades.map(t => [
+            t.date || '', t.pair || '', t.tf || '', t.setup || '',
+            (t.confirmations || []).join(', '),
+            t.result || '',
+            t.rr != null ? Number(t.rr).toFixed(2) : '',
+            ...allLinkTitles.map(title => (t.links && t.links[title]) || ''),
+            t.not || ''
+          ]);
+          const csvContent = '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${sanitizeCsvVal(v)}"`).join(','))].join('\n');
           adminPanel.classList.remove('open');
           adminToggle.classList.remove('active');
           await showAlert('Bu kullanıcı buluta CSV kaydetmemiş. Trade verilerinden oluşturuldu.');
-          startPreview(csvContent, settings);
+          startPreview(csvContent, null);
           return;
         }
         // Find the latest file by updatedAt
