@@ -2183,6 +2183,7 @@ let currentUser = null;
         <div class="admin-actions">
           <button data-uid="${u.uid}" data-action="edit-nick">${nickLabel}</button>
           <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
+          <button data-uid="${u.uid}" data-action="delete-user-csv" style="background:#f7525a;color:#fff">CSV Sil</button>
           <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
           <button data-uid="${u.uid}" data-action="${isBlocked ? 'unblock-user' : 'block-user'}" ${isBlocked ? 'style="background:#f7525a;color:#fff"' : ''}>${isBlocked ? 'Aç' : 'Engelle'}</button>
         </div>
@@ -2216,6 +2217,23 @@ let currentUser = null;
           startPreview(csvContent, d);
         }
       } catch(e) { await showAlert('CSV yüklenemedi: ' + e.message); }
+    } else if (action === 'delete-user-csv') {
+      try {
+        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        if (filesSnap.empty) { await showAlert('Bu kullanıcının silinecek CSV verisi yok.'); return; }
+        let msg = 'Kullanıcının CSV dosyaları:\n';
+        const fileList = [];
+        filesSnap.forEach(d => { fileList.push({ id: d.id, name: d.data().name || 'isimsiz' }); });
+        fileList.forEach((f, i) => { msg += `${i+1}. ${f.name}\n`; });
+        msg += '\nTümünü silmek istediğinize emin misiniz?';
+        if (!(await showConfirm(msg))) return;
+        let count = 0;
+        for (const f of fileList) {
+          await deleteDoc(doc(db, 'csv_storage', uid, 'files', f.id));
+          count++;
+        }
+        await showAlert(count + ' CSV dosyası silindi.');
+      } catch(e) { await showAlert('CSV silinemedi: ' + e.message); }
     } else if (action === 'view-info') {
       await showAlert('UID: ' + uid);
     } else if (action === 'block-user' || action === 'unblock-user') {
