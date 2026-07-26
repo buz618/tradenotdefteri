@@ -1354,30 +1354,42 @@ let currentUser = null;
   async function loadFromFirestore() {
     if (!currentUser) return false;
     try {
+      // 1. Read Firestore (source of truth)
       const snap = await getDocs(collection(db, 'trades', currentUser.uid, 'items'));
-      const data = snap.docs.map(d => d.data());
-      if (data.length > 0) {
-        trades = data;
+      const firestoreTrades = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+      // 2. Read localStorage (offline cache)
+      let localTrades = [];
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) localTrades = JSON.parse(raw);
+      } catch(e) {}
+      if (firestoreTrades.length > 0) {
+        // Merge: Firestore base + localStorage-only trades (offline creations)
+        const firestoreIds = new Set(firestoreTrades.map(t => String(t.id)));
+        for (const t of localTrades) {
+          if (!firestoreIds.has(String(t.id))) firestoreTrades.push(t);
+        }
+        trades = firestoreTrades;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
         return true;
       }
     } catch(e) { console.warn('Firestore load failed:', e); }
-    // Fallback: localStorage (offline cache)
-    const localRaw = localStorage.getItem(STORAGE_KEY);
-    if (localRaw) {
-      const localData = JSON.parse(localRaw);
-      if (localData.length > 0) {
-        trades = localData;
-        return true;
+    // Fallback: localStorage
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.length > 0) { trades = d; return true; }
       }
-    }
+    } catch(e) {}
     return false;
   }
 
   async function syncTradeToFirestore(t) {
     if (!currentUser) return;
     try {
-      await setDoc(doc(db, 'trades', currentUser.uid, 'items', String(t.id)), { ...t, updatedAt: serverTimestamp() });
+      const { _new, ...clean } = t;
+      await setDoc(doc(db, 'trades', currentUser.uid, 'items', String(t.id)), { ...clean, updatedAt: serverTimestamp() });
     } catch(e) { console.error('Firestore sync error:', e); }
   }
 
@@ -1397,7 +1409,7 @@ let currentUser = null;
       const currentIds = new Set(trades.map(t => String(t.id)));
       const ops = [];
       for (const d of existing.docs) { if (!currentIds.has(d.id)) ops.push(deleteDoc(d.ref)); }
-      for (const t of trades) { ops.push(setDoc(doc(col, String(t.id)), { ...t, updatedAt: serverTimestamp() })); }
+      for (const t of trades) { const { _new, ...clean } = t; ops.push(setDoc(doc(col, String(t.id)), { ...clean, updatedAt: serverTimestamp() })); }
       await Promise.all(ops);
     } catch(e) { console.error('Firestore sync all error:', e); }
   }
