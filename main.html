@@ -2416,8 +2416,6 @@ let currentUser = null;
     $('logoutBtn').addEventListener('click', () => {
       if (chatUnsub) chatUnsub();
       if (csvPublicUnsub) csvPublicUnsub();
-      for (const unsub of csvPublicFileUnsubs.values()) unsub();
-      csvPublicFileUnsubs.clear();
       signOut(auth);
       window.location.href = 'index.html';
     });
@@ -3072,7 +3070,7 @@ let currentUser = null;
         const nickSave = localStorage.getItem('chatNickname') || '';
         await setDoc(doc(db, 'csv_storage', currentUser.uid), {
           saveCount: saveCount + 1, saveResetAt, nickname: nickSave,
-          updatedAt: serverTimestamp()
+          public: true, updatedAt: serverTimestamp()
         }, { merge: true });
       } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); return; }
     } else {
@@ -3101,6 +3099,8 @@ let currentUser = null;
         });
         csvCurrentFileId = newId;
       }
+      // Trigger parent update so public watchers detect the change
+      await setDoc(doc(db, 'csv_storage', currentUser.uid), { updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
       await showAlert('CSV kaydedildi.');
       await loadMyCsvFiles();
     } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); }
@@ -3109,8 +3109,6 @@ let currentUser = null;
   let csvPublicUnsub = null;
   let csvPublicCache = [];
   const csvPublicContentMap = new Map();
-  const csvPublicFileUnsubs = new Map();
-  const csvPublicUserMeta = new Map();
 
   function initCsvPublicWatcher() {
     if (csvPublicUnsub || !currentUser) return;
@@ -3118,93 +3116,67 @@ let currentUser = null;
       ? collection(db, 'csv_storage')
       : query(collection(db, 'csv_storage'), where('public', '==', true));
     csvPublicUnsub = onSnapshot(q, (snap) => {
-      const activeUids = new Set();
+      const publicUsers = [];
       snap.forEach(doc => {
-        const isPublic = doc.data().public === true;
-        if (isPublic || isAdmin) {
-          const uid = doc.id;
-          activeUids.add(uid);
-          csvPublicUserMeta.set(uid, doc.data());
-          if (!csvPublicFileUnsubs.has(uid)) {
-            watchUserFiles(uid);
-          }
-        }
+        if (doc.data().public === true || isAdmin) publicUsers.push({ uid: doc.id, meta: doc.data() });
       });
-      for (const uid of csvPublicFileUnsubs.keys()) {
-        if (!activeUids.has(uid)) {
-          unwatchUserFiles(uid);
-          csvPublicUserMeta.delete(uid);
-        }
-      }
+      fetchPublicCsvFiles(publicUsers);
     });
   }
 
-  function watchUserFiles(uid) {
-    const filesRef = collection(db, 'csv_storage', uid, 'files');
-    const unsub = onSnapshot(filesRef, (snap) => {
-      for (const [key, val] of csvPublicContentMap) {
-        if (val.uid === uid) csvPublicContentMap.delete(key);
-      }
-      snap.forEach(fd => {
-        const d = fd.data();
-        const key = uid + '_' + fd.id;
-        csvPublicContentMap.set(key, {
-          uid, fileId: fd.id,
-          name: d.name || '',
-          pairList: d.pairList || [],
-          tfList: d.tfList || [],
-          setupList: d.setupList || [],
-          confList: d.confList || [],
-          linkList: d.linkList || [],
-          confFilterSelection: d.confFilterSelection || [],
-          updatedAt: d.updatedAt || null
+  async function fetchPublicCsvFiles(publicUsers) {
+    csvPublicContentMap.clear();
+    let items = [];
+    await Promise.all(publicUsers.map(async ({ uid, meta }) => {
+      try {
+        const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        filesSnap.forEach(fd => {
+          const d = fd.data();
+          const key = uid + '_' + fd.id;
+          csvPublicContentMap.set(key, {
+            uid, fileId: fd.id,
+            content: d.content || '',
+            name: d.name || '',
+            pairList: d.pairList || [],
+            tfList: d.tfList || [],
+            setupList: d.setupList || [],
+            confList: d.confList || [],
+            linkList: d.linkList || [],
+            confFilterSelection: d.confFilterSelection || []
+          });
+          const fileTime = d.updatedAt || d.createdAt || null;
+          items.push({
+            uid, fileId: fd.id, key,
+            userName: meta.nickname_admin || meta.nickname || uid.slice(0, 8),
+            name: d.name || 'isimsiz',
+            fileUpdatedAt: fileTime
+          });
         });
-      });
-      rebuildPublicCache();
-    });
-    csvPublicFileUnsubs.set(uid, unsub);
-  }
-
-  function unwatchUserFiles(uid) {
-    const unsub = csvPublicFileUnsubs.get(uid);
-    if (unsub) { unsub(); csvPublicFileUnsubs.delete(uid); }
-    for (const [key, val] of csvPublicContentMap) {
-      if (val.uid === uid) csvPublicContentMap.delete(key);
-    }
-    rebuildPublicCache();
-  }
-
-  function rebuildPublicCache() {
-    const items = [];
-    for (const val of csvPublicContentMap.values()) {
-      const meta = csvPublicUserMeta.get(val.uid);
-      items.push({
-        uid: val.uid, fileId: val.fileId, key: val.uid + '_' + val.fileId,
-        userName: meta?.nickname_admin || meta?.nickname || val.uid.slice(0, 8),
-        name: val.name || 'isimsiz',
-        fileUpdatedAt: val.updatedAt
-      });
-    }
+      } catch(e) { /* skip */ }
+    }));
     const seen = new Set();
-    csvPublicCache = items.filter(item => {
+    items = items.filter(item => {
       if (seen.has(item.key)) return false;
       seen.add(item.key);
       return true;
     });
+    csvPublicCache = items;
     if (isWatchingPublic) {
-      renderCsvPublicList(csvPublicCache);
+      renderCsvPublicList(items);
       csvToggle.classList.remove('has-unread');
-    } else if (csvPublicCache.length > 0) {
+    } else if (items.length > 0) {
       const lastSeen = parseInt(localStorage.getItem('csvLastSeen'));
       let hasNew = false;
       if (lastSeen) {
-        for (const item of csvPublicCache) {
+        for (const item of items) {
           const t = item.fileUpdatedAt;
           const fileTime = t?.seconds ? t.seconds * 1000 : (typeof t === 'number' ? t : 0);
           if (fileTime > lastSeen) { hasNew = true; break; }
         }
       }
-      if (hasNew) csvToggle.classList.add('has-unread');
+      if (hasNew) {
+        csvToggle.classList.add('has-unread');
+      }
     }
   }
 
@@ -3355,21 +3327,10 @@ let currentUser = null;
 
     if (btn.classList.contains('csv-pub-view')) {
       const key = btn.getAttribute('data-key');
-      const meta = csvPublicContentMap.get(key);
-      if (!meta) return;
-      const contentSnap = await getDoc(doc(db, 'csv_storage', meta.uid, 'files', meta.fileId)).catch(() => null);
-      if (!contentSnap || !contentSnap.exists()) return;
-      const d = contentSnap.data();
-      const csvContent = d.content || '';
-      const panelData = {
-        pairList: d.pairList || meta.pairList,
-        tfList: d.tfList || meta.tfList,
-        setupList: d.setupList || meta.setupList,
-        confList: d.confList || meta.confList,
-        linkList: d.linkList || meta.linkList,
-        confFilterSelection: d.confFilterSelection || meta.confFilterSelection
-      };
-      startPreview(csvContent, panelData);
+      const data = csvPublicContentMap.get(key);
+      if (!data) return;
+      const csvContent = data.content || '';
+      startPreview(csvContent, data);
     } else if (btn.classList.contains('csv-pub-delete')) {
       const key = btn.getAttribute('data-key');
       const data = csvPublicContentMap.get(key);
