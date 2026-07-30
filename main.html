@@ -85,10 +85,8 @@ body { min-height: 100%; overflow-x: hidden; }
 .theme-light-lite .card-ice { background: var(--bg-card) !important; animation: none !important; }
 .theme-dark-lite .card-ice::before,
 .theme-light-lite .card-ice::before { display: none !important; }
-.theme-dark-lite .sig-ice .sig-text,
-.theme-light-lite .sig-ice .sig-text { animation: none !important; }
-.theme-dark-lite .sig-ice .sig-emoji,
-.theme-light-lite .sig-ice .sig-emoji { animation: none !important; }
+.theme-dark-lite .sig-sup,
+.theme-light-lite .sig-sup { animation: none !important; }
 .theme-dark-lite tr.new-trade,
 .theme-light-lite tr.new-trade { animation: none !important; outline: 1px solid var(--warning); }
 /* ====================== */
@@ -274,25 +272,51 @@ input.link-input { width: 260px; font-size: 11px; }
 }
 tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 
-.sig-ice {
-  font-size: 22px; line-height: 1;
-  display: flex; align-items: flex-end; gap: 3px;
-  cursor: pointer; user-select: none;
+/* Signature emoji — superscript next to title */
+.sig-sup-wrap {
+  position: relative; display: inline;
+  cursor: default; user-select: none;
+  z-index: 1;
 }
-.sig-ice .sig-text {
-  color: var(--accent-blue); font-weight: 600; font-size: 15px;
-  letter-spacing: 0.5px;
-  animation: sigTextGlow 4s ease-in-out infinite;
+.sig-sup {
+  font-size: 15px; line-height: 1; vertical-align: super;
+  display: inline-block; padding: 10px 8px; margin: -10px -8px 0 6px;
+  animation: sigEmoji 15s ease-in-out infinite;
+  animation-fill-mode: both;
+  filter: drop-shadow(0 0 5px rgba(125,216,242,0.4));
 }
-.sig-ice .sig-emoji {
-  display: inline-block;
-  animation: sigEmoji 4s ease-in-out infinite;
-}
-.sig-wrap {
-  position: fixed; bottom: 12px; left: 14px; z-index: 999;
+
+@keyframes sigEmoji {
+  /* ── Idle wobble + glow pulsing ── */
+  0%   { transform: rotate(0deg) scale(1) translate(0,0); filter: drop-shadow(0 0 4px rgba(125,216,242,0.3)); }
+  8%   { transform: rotate(4deg) scale(1.06) translate(0,0); filter: drop-shadow(0 0 12px rgba(125,216,242,0.7)); }
+  16%  { transform: rotate(-3deg) scale(0.95) translate(0,0); filter: drop-shadow(0 0 5px rgba(125,216,242,0.35)); }
+  24%  { transform: rotate(5deg) scale(1.05) translate(0,0); filter: drop-shadow(0 0 14px rgba(125,216,242,0.65)); }
+  32%  { transform: rotate(-2deg) scale(1) translate(0,0);    filter: drop-shadow(0 0 4px rgba(125,216,242,0.3)); }
+  40%  { transform: rotate(3deg) scale(1.07) translate(0,0); filter: drop-shadow(0 0 12px rgba(125,216,242,0.7)); }
+  48%  { transform: rotate(-5deg) scale(0.94) translate(0,0); filter: drop-shadow(0 0 6px rgba(125,216,242,0.35)); }
+  56%  { transform: rotate(2deg) scale(1.03) translate(0,0); filter: drop-shadow(0 0 10px rgba(125,216,242,0.55)); }
+  64%  { transform: rotate(0deg) scale(1) translate(0,0);    filter: drop-shadow(0 0 4px rgba(125,216,242,0.3)); }
+
+  /* ── Erime (melt) ── */
+  68%  { transform: rotate(-2deg) scale(1,0.6) translate(0,3px);  filter: drop-shadow(0 0 16px rgba(125,216,242,0.7)); }
+  71%  { transform: rotate(-4deg) scale(0.7,0.25) translate(0,10px); filter: drop-shadow(0 0 20px rgba(125,216,242,0.5)); opacity: 0.85; }
+
+  /* ── Fırlama (shoot away: yukarı-sağa) ── */
+  74%  { transform: rotate(40deg) scale(0.5,0.5) translate(55px,-50px); filter: drop-shadow(0 0 22px rgba(125,216,242,0.35)); opacity: 0.8; }
+
+  /* ── Dönme (spin mid-air) ── */
+  79%  { transform: rotate(720deg) scale(0.28,0.28) translate(90px,-140px); filter: drop-shadow(0 0 25px rgba(125,216,242,0.15)); opacity: 0.6; }
+
+  /* ── Geri dönüş (return) ── */
+  84%  { transform: rotate(900deg) scale(0.45,0.45) translate(50px,-70px); filter: drop-shadow(0 0 16px rgba(125,216,242,0.5)); opacity: 0.85; }
+  90%  { transform: rotate(980deg) scale(0.7,0.7) translate(18px,-25px);   filter: drop-shadow(0 0 12px rgba(125,216,242,0.6)); opacity: 0.95; }
+  95%  { transform: rotate(1020deg) scale(0.9,0.9) translate(5px,-8px);   filter: drop-shadow(0 0 8px rgba(125,216,242,0.55)); opacity: 1; }
+  100% { transform: rotate(0deg) scale(1) translate(0,0);                  filter: drop-shadow(0 0 4px rgba(125,216,242,0.3)); }
 }
 .sig-popup {
-  position: absolute; bottom: calc(100% + 14px); left: 0;
+  position: absolute; top: calc(100% + 10px); left: 50%;
+  transform: translateX(-50%);
   width: 290px; padding: 14px 16px;
   background: var(--bg-card); border: 1px solid var(--bg-surface);
   border-radius: 8px;
@@ -301,27 +325,15 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   text-align: left; pointer-events: none;
   opacity: 0; visibility: hidden;
   transition: opacity 0.2s ease, visibility 0.2s ease;
-  border-top: 2px solid var(--accent-blue);
+  border-bottom: 2px solid var(--accent-blue);
 }
 .sig-popup::after {
-  content: ''; position: absolute; top: 100%; left: 18px;
-  border: 6px solid transparent; border-top-color: var(--bg-surface);
+  content: ''; position: absolute; bottom: 100%; left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent; border-bottom-color: var(--bg-surface);
 }
-.sig-wrap:hover .sig-popup {
+.sig-sup-wrap:hover .sig-popup {
   opacity: 1; visibility: visible; pointer-events: auto;
-}
-@keyframes sigTextGlow {
-  0%, 100% { text-shadow: 0 0 4px rgba(125,216,242,0.2); }
-  25% { text-shadow: 0 0 14px rgba(125,216,242,0.5); }
-  50% { text-shadow: 0 0 8px rgba(125,216,242,0.3); }
-  75% { text-shadow: 0 0 18px rgba(125,216,242,0.6); }
-}
-@keyframes sigEmoji {
-  0% { transform: rotate(0deg) scale(0.94); }
-  25% { transform: rotate(6deg) scale(1.04); }
-  50% { transform: rotate(0deg) scale(0.98); }
-  75% { transform: rotate(-6deg) scale(1.06); }
-  100% { transform: rotate(0deg) scale(0.94); }
 }
 
 .card-header {
@@ -701,7 +713,7 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 <body>
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-  <h1 style="margin-bottom:0">Trade <span>Not Defteri</span></h1>
+  <h1 style="margin-bottom:0">Trade <span>Not Defteri</span><span class="sig-sup-wrap"><span class="sig-sup">🧊</span><div class="sig-popup">"Dışa Aktar" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div></span></h1>
   <div id="userInfo" style="display:none;align-items:center;gap:10px">
     <span id="userEmail" style="font-size:12px;color:var(--text-secondary)"></span>
     <button id="logoutBtn" class="btn btn-sm">Çıkış</button>
@@ -3642,10 +3654,6 @@ let currentUser = null;
   </div>
 </div>
 
-<div class="sig-wrap">
-  <div class="sig-popup">"Dışa Aktar" ile verilerinizin .csv şeklinde yedeğini alabilirsiniz.<br><br>Bu sayfayı istediğiniz bilgisayarda açıp oluşturduğunuz .csv yi "İçe Aktar" ile tekrar yükleyip notlarınıza kaldığınız yerden devam edebilirsiniz.<br><br><b><i>Herkese bol kazançlı tradeler dilerim.</i></b></div>
-  <div class="sig-ice"><span class="sig-emoji">🧊</span> <span class="sig-text">BUZ</span></div>
-</div>
 
 <!-- Custom modal -->
 <div class="modal-overlay" id="modalOverlay">
