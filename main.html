@@ -856,6 +856,10 @@ let currentUser = null;
     if (!currentUser || !currentUser.email) return '';
     return btoa(currentUser.email.split('@')[0]);
   }
+  function getNicknameKey() {
+    if (!currentUser || !currentUser.email) return 'chatNickname';
+    return 'cn_' + btoa(currentUser.email.split('@')[0]);
+  }
   async function migrateLegacyStorage() {
     if (!currentUser) return;
     const newKey = getTradeStorageKey();
@@ -2427,7 +2431,7 @@ let currentUser = null;
     if (!currentUser) return;
     try {
       allUsers = [];
-      const collections = ['users', 'trades', 'csv_storage', 'user_settings'];
+      const collections = ['users', 'csv_storage', 'user_settings'];
       for (const col of collections) {
         try {
           const snap = await getDocs(collection(db, col));
@@ -2484,6 +2488,7 @@ let currentUser = null;
           <button data-uid="${u.uid}" data-action="view-csv">CSV</button>
           <button data-uid="${u.uid}" data-action="view-info">Bilgi</button>
           <button data-uid="${u.uid}" data-action="${isBlocked ? 'unblock-user' : 'block-user'}" ${isBlocked ? 'style="background:var(--danger);color:#fff"' : ''}>${isBlocked ? 'Aç' : 'Engelle'}</button>
+          <button data-uid="${u.uid}" data-action="delete-user" style="background:var(--danger);color:#fff;border-color:var(--danger)">🗑 Sil</button>
         </div>
       </div>`;
     }).join('');
@@ -2591,9 +2596,16 @@ let currentUser = null;
           const val = inp.value.trim();
           if (val) {
                 try {
+              // Benzersizlik kontrolü
+              const nickSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname', '==', val)));
+              const adminSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname_admin', '==', val)));
+              const takenBy = [];
+              nickSnap.forEach(d => { if (d.id !== uid) takenBy.push(d.id); });
+              adminSnap.forEach(d => { if (d.id !== uid && !takenBy.includes(d.id)) takenBy.push(d.id); });
+              if (takenBy.length > 0) { await showAlert('Bu rumuz zaten başka bir kullanıcı tarafından kullanılıyor.'); return; }
               await setDoc(doc(db, 'csv_storage', uid), { nickname_admin: val, nickname: val }, { merge: true });
               nicknameOverrideMap[uid] = val;
-              if (uid === currentUser.uid) localStorage.setItem('chatNickname', val);
+              if (uid === currentUser.uid) localStorage.setItem(getNicknameKey(), val);
             } catch(e) { /* skip */ }
           }
         }
@@ -2604,6 +2616,34 @@ let currentUser = null;
         else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
       });
       inp.addEventListener('blur', () => finish(true));
+    } else if (action === 'delete-user') {
+      if (!(await showConfirm('Bu kullanıcının TÜM verilerini silmek istediğinize emin misiniz?\n\nSilinecekler:\n- Trade kayıtları\n- CSV dosyaları\n- Hesap ayarları\n\nBu işlem geri alınamaz!'))) return;
+      if (!(await showConfirm('SON UYARI: Bu işlemin dönüşü yoktur. Devam ediyor musunuz?'))) return;
+      try {
+        const tradeSnap = await getDocs(collection(db, 'trades', uid, 'items'));
+        const tradeOps = tradeSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(tradeOps);
+        const csvFilesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        const csvFileOps = csvFilesSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(csvFileOps);
+        await deleteDoc(doc(db, 'csv_storage', uid));
+        await deleteDoc(doc(db, 'user_settings', uid));
+        await deleteDoc(doc(db, 'users', uid));
+        const msgSnap = await getDocs(query(collection(db, 'messages'), where('uid', '==', uid)));
+        const msgOps = msgSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(msgOps);
+        // Kullanıcının oturumunu kapatmak için forceLogout listesine ekle
+        const adminConfig = await getDoc(doc(db, 'admin', 'config'));
+        if (adminConfig.exists()) {
+          const cfg = adminConfig.data();
+          let fl = cfg.forceLogout || [];
+          if (!fl.includes(uid)) fl.push(uid);
+          await setDoc(doc(db, 'admin', 'config'), { ...cfg, forceLogout: fl });
+        }
+        await showAlert('Kullanıcı verileri başarıyla silindi.\n\n⚠️ Sıradaki adım: Firebase Console > Authentication bölümünden kullanıcının e-posta adresini bularak hesabı da silin. Böylece kullanıcı tekrar giriş yapamaz.');
+        allUsers = allUsers.filter(u => u.uid !== uid);
+        renderAdminUserList();
+      } catch(e) { await showAlert('Silme hatası: ' + e.message); }
     }
   });
 
@@ -2627,7 +2667,7 @@ let currentUser = null;
     openPanel.classList.add('open');
     openTgl.classList.add('active');
     if (type === 'chat') {
-      const nickname = localStorage.getItem('chatNickname');
+      const nickname = localStorage.getItem(getNicknameKey());
       const nicknameWrap = $('chatNicknameWrap');
       const chatBody = $('chatBody');
       const chatFooter = $('chatFooter');
@@ -2688,6 +2728,7 @@ let currentUser = null;
     $('logoutBtn').addEventListener('click', () => {
       if (chatUnsub) chatUnsub();
       if (csvPublicUnsub) csvPublicUnsub();
+      if (window._forceLogoutUnsub) { window._forceLogoutUnsub(); window._forceLogoutUnsub = null; }
       signOut(auth);
       window.location.href = 'index.html';
     });
@@ -2723,14 +2764,49 @@ let currentUser = null;
         const override = meta.nickname_admin || meta.nickname;
         if (override) {
           nicknameOverrideMap[currentUser.uid] = override;
-          localStorage.setItem('chatNickname', override);
+          localStorage.setItem(getNicknameKey(), override);
         }
       }
     } catch(e) { /* skip */ }
-    // Ensure nickname in meta at login
-    const savedNick = localStorage.getItem('chatNickname');
-    if (savedNick) {
-      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: savedNick }, { merge: true }).catch(() => {});
+    // Ensure nickname in meta at login (sadece Firestore'dan geldiyse yaz)
+    const existingNick = nicknameOverrideMap[currentUser.uid];
+    if (existingNick) {
+      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: existingNick }, { merge: true }).catch(() => {});
+    }
+    // Force logout kontrolü — admin silince oturumu kapat
+    try {
+      const flSnap = await getDoc(doc(db, 'admin', 'config'));
+      if (flSnap.exists()) {
+        const fl = flSnap.data().forceLogout || [];
+        if (fl.includes(currentUser.uid)) {
+          const cfg = flSnap.data();
+          await setDoc(doc(db, 'admin', 'config'), { ...cfg, forceLogout: fl.filter(id => id !== currentUser.uid) });
+          // Tüm localStorage verilerini temizle
+          localStorage.removeItem(getTradeStorageKey());
+          localStorage.removeItem(getNicknameKey());
+          localStorage.removeItem(DEFAULTS_KEY);
+          localStorage.removeItem(CF_STORAGE_KEY);
+          signOut(auth);
+          window.location.href = 'index.html';
+          return;
+        }
+      }
+    } catch(e) { /* skip */ }
+    // Canlı dinle: admin panelden silinince anında çıkış
+    if (!window._forceLogoutUnsub) {
+      window._forceLogoutUnsub = onSnapshot(doc(db, 'admin', 'config'), (docSnap) => {
+        if (!docSnap.exists()) return;
+        const fl = docSnap.data().forceLogout || [];
+        if (currentUser && fl.includes(currentUser.uid)) {
+          window._forceLogoutUnsub = null;
+          localStorage.removeItem(getTradeStorageKey());
+          localStorage.removeItem(getNicknameKey());
+          localStorage.removeItem(DEFAULTS_KEY);
+          localStorage.removeItem(CF_STORAGE_KEY);
+          signOut(auth);
+          window.location.href = 'index.html';
+        }
+      });
     }
     restoreChatPosition();
     initChatDrag();
@@ -2886,7 +2962,7 @@ let currentUser = null;
       return;
     }
 
-    const nickname = localStorage.getItem('chatNickname') || currentUser.email;
+    const nickname = localStorage.getItem(getNicknameKey()) || currentUser.email;
     if (text.length > 500) { await showAlert('Mesaj çok uzun (maks 500 karakter).'); return; }
     try {
       await addDoc(collection(db, 'messages'), {
@@ -2905,7 +2981,17 @@ let currentUser = null;
     const inp = $('chatNicknameInput');
     const val = inp.value.trim();
     if (!val) { await showAlert('Lütfen bir rumuz girin.'); return; }
-    localStorage.setItem('chatNickname', val);
+    if (val.length > 20) { await showAlert('Rumuz en fazla 20 karakter olabilir.'); return; }
+    // Benzersizlik kontrolü
+    try {
+      const nickSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname', '==', val)));
+      const adminSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname_admin', '==', val)));
+      const takenBy = [];
+      nickSnap.forEach(d => { if (d.id !== currentUser.uid) takenBy.push(d.id); });
+      adminSnap.forEach(d => { if (d.id !== currentUser.uid && !takenBy.includes(d.id)) takenBy.push(d.id); });
+      if (takenBy.length > 0) { await showAlert('Bu rumuz zaten başka bir kullanıcı tarafından kullanılıyor.'); return; }
+    } catch(e) { /* skip check on error */ }
+    localStorage.setItem(getNicknameKey(), val);
     if (currentUser) {
       setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: val }, { merge: true }).catch(() => {});
     }
@@ -3244,7 +3330,7 @@ let currentUser = null;
   let previewBackup = null;
 
   function getDefaultCsvName() {
-    const nick = nicknameOverrideMap[currentUser.uid] || localStorage.getItem('chatNickname') || currentUser.email.split('@')[0];
+    const nick = nicknameOverrideMap[currentUser.uid] || localStorage.getItem(getNicknameKey()) || currentUser.email.split('@')[0];
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
@@ -3363,7 +3449,7 @@ let currentUser = null;
           await showAlert('15 dakika içinde maksimum 3 kayıt yapabilirsiniz. Kalan süre: ' + remaining + ' dakika.');
           return;
         }
-        const nickSave = localStorage.getItem('chatNickname') || '';
+        const nickSave = localStorage.getItem(getNicknameKey()) || '';
         await setDoc(doc(db, 'csv_storage', currentUser.uid), {
           saveCount: saveCount + 1, saveResetAt, nickname: nickSave,
           public: true, updatedAt: serverTimestamp()
@@ -3371,7 +3457,7 @@ let currentUser = null;
       } catch(e) { await showAlert('CSV kaydedilemedi: ' + e.message); return; }
     } else {
       // Admin path: ensure nickname in meta and make visible to all
-      const nickSave = localStorage.getItem('chatNickname') || '';
+      const nickSave = localStorage.getItem(getNicknameKey()) || '';
       await setDoc(doc(db, 'csv_storage', currentUser.uid), {
         ...(nickSave ? { nickname: nickSave } : {}),
         public: true
