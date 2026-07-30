@@ -8,7 +8,8 @@
 <script>(function(){try{var t=localStorage.getItem('td_theme');if(t)document.documentElement.className='theme-'+t;}catch(e){}})();</script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
+html { height: 100%; overflow-x: hidden; }
+body { min-height: 100%; overflow-x: hidden; }
 
 /* ===== THEME SYSTEM ===== */
 :root, .theme-dark-dynamic {
@@ -214,7 +215,7 @@ tr:hover td { background: var(--bg-card); }
 .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
 .badge-win { background: #22ab9440; color: #22ab94; }
 .badge-be { background: #f0c04040; color: #f0c040; }
-.badge-lose { background: var(--danger)40; color: var(--danger); }
+.badge-lose { background: #f7525a30; color: var(--danger); }
 .badge-setup { background: var(--bg-surface); color: var(--text-secondary); margin-right: 2px; }
 .conf-chip { display: inline-block; background: var(--bg-surface); color: var(--text-secondary); padding: 0 5px; border-radius: 2px; font-size: 10px; margin: 1px; }
 .actions { white-space: nowrap; }
@@ -1055,6 +1056,7 @@ let currentUser = null;
 
   let trades = [];
   let editingId = null;
+  let lastNewTradeTime = 0;
   let expandedSetup = null;
   let editMode = false;
   let customDefaults = null;
@@ -1837,10 +1839,10 @@ let currentUser = null;
     }).join('');
 
     tbody.querySelectorAll('[data-edit]').forEach(b => {
-      b.addEventListener('click', () => startEdit(Number(b.getAttribute('data-edit'))));
+      b.addEventListener('click', () => startEdit(b.getAttribute('data-edit')));
     });
     tbody.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => deleteTrade(Number(b.getAttribute('data-del'))));
+      b.addEventListener('click', () => deleteTrade(b.getAttribute('data-del')));
     });
     tbody.querySelectorAll('.preview-link').forEach(el => {
       el.addEventListener('mouseenter', () => { previewEnter(el); });
@@ -1852,8 +1854,8 @@ let currentUser = null;
   }
 
   function startNoteEdit(el) {
-    const id = Number(el.getAttribute('data-id'));
-    const t = trades.find(x => x.id === id);
+    const id = el.getAttribute('data-id');
+    const t = trades.find(x => String(x.id) === String(id));
     if (!t) return;
     const td = el.closest('.note-cell');
     const inp = document.createElement('input');
@@ -1882,14 +1884,14 @@ let currentUser = null;
 
   async function deleteTrade(id) {
     if (!(await showConfirm('Bu trade kaydını silmek istediğinize emin misiniz?'))) return;
-    trades = trades.filter(t => t.id !== id);
+    trades = trades.filter(t => String(t.id) !== String(id));
     save();
     removeTradeFromFirestore(id);
     renderAll();
   }
 
   function startEdit(id) {
-    const t = trades.find(x => x.id === id);
+    const t = trades.find(x => String(x.id) === String(id));
     if (!t) return;
     editingId = id;
     fPair.style.display = 'inline-block';
@@ -1922,16 +1924,11 @@ let currentUser = null;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function isDuplicate(pair, tf, setup, result, rr) {
-    return trades.some(t =>
-      t.pair === pair && t.tf === tf && t.setup === setup &&
-      t.result === result && (t.rr == rr || (t.rr == null && rr == null))
-    );
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitBtn.disabled) return;
+    // 5 saniye içinde sadece 1 trade eklenebilir (arka arkaya tıklama koruması)
+    if (!editingId && Date.now() - lastNewTradeTime < 5000) { submitBtn.disabled = false; return; }
     if (isPreviewMode) { await showAlert('Önizleme modunda trade eklenemez.'); return; }
     submitBtn.disabled = true;
     const pair = getPairValue();
@@ -1945,11 +1942,6 @@ let currentUser = null;
       fRr.style.borderColor = 'var(--danger)';
       fRr.style.boxShadow = '0 0 0 2px var(--danger)40';
       setTimeout(() => { fRr.style.borderColor = ''; fRr.style.boxShadow = ''; }, 2500);
-      submitBtn.disabled = false;
-      return;
-    }
-    if (!editingId && isDuplicate(pair, tf, setup, result, rr)) {
-      await showAlert('Bu trade zaten mevcut.');
       submitBtn.disabled = false;
       return;
     }
@@ -1968,7 +1960,7 @@ let currentUser = null;
     const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
     if (editingId) {
-      const idx = trades.findIndex(t => t.id === editingId);
+      const idx = trades.findIndex(t => String(t.id) === String(editingId));
       if (idx !== -1) {
         trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations, updatedAt: Date.now() };
         syncTradeToFirestore(trades[idx]);
@@ -1985,8 +1977,9 @@ let currentUser = null;
       };
       trades.push(newTrade);
       syncTradeToFirestore(newTrade);
+      lastNewTradeTime = Date.now();
       setTimeout(() => {
-        const t = trades.find(x => x.id === newId);
+        const t = trades.find(x => String(x.id) === String(newId));
         if (t) { delete t._new; save(); renderTrades(); }
       }, 3200);
     }
@@ -2523,15 +2516,20 @@ let currentUser = null;
         if (chatUnsub) chatUnsub();
         initChat();
       }
+      restoreChatPosition();
       restoreChatSize();
       chatToggle.classList.remove('has-unread');
       hasUnreadChat = false;
       localStorage.setItem('chatLastSeen', Date.now().toString());
     } else if (type === 'csv') {
+      restoreCsvPosition();
+      restoreCsvSize();
       csvToggle.classList.remove('has-unread');
       loadCsvMeta();
       loadMyCsvFiles();
     } else if (type === 'admin') {
+      restoreAdminPosition();
+      restoreAdminSize();
       loadAdminUsers();
     }
   }
@@ -2819,6 +2817,14 @@ let currentUser = null;
       chatPanel.style.right = 'auto';
       chatPanel.style.left = l + 'px';
       chatPanel.style.top = t + 'px';
+    } else {
+      // Default: center in viewport
+      chatPanel.style.bottom = 'auto';
+      chatPanel.style.right = 'auto';
+      const pw = Math.min(350, window.innerWidth - 20);
+      const ph = Math.min(440, window.innerHeight - 20);
+      chatPanel.style.left = Math.max(10, Math.round((window.innerWidth - pw) / 2)) + 'px';
+      chatPanel.style.top = Math.max(10, Math.round((window.innerHeight - ph) / 2)) + 'px';
     }
   }
 
@@ -2944,6 +2950,14 @@ let currentUser = null;
       csvPanel.style.right = 'auto';
       csvPanel.style.left = l + 'px';
       csvPanel.style.top = t + 'px';
+    } else {
+      // Default: center in viewport (slightly offset from chat panel)
+      csvPanel.style.bottom = 'auto';
+      csvPanel.style.right = 'auto';
+      const pw = Math.min(350, window.innerWidth - 20);
+      const ph = Math.min(440, window.innerHeight - 20);
+      csvPanel.style.left = Math.max(10, Math.round((window.innerWidth - pw) / 2 + 20)) + 'px';
+      csvPanel.style.top = Math.max(10, Math.round((window.innerHeight - ph) / 2 + 20)) + 'px';
     }
   }
 
@@ -2999,6 +3013,14 @@ let currentUser = null;
       adminPanel.style.right = 'auto';
       adminPanel.style.left = l + 'px';
       adminPanel.style.top = t + 'px';
+    } else {
+      // Default: center in viewport
+      adminPanel.style.bottom = 'auto';
+      adminPanel.style.right = 'auto';
+      const pw = Math.min(380, window.innerWidth - 20);
+      const ph = Math.min(440, window.innerHeight - 20);
+      adminPanel.style.left = Math.max(10, Math.round((window.innerWidth - pw) / 2 + 40)) + 'px';
+      adminPanel.style.top = Math.max(10, Math.round((window.innerHeight - ph) / 2 + 40)) + 'px';
     }
   }
 
