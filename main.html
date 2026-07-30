@@ -845,7 +845,39 @@ enableIndexedDbPersistence(db).catch((err) => {
 let currentUser = null;
 
 (function() {
-  const STORAGE_KEY = 'trade_notlari';
+  const LEGACY_STORAGE_KEY = 'trade_notlari';
+  function getTradeStorageKey() {
+    if (!currentUser || !currentUser.email) return LEGACY_STORAGE_KEY;
+    const localPart = currentUser.email.split('@')[0];
+    const encoded = btoa(localPart);
+    return 'trade_notlari_' + encoded;
+  }
+  function getEmailStamp() {
+    if (!currentUser || !currentUser.email) return '';
+    return btoa(currentUser.email.split('@')[0]);
+  }
+  async function migrateLegacyStorage() {
+    if (!currentUser) return;
+    const newKey = getTradeStorageKey();
+    const oldData = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!oldData) return;
+    try {
+      const parsed = JSON.parse(oldData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Check if new key already has data (don't overwrite)
+        if (!localStorage.getItem(newKey)) {
+          // Only migrate if the data has a matching email stamp
+          const stamp = localStorage.getItem(LEGACY_STORAGE_KEY + '_local');
+          if (stamp === getEmailStamp()) {
+            localStorage.setItem(newKey, oldData);
+          }
+        }
+      }
+    } catch(e) { /* corrupt data, clean up */ }
+    // Always remove old key to prevent future contamination
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY + '_local');
+  }
   const SETTINGS_KEY = 'td_lists';
   const DEFAULTS_KEY = 'td_custom_defaults';
   const BG_KEY = 'td_bg_animated';
@@ -1505,8 +1537,26 @@ let currentUser = null;
 
   function load() {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      trades = data ? JSON.parse(data) : [];
+      const key = getTradeStorageKey();
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Handle wrapped format: { trades, email, updatedAt }
+        if (parsed && typeof parsed === 'object' && 'trades' in parsed) {
+          if (parsed.email && parsed.email !== getEmailStamp()) {
+            // Email mismatch — data belongs to another user, discard
+            localStorage.removeItem(key);
+            trades = [];
+          } else {
+            trades = parsed.trades;
+          }
+        } else {
+          // Legacy bare array format — accept as-is
+          trades = parsed;
+        }
+      } else {
+        trades = [];
+      }
     } catch(e) { trades = []; }
     // Migrate old format: htf/ltf/esPair → links
     trades.forEach(t => {
@@ -1520,7 +1570,12 @@ let currentUser = null;
     });
   }
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    if (!currentUser) return;
+    const key = getTradeStorageKey();
+    const wrapped = { trades, email: getEmailStamp(), updatedAt: Date.now() };
+    localStorage.setItem(key, JSON.stringify(wrapped));
+    // Also write a separate email stamp for legacy migration cross-check
+    localStorage.setItem(LEGACY_STORAGE_KEY + '_local', getEmailStamp());
   }
 
   async function loadFromFirestore() {
@@ -1532,8 +1587,21 @@ let currentUser = null;
       // 2. Read localStorage (offline cache)
       let localTrades = [];
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) localTrades = JSON.parse(raw);
+        const raw = localStorage.getItem(getTradeStorageKey());
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Handle wrapped format: { trades, email, updatedAt }
+          if (parsed && typeof parsed === 'object' && 'trades' in parsed) {
+            if (parsed.email && parsed.email !== getEmailStamp()) {
+              localStorage.removeItem(getTradeStorageKey());
+              localTrades = [];
+            } else {
+              localTrades = parsed.trades;
+            }
+          } else {
+            localTrades = parsed;
+          }
+        }
       } catch(e) {}
       if (firestoreTrades.length > 0) {
         // Merge: Firestore base + localStorage-only trades (offline creations)
@@ -1558,16 +1626,19 @@ let currentUser = null;
           if (!firestoreIds.has(String(t.id))) firestoreTrades.push(t);
         }
         trades = firestoreTrades;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+        const wrapped = { trades, email: getEmailStamp(), updatedAt: Date.now() };
+        localStorage.setItem(getTradeStorageKey(), JSON.stringify(wrapped));
         return true;
       }
     } catch(e) { console.warn('Firestore load failed:', e); }
     // Fallback: localStorage
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(getTradeStorageKey());
       if (raw) {
         const d = JSON.parse(raw);
-        if (d.length > 0) { trades = d; return true; }
+        // Handle wrapped format
+        let fallbackTrades = (d && typeof d === 'object' && 'trades' in d) ? d.trades : d;
+        if (fallbackTrades.length > 0) { trades = fallbackTrades; return true; }
       }
     } catch(e) {}
     return false;
@@ -1937,6 +2008,7 @@ let currentUser = null;
   }
 
   async function deleteTrade(id) {
+    if (isPreviewMode) { await showAlert('Önizleme modunda silme yapılamaz.'); return; }
     if (!(await showConfirm('Bu trade kaydını silmek istediğinize emin misiniz?'))) return;
     trades = trades.filter(t => String(t.id) !== String(id));
     save();
@@ -2604,6 +2676,8 @@ let currentUser = null;
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
     currentUser = user;
+    // Eski ortak localStorage anahtarını temizle (güvenlik)
+    migrateLegacyStorage();
     // Register user doc for admin panel visibility
     setDoc(doc(db, 'users', user.uid), {
       email: user.email, uid: user.uid, lastSeen: serverTimestamp()
