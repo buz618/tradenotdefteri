@@ -197,11 +197,22 @@ select { min-width: 70px; cursor: pointer; }
 .pair-wrap input { min-width: 100px; }
 textarea.note-input { width: 100%; min-height: 36px; resize: vertical; background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text); border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; }
 textarea.note-input:focus { outline: none; border-color: #22ab94; }
-.note-cell { max-width: 160px; min-width: 60px; cursor: pointer; }
-.note-display { font-size: 11px; color: var(--text-secondary); }
+.note-cell { max-width: 160px; min-width: 60px; cursor: pointer; overflow: hidden; }
+.note-display { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .note-display:hover { color: #22ab94; }
 .note-display.has-note { color: var(--text); }
 .note-input-inline { width: 100%; min-width: 60px; background: var(--bg-surface); border: 1px solid #22ab94; color: var(--text); border-radius: 3px; padding: 2px 6px; font-size: 11px; font-family: inherit; }
+#noteTooltip {
+  position: fixed; z-index: 9999;
+  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 6px;
+  padding: 8px 12px; font-size: 12px; color: var(--text);
+  box-shadow: 0 8px 24px var(--shadow-heavy);
+  max-width: 360px; word-break: break-word; white-space: pre-wrap; line-height: 1.5;
+  pointer-events: none; font-family: inherit;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.15s ease;
+}
+#noteTooltip.show { opacity: 1; visibility: visible; }
 
 .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
@@ -1099,6 +1110,7 @@ let currentUser = null;
   const fPairCustom = $('fPairCustom');
   const fTf = $('fTf');
   const fSetup = $('fSetup');
+  const noteTooltip = (() => { const e = document.createElement('div'); e.id = 'noteTooltip'; document.body.appendChild(e); return e; })();
   const fResult = $('fResult');
   const fRr = $('fRr');
   const fNote = $('fNote');
@@ -1862,6 +1874,36 @@ let currentUser = null;
     });
     tbody.querySelectorAll('.note-display').forEach(el => {
       el.addEventListener('click', () => startNoteEdit(el));
+      el.addEventListener('mouseenter', () => {
+        const text = el.textContent.trim();
+        if (!text || text === 'Not...') return;
+        // Sadece taşma varsa tooltip göster
+        if (el.scrollWidth <= el.clientWidth) return;
+        noteTooltip.textContent = text;
+        noteTooltip.classList.remove('show');
+        const rect = el.getBoundingClientRect();
+        const pad = 4;
+        let top = rect.bottom + pad;
+        let left = Math.max(pad, rect.left);
+        noteTooltip.style.top = top + 'px';
+        noteTooltip.style.left = left + 'px';
+        noteTooltip.classList.add('show');
+        // Taşma kontrolü — viewport dışına çıkma
+        requestAnimationFrame(() => {
+          const tr = noteTooltip.getBoundingClientRect();
+          if (tr.bottom > window.innerHeight - pad) {
+            top = rect.top - tr.height - pad;
+            noteTooltip.style.top = Math.max(pad, top) + 'px';
+          }
+          if (tr.right > window.innerWidth - pad) {
+            left = window.innerWidth - tr.width - pad;
+            noteTooltip.style.left = Math.max(pad, left) + 'px';
+          }
+          if (parseFloat(noteTooltip.style.top) < pad) noteTooltip.style.top = pad + 'px';
+          if (parseFloat(noteTooltip.style.left) < pad) noteTooltip.style.left = pad + 'px';
+        });
+      });
+      el.addEventListener('mouseleave', () => { noteTooltip.classList.remove('show'); });
     });
   }
 
