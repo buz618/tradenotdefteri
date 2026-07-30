@@ -454,6 +454,41 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   .row label { margin-top: 4px; }
   input, select { width: 100% !important; }
   .filter-row .btn { margin-left: 0; }
+
+  /* A <label> holding text + a <select>/<input> is inline by default, but
+     as a flex item inside a column .row it gets blockified & stretched to
+     full width while the select also gets width:100% from the rule above.
+     The label text and the full-width control then fight for the same
+     line and wrap unpredictably — this is what caused combobox/textbox
+     positions to "shift" on mobile. Stacking label text above the control
+     makes the layout deterministic. */
+  .row label {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+  }
+  .row label select,
+  .row label input[type="text"],
+  .row label input[type="number"] {
+    width: 100% !important;
+  }
+
+  /* .pair-wrap is inline-flex (shrink-to-fit) on desktop; on mobile it must
+     become a full-width row so the select/input inside it don't collapse
+     to their min-width and misalign under the "Parite" label. */
+  .pair-wrap { display: flex; width: 100%; }
+  .pair-wrap select, .pair-wrap input { flex: 1; min-width: 0; }
+
+  /* The confirmations filter trigger/dropdown are absolutely positioned
+     relative to .conf-filter-wrap, which is inline-block (shrink-to-fit).
+     On narrow screens this let the dropdown overflow off-screen or sit
+     misaligned under the trigger. Make both full-width and anchor the
+     dropdown to the row instead of a fixed left offset. */
+  .conf-filter-wrap { width: 100%; }
+  .conf-filter-trigger { width: 100%; box-sizing: border-box; }
+  .conf-filter-dropdown { left: 0; right: 0; width: auto; }
 }
 
 #linkFields { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -3492,6 +3527,12 @@ let currentUser = null;
   let csvPublicUnsub = null;
   let csvPublicCache = [];
   const csvPublicContentMap = new Map();
+  // Guards against out-of-order async responses: Firestore can emit several
+  // onSnapshot events in quick succession (e.g. right after a save). Each
+  // triggers an async fetchPublicCsvFiles(); without a token, a slower older
+  // request could resolve AFTER a newer one and overwrite fresh data with
+  // stale/empty data, causing the "sometimes empty, sometimes not" glitch.
+  let csvFetchToken = 0;
 
   function initCsvPublicWatcher() {
     if (csvPublicUnsub || !currentUser) return;
@@ -3504,11 +3545,16 @@ let currentUser = null;
         if (doc.data().public === true || isAdmin) publicUsers.push({ uid: doc.id, meta: doc.data() });
       });
       fetchPublicCsvFiles(publicUsers);
+    }, (err) => {
+      // Previously errors (e.g. permission-denied) were swallowed silently,
+      // which made the list look "empty" with no indication why.
+      console.error('Buluttan İzle: snapshot dinleyicisi hata verdi:', err);
     });
   }
 
   async function fetchPublicCsvFiles(publicUsers) {
-    csvPublicContentMap.clear();
+    const myToken = ++csvFetchToken;
+    const contentMap = new Map();
     let items = [];
     await Promise.all(publicUsers.map(async ({ uid, meta }) => {
       try {
@@ -3516,7 +3562,7 @@ let currentUser = null;
         filesSnap.forEach(fd => {
           const d = fd.data();
           const key = uid + '_' + fd.id;
-          csvPublicContentMap.set(key, {
+          contentMap.set(key, {
             uid, fileId: fd.id,
             content: d.content || '',
             name: d.name || '',
@@ -3535,8 +3581,16 @@ let currentUser = null;
             fileUpdatedAt: fileTime
           });
         });
-      } catch(e) { /* skip */ }
+      } catch(e) { console.error('Buluttan İzle: dosyalar okunamadı (' + uid + '):', e); }
     }));
+
+    // A newer fetch started (or already finished) while we were waiting on
+    // getDocs — discard this stale result instead of overwriting the cache.
+    if (myToken !== csvFetchToken) return;
+
+    csvPublicContentMap.clear();
+    contentMap.forEach((v, k) => csvPublicContentMap.set(k, v));
+
     const seen = new Set();
     items = items.filter(item => {
       if (seen.has(item.key)) return false;
