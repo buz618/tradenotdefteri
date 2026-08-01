@@ -179,6 +179,7 @@ select { min-width: 70px; cursor: pointer; }
 .stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
 .stat-bar .bar-win { background: #22ab94; }
 .stat-bar .bar-be { background: #f0c040; }
+.stat-bar .bar-fr { background: #8a7ff0; }
 .stat-bar .bar-lose { background: var(--danger); }
 .stat-conf-row { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 2px; }
 .stat-conf { display: inline-block; background: var(--bg-surface); color: var(--text-secondary); padding: 1px 6px; border-radius: 3px; font-size: 10px; }
@@ -224,6 +225,7 @@ tr:hover td { background: var(--bg-card); }
 .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
 .badge-win { background: #22ab9440; color: #22ab94; }
 .badge-be { background: #f0c04040; color: #f0c040; }
+.badge-fr { background: #8a7ff040; color: #8a7ff0; }
 .badge-lose { background: #f7525a30; color: var(--danger); }
 .badge-setup { background: var(--bg-surface); color: var(--text-secondary); margin-right: 2px; }
 .conf-chip { display: inline-block; background: var(--bg-surface); color: var(--text-secondary); padding: 0 5px; border-radius: 2px; font-size: 10px; margin: 1px; }
@@ -395,8 +397,10 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
   display: inline-flex; align-items: center; gap: 3px;
   background: var(--bg-surface); border: 1px solid var(--border-light);
   border-radius: 3px; padding: 2px 6px; font-size: 11px;
-  color: var(--text);
+  color: var(--text); cursor: grab; user-select: none;
 }
+.edit-chips .chip.dragging { opacity: 0.4; cursor: grabbing; }
+.edit-chips .chip.drag-over { border-color: #22ab94; box-shadow: -2px 0 0 #22ab94; }
 .edit-chips .chip .chip-x {
   cursor: pointer; color: var(--text-secondary); font-size: 12px;
   line-height: 1; margin-left: 2px;
@@ -753,6 +757,47 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
 .modal-box .modal-btns .btn-primary { background: #22ab94; color: var(--text-inverse); border-color: #22ab94; }
 .modal-box .modal-btns .btn-primary:hover { background: #1b8a77; }
 .modal-box .modal-btns .btn-danger { background: var(--danger); color: var(--text-inverse); border-color: var(--danger); }
+
+/* Mini takvim seçici (calender.html temasından app.html'e uyarlanmıştır) */
+.mini-cal-box { width: 300px; padding: 14px 14px 4px; }
+.mini-cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px; margin-bottom: 10px;
+}
+.mini-cal-nav {
+  background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-secondary);
+  border-radius: 6px; width: 26px; height: 26px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; font-family: inherit;
+}
+.mini-cal-nav:hover { background: var(--border-light); color: var(--text); }
+.mini-cal-selects { display: flex; gap: 6px; }
+.mini-cal-selects select { font-size: 11px; padding: 4px 6px; }
+.mini-cal-daynames, .mini-cal-days {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+}
+.mini-cal-daynames { margin-bottom: 4px; }
+.mini-cal-daynames div {
+  text-align: center; font-size: 10px; font-weight: 700; color: var(--text-secondary);
+  padding: 4px 0;
+}
+.mini-cal-day {
+  text-align: center; padding: 6px 0; border-radius: 6px; font-size: 11px;
+  background: var(--bg-surface); color: var(--text); cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.mini-cal-day:hover { background: var(--border-light); }
+.mini-cal-day.today {
+  background: #22ab9440; color: #22ab94; font-weight: 700;
+  border: 1px solid #22ab94;
+}
+.mini-cal-day.selected {
+  background: #22ab94; color: var(--text-inverse); font-weight: 700;
+  transform: scale(1.05);
+}
+.mini-cal-day.other-month { visibility: hidden; pointer-events: none; }
+#filterDateRangeLabel {
+  font-size: 11px; color: var(--text-secondary); white-space: nowrap;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -792,7 +837,12 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
       <div class="edit-chips" id="editChipsTf" style="display:none"></div>
       <label>Setup <select id="fSetup"></select></label>
       <div class="edit-chips" id="editChipsSetup" style="display:none"></div>
-      <label>Sonuç <select id="fResult"><option value="Win">Win</option><option value="BE">BE</option><option value="Lose">Lose</option></select></label>
+      <label>İşlem Tarihi <span style="display:inline-flex;gap:4px;align-items:center">
+        <button type="button" class="btn btn-sm" id="fTradeDateBtn" title="Geçmiş bir tarih seçmek için tıklayın">📅 Otomatik (şu an)</button>
+        <button type="button" class="btn btn-sm" id="fTradeDateClearBtn" title="Otomatik tarihe dön" style="display:none;padding:3px 8px">✕</button>
+      </span></label>
+      <label>İşlem Saati <select id="fSaat"></select></label>
+      <label>Sonuç <select id="fResult"><option value="Win">Win</option><option value="BE">BE</option><option value="FR">FR</option><option value="Lose">Lose</option></select></label>
       <label>RR <input type="number" id="fRr" step="0.01" min="0" placeholder="0.00"></label>
       <div id="linkFields"></div>
     </div>
@@ -828,7 +878,17 @@ tr.new-trade { animation: newRowGlow 3s ease-out forwards; }
     <label>Parite <select id="filterPair"><option value="">Tümü</option></select></label>
     <label>TF <select id="filterTf"><option value="">Tümü</option></select></label>
     <label>Setup <select id="filterSetup"><option value="">Tümü</option></select></label>
-    <label>Sonuç <select id="filterResult"><option value="">Tümü</option><option>Win</option><option>BE</option><option>Lose</option></select></label>
+    <label>Sonuç <select id="filterResult"><option value="">Tümü</option><option>Win</option><option>BE</option><option>FR</option><option>Lose</option></select></label>
+    <label>Tarih Aralığı <span style="display:inline-flex;gap:4px;align-items:center">
+      <select id="filterDateRange"><option value="">Tümü</option><option value="day">Gün</option><option value="week">Hafta</option><option value="month">Ay</option><option value="year">Yıl</option></select>
+      <button type="button" class="btn btn-sm" id="filterDateCalBtn" title="Tarih seç" style="display:none;padding:3px 8px">📅</button>
+      <span id="filterDateRangeLabel"></span>
+    </span></label>
+    <label>Saat Aralığı <span style="display:inline-flex;gap:4px;align-items:center">
+      <select id="filterHourFrom"><option value="">Tümü</option></select>
+      <span style="color:var(--text-secondary);font-size:11px">-</span>
+      <select id="filterHourTo"><option value="">Tümü</option></select>
+    </span></label>
     <label>Konfirmasyonlar</label>
     <div class="conf-filter-wrap" id="confFilterWrap"><div class="conf-filter-trigger" id="confFilterTrigger">Tümü</div><div class="conf-filter-dropdown" id="confFilterDropdown"></div></div>
     <span class="filter-summary" id="filterSummary"></span>
@@ -894,6 +954,73 @@ let currentUser = null;
   function getNicknameKey() {
     if (!currentUser || !currentUser.email) return 'chatNickname';
     return 'cn_' + btoa(currentUser.email.split('@')[0]);
+  }
+
+  // Shared nickname requirement logic, used by both the Chat popup and the CSV popup.
+  function hasNickname() {
+    return !!localStorage.getItem(getNicknameKey());
+  }
+
+  function showNicknamePrompt(type) {
+    if (type === 'chat') {
+      $('chatNicknameWrap').style.display = 'flex';
+      $('chatBody').style.display = 'none';
+      $('chatFooter').style.display = 'none';
+    } else if (type === 'csv') {
+      $('csvNicknameWrap').style.display = 'flex';
+      $('csvTabsNav').style.display = 'none';
+      $('csvMyBody').style.display = 'none';
+      $('csvPublicBody').style.display = 'none';
+    }
+  }
+
+  function hideNicknamePrompt(type) {
+    if (type === 'chat') {
+      $('chatNicknameWrap').style.display = 'none';
+      $('chatBody').style.display = 'flex';
+      $('chatFooter').style.display = 'flex';
+    } else if (type === 'csv') {
+      $('csvNicknameWrap').style.display = 'none';
+      $('csvTabsNav').style.display = 'flex';
+      const activeId = $('csvTabMy').classList.contains('active') ? 'csvMyBody' : 'csvPublicBody';
+      $(activeId).style.display = 'flex';
+    }
+  }
+
+  // Checks whether the user has a nickname; if not, shows the prompt for the given popup type.
+  // Returns true if the nickname already exists (no prompt needed).
+  function ensureNickname(type) {
+    if (hasNickname()) { hideNicknamePrompt(type); return true; }
+    showNicknamePrompt(type);
+    return false;
+  }
+
+  async function confirmNickname(type) {
+    const inp = type === 'chat' ? $('chatNicknameInput') : $('csvNicknameInput');
+    const val = inp.value.trim();
+    if (!val) { await showAlert('Lütfen bir rumuz girin.'); return; }
+    if (val.length > 20) { await showAlert('Rumuz en fazla 20 karakter olabilir.'); return; }
+    // Benzersizlik kontrolü
+    try {
+      const nickSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname', '==', val)));
+      const adminSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname_admin', '==', val)));
+      const takenBy = [];
+      nickSnap.forEach(d => { if (d.id !== currentUser.uid) takenBy.push(d.id); });
+      adminSnap.forEach(d => { if (d.id !== currentUser.uid && !takenBy.includes(d.id)) takenBy.push(d.id); });
+      if (takenBy.length > 0) { await showAlert('Bu rumuz zaten başka bir kullanıcı tarafından kullanılıyor.'); return; }
+    } catch(e) { /* skip check on error */ }
+    localStorage.setItem(getNicknameKey(), val);
+    if (currentUser) {
+      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: val }, { merge: true }).catch(() => {});
+    }
+    inp.value = '';
+    hideNicknamePrompt(type);
+    if (type === 'chat') {
+      if (!chatUnsub) initChat();
+    } else if (type === 'csv') {
+      loadCsvMeta();
+      loadMyCsvFiles();
+    }
   }
   async function migrateLegacyStorage() {
     if (!currentUser) return;
@@ -1155,6 +1282,12 @@ let currentUser = null;
   let editMode = false;
   let customDefaults = null;
 
+  const HOUR_SLOTS = Array.from({ length: 24 }, (_, i) => {
+    const pad = n => String(n).padStart(2, '0');
+    const start = pad(i);
+    const end = pad((i + 1) % 24);
+    return `${start}:00-${end}:00`;
+  });
   let pairList = [];
   let tfList = [];
   let setupList = [];
@@ -1181,6 +1314,10 @@ let currentUser = null;
   const fPairCustom = $('fPairCustom');
   const fTf = $('fTf');
   const fSetup = $('fSetup');
+  const fSaat = $('fSaat');
+  let saatManuallySet = false;
+  fSaat.addEventListener('change', () => { saatManuallySet = true; });
+  function getCurrentHourSlot() { return HOUR_SLOTS[new Date().getHours()]; }
   const noteTooltip = (() => { const e = document.createElement('div'); e.id = 'noteTooltip'; document.body.appendChild(e); return e; })();
   const fResult = $('fResult');
   const fRr = $('fRr');
@@ -1279,9 +1416,14 @@ let currentUser = null;
     const curPair = fPair.value;
     const curTf = fTf.value;
     const curSetup = fSetup.value;
+    const curSaat = fSaat.value;
     populateSelect(fTf, tfList, curTf);
     populateSelect(fSetup, setupList, curSetup);
     populatePairOptions();
+    if (!fSaat.options.length) {
+      fSaat.innerHTML = HOUR_SLOTS.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+    if (curSaat && HOUR_SLOTS.includes(curSaat)) fSaat.value = curSaat;
   }
 
   // Conf checkboxes
@@ -1318,7 +1460,7 @@ let currentUser = null;
     if (!editMode) { container.style.display = 'none'; return; }
     container.style.display = 'flex';
     container.innerHTML = list.map((v, i) =>
-      `<span class="chip">${escapeHtml(v)}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
+      `<span class="chip" draggable="true" data-list="${listId}" data-index="${i}">${escapeHtml(v)}<span class="chip-x" data-list="${listId}" data-index="${i}">✕</span></span>`
     ).join('') + `<span class="chip-add" data-list="${listId}">+</span>`;
   }
 
@@ -1379,6 +1521,29 @@ let currentUser = null;
     else if (listId === 'setups') setupList.splice(index, 1);
     else if (listId === 'confs') confList.splice(index, 1);
     else if (listId === 'links') linkList.splice(index, 1);
+    saveLists();
+    buildConfGrid();
+    populateSelectors();
+    renderAllChips();
+    buildConfFilterDropdown();
+    if (listId === 'links') { renderLinkFields(); }
+  }
+
+  function getListRef(listId) {
+    if (listId === 'pairs') return pairList;
+    if (listId === 'tfs') return tfList;
+    if (listId === 'setups') return setupList;
+    if (listId === 'confs') return confList;
+    if (listId === 'links') return linkList;
+    return null;
+  }
+
+  function reorderChipItem(listId, fromIndex, toIndex) {
+    const list = getListRef(listId);
+    if (!list) return;
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= list.length || toIndex >= list.length) return;
+    const [moved] = list.splice(fromIndex, 1);
+    list.splice(toIndex, 0, moved);
     saveLists();
     buildConfGrid();
     populateSelectors();
@@ -1491,6 +1656,55 @@ let currentUser = null;
       addChipItem(listId);
       return;
     }
+  });
+
+  // Drag-and-drop reordering for edit chips
+  let dragChip = null; // { listId, index, el }
+
+  document.addEventListener('dragstart', (e) => {
+    const chip = e.target.closest('.edit-chips .chip[draggable="true"]');
+    if (!chip) return;
+    dragChip = {
+      listId: chip.getAttribute('data-list'),
+      index: parseInt(chip.getAttribute('data-index'), 10),
+      el: chip
+    };
+    chip.classList.add('dragging');
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', ''); } catch(err) {}
+    }
+  });
+
+  document.addEventListener('dragover', (e) => {
+    if (!dragChip) return;
+    const chip = e.target.closest('.edit-chips .chip[draggable="true"]');
+    if (!chip || chip.getAttribute('data-list') !== dragChip.listId || chip === dragChip.el) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    chip.classList.add('drag-over');
+  });
+
+  document.addEventListener('dragleave', (e) => {
+    const chip = e.target.closest('.edit-chips .chip[draggable="true"]');
+    if (chip) chip.classList.remove('drag-over');
+  });
+
+  document.addEventListener('drop', (e) => {
+    if (!dragChip) return;
+    const chip = e.target.closest('.edit-chips .chip[draggable="true"]');
+    if (chip && chip.getAttribute('data-list') === dragChip.listId && chip !== dragChip.el) {
+      e.preventDefault();
+      const toIndex = parseInt(chip.getAttribute('data-index'), 10);
+      reorderChipItem(dragChip.listId, dragChip.index, toIndex);
+    }
+    document.querySelectorAll('.edit-chips .chip.drag-over').forEach(c => c.classList.remove('drag-over'));
+  });
+
+  document.addEventListener('dragend', () => {
+    document.querySelectorAll('.edit-chips .chip.dragging').forEach(c => c.classList.remove('dragging'));
+    document.querySelectorAll('.edit-chips .chip.drag-over').forEach(c => c.classList.remove('drag-over'));
+    dragChip = null;
   });
 
   // Gear menu
@@ -1720,6 +1934,12 @@ let currentUser = null;
     fPair.value = pairList[0] || '';
     fTf.value = tfList.includes('15m') ? '15m' : (tfList[0] || '');
     fSetup.value = setupList.includes('Senkron') ? 'Senkron' : (setupList[0] || '');
+    fSaat.value = getCurrentHourSlot();
+    saatManuallySet = false;
+    formTradeDate = null;
+    fTradeDateBtn.disabled = false;
+    fTradeDateBtn.title = 'Geçmiş bir tarih seçmek için tıklayın';
+    applyTradeDateLabel();
     fResult.value = 'Win';
     fRr.value = '';
     renderLinkFields();
@@ -1732,10 +1952,237 @@ let currentUser = null;
 
   function getFilterValues() {
     const v = {};
-    ['Pair','Tf','Setup','Result'].forEach(k => {
+    ['Pair','Tf','Setup','Result','DateRange','HourFrom','HourTo'].forEach(k => {
       v[k] = $(`filter${k}`).value;
     });
     return v;
+  }
+
+  // Trade tarihi (t.date, "D.M.YYYY HH:MM" tr-TR biçimi) belirtilen aralığın içinde mi?
+  // Aralık, kullanıcının mini takvimden seçtiği filterRefDate'e göre hesaplanır
+  // (Gün/Hafta/Ay/Yıl her zaman "bugün" değil, seçilen tarihe göre çalışır).
+  // ÖNEMLİ: t.date, trade'in gerçek işlem tarihini tutar (manuel İşlem Tarihi seçilmiş
+  // olabilir), t.id ise sadece benzersiz kayıt anahtarıdır — bu yüzden filtreleme için
+  // önce t.date ayrıştırılır, t.id'ye sadece t.date okunamazsa geri dönülür.
+  function isTradeInDateRange(t, range) {
+    if (!range) return true;
+    let ts = null;
+    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})/.exec(t.date || '');
+    if (m) {
+      ts = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime();
+    } else {
+      const idTs = Number(t.id);
+      if (idTs && !isNaN(idTs)) ts = idTs;
+    }
+    if (ts == null) return true;
+    const d = new Date(ts);
+    const ref = filterRefDate;
+    if (range === 'day') {
+      return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate();
+    }
+    if (range === 'week') {
+      const dow = (ref.getDay() + 6) % 7; // Pazartesi = 0
+      const weekStart = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - dow, 0, 0, 0, 0);
+      const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return d >= weekStart && d < weekEnd;
+    }
+    if (range === 'month') {
+      return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
+    }
+    if (range === 'year') {
+      return d.getFullYear() === ref.getFullYear();
+    }
+    return true;
+  }
+
+
+  // === Genel amaçlı mini takvim seçici (calender.html'den app.html temasına uyarlanmıştır) ===
+  // Hem "Tarih Aralığı" filtresinde, hem de "Yeni Trade" formundaki "İşlem Tarihi"
+  // alanında (geçmiş veri girişi için) kullanılır.
+  const MINI_CAL_DAYNAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+  const MINI_CAL_MONTHNAMES = [...Array(12).keys()].map(i => new Date(2000, i, 1).toLocaleString('tr-TR', { month: 'long' }));
+  let filterRefDate = new Date(); // Tarih Aralığı filtresinin hangi gün/ay/yıla göre hesaplanacağını belirler
+  let formTradeDate = null; // Yeni Trade formunda manuel seçilen İşlem Tarihi (null = "otomatik / şu an")
+  let miniCalViewDate = new Date(); // Takvim popup'ında o an gezinilen ay/yıl
+  let miniCalSelectedDate = new Date(); // Popup içinde vurgulanan (seçili) gün
+  let miniCalOnSelectDay = null; // Bir güne tıklanınca çağrılır: (Date) => void
+  let miniCalOnApplyMonth = null; // "Uygula" butonuna tıklanınca çağrılır: (viewDate) => void — null ise buton gizlenir
+
+  const miniCalOverlay = $('miniCalOverlay');
+  const miniCalMonthSel = $('miniCalMonth');
+  const miniCalYearSel = $('miniCalYear');
+  const miniCalDayNamesEl = $('miniCalDayNames');
+  const miniCalDaysEl = $('miniCalDays');
+  const miniCalApplyBtn = $('miniCalApply');
+  const filterDateCalBtn = $('filterDateCalBtn');
+  const filterDateRangeLabel = $('filterDateRangeLabel');
+  const fTradeDateBtn = $('fTradeDateBtn');
+  const fTradeDateClearBtn = $('fTradeDateClearBtn');
+
+  function populateMiniCalSelects() {
+    MINI_CAL_MONTHNAMES.forEach((m, i) => {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = m;
+      miniCalMonthSel.appendChild(o);
+    });
+    const curYear = new Date().getFullYear();
+    for (let y = curYear - 5; y <= curYear + 5; y++) {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      miniCalYearSel.appendChild(o);
+    }
+  }
+
+  function renderMiniCalDayNames() {
+    miniCalDayNamesEl.innerHTML = MINI_CAL_DAYNAMES.map(n => `<div>${n}</div>`).join('');
+  }
+
+  function renderMiniCal() {
+    const month = miniCalViewDate.getMonth();
+    const year = miniCalViewDate.getFullYear();
+    miniCalMonthSel.value = month;
+    miniCalYearSel.value = year;
+
+    const firstDay = new Date(year, month, 1);
+    const firstDayIndex = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    miniCalDaysEl.innerHTML = '';
+    for (let i = 0; i < firstDayIndex; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'mini-cal-day other-month';
+      miniCalDaysEl.appendChild(empty);
+    }
+    for (let i = 1; i <= lastDay; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'mini-cal-day';
+      cell.textContent = i;
+      if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+        cell.classList.add('today');
+      }
+      if (miniCalSelectedDate && i === miniCalSelectedDate.getDate() && month === miniCalSelectedDate.getMonth() && year === miniCalSelectedDate.getFullYear()) {
+        cell.classList.add('selected');
+      }
+      cell.addEventListener('click', () => {
+        const picked = new Date(year, month, i);
+        const onSelect = miniCalOnSelectDay;
+        closeMiniCal();
+        if (onSelect) onSelect(picked);
+      });
+      miniCalDaysEl.appendChild(cell);
+    }
+  }
+
+  // opts: { initialDate, onSelectDay, onApplyMonth? } — onApplyMonth verilmezse "Uygula" butonu gizlenir
+  function openMiniCal(opts) {
+    miniCalSelectedDate = opts.initialDate || new Date();
+    miniCalViewDate = new Date(miniCalSelectedDate.getFullYear(), miniCalSelectedDate.getMonth(), 1);
+    miniCalOnSelectDay = opts.onSelectDay || null;
+    miniCalOnApplyMonth = opts.onApplyMonth || null;
+    miniCalApplyBtn.style.display = miniCalOnApplyMonth ? '' : 'none';
+    renderMiniCal();
+    miniCalOverlay.classList.add('open');
+  }
+
+  function closeMiniCal() {
+    miniCalOverlay.classList.remove('open');
+  }
+
+  function applyDateRangeLabel() {
+    const range = $('filterDateRange').value;
+    const pad = n => String(n).padStart(2, '0');
+    if (!range) { filterDateRangeLabel.textContent = ''; filterDateCalBtn.style.display = 'none'; return; }
+    filterDateCalBtn.style.display = '';
+    if (range === 'day' || range === 'week') {
+      filterDateRangeLabel.textContent = `${pad(filterRefDate.getDate())}.${pad(filterRefDate.getMonth()+1)}.${filterRefDate.getFullYear()}`;
+    } else if (range === 'month') {
+      filterDateRangeLabel.textContent = `${MINI_CAL_MONTHNAMES[filterRefDate.getMonth()]} ${filterRefDate.getFullYear()}`;
+    } else if (range === 'year') {
+      filterDateRangeLabel.textContent = `${filterRefDate.getFullYear()}`;
+    }
+  }
+
+  function applyTradeDateLabel() {
+    const pad = n => String(n).padStart(2, '0');
+    if (formTradeDate) {
+      fTradeDateBtn.textContent = `📅 ${pad(formTradeDate.getDate())}.${pad(formTradeDate.getMonth()+1)}.${formTradeDate.getFullYear()}`;
+      fTradeDateClearBtn.style.display = '';
+    } else {
+      fTradeDateBtn.textContent = '📅 Otomatik (şu an)';
+      fTradeDateClearBtn.style.display = 'none';
+    }
+  }
+
+  populateMiniCalSelects();
+  renderMiniCalDayNames();
+
+  // Tarih Aralığı filtresi: bir güne tıklayınca hemen uygulanır; Ay/Yıl modunda
+  // "Uygula" ile o an görüntülenen ay/yıl, gün seçmeden onaylanabilir.
+  filterDateCalBtn.addEventListener('click', () => {
+    openMiniCal({
+      initialDate: filterRefDate,
+      onSelectDay: (d) => { filterRefDate = d; applyDateRangeLabel(); renderTrades(); },
+      onApplyMonth: (viewDate) => {
+        let d = new Date(viewDate.getFullYear(), viewDate.getMonth(), filterRefDate.getDate() || 1);
+        // Ay içinde geçersiz bir gün kalmışsa (örn. 31'inden kısa aya geçiş), ay sonuna çek
+        const lastDay = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+        if (d.getDate() > lastDay) d = new Date(viewDate.getFullYear(), viewDate.getMonth(), lastDay);
+        filterRefDate = d;
+        applyDateRangeLabel();
+        renderTrades();
+      }
+    });
+  });
+
+  // İşlem Tarihi (Yeni Trade formu): sadece kesin bir gün seçilir, "Uygula" yok —
+  // geçmiş veri girişi için tam tarih gerekir.
+  fTradeDateBtn.addEventListener('click', () => {
+    if (fTradeDateBtn.disabled) return;
+    openMiniCal({
+      initialDate: formTradeDate || new Date(),
+      onSelectDay: (d) => { formTradeDate = d; applyTradeDateLabel(); }
+    });
+  });
+  fTradeDateClearBtn.addEventListener('click', () => {
+    formTradeDate = null;
+    applyTradeDateLabel();
+  });
+
+  $('miniCalCancel').addEventListener('click', closeMiniCal);
+  miniCalOverlay.addEventListener('click', (e) => { if (e.target === miniCalOverlay) closeMiniCal(); });
+  $('miniCalPrev').addEventListener('click', () => {
+    miniCalViewDate.setMonth(miniCalViewDate.getMonth() - 1);
+    renderMiniCal();
+  });
+  $('miniCalNext').addEventListener('click', () => {
+    miniCalViewDate.setMonth(miniCalViewDate.getMonth() + 1);
+    renderMiniCal();
+  });
+  miniCalMonthSel.addEventListener('change', () => {
+    miniCalViewDate.setMonth(parseInt(miniCalMonthSel.value));
+    renderMiniCal();
+  });
+  miniCalYearSel.addEventListener('change', () => {
+    miniCalViewDate.setFullYear(parseInt(miniCalYearSel.value));
+    renderMiniCal();
+  });
+  miniCalApplyBtn.addEventListener('click', () => {
+    if (miniCalOnApplyMonth) miniCalOnApplyMonth(miniCalViewDate);
+    closeMiniCal();
+  });
+  $('filterDateRange').addEventListener('change', applyDateRangeLabel);
+
+
+  // Trade'in İşlem Saati (örn. "13:00-14:00") seçili saat aralığının içinde mi?
+  function isTradeInHourRange(t, from, to) {
+    if (!from && !to) return true;
+    const m = /^(\d{2}:\d{2})/.exec(t.saat || '');
+    if (!m) return false;
+    const start = m[1];
+    if (from && start < from) return false;
+    if (to && start >= to) return false;
+    return true;
   }
 
   function populateFilterOptions() {
@@ -1756,7 +2203,7 @@ let currentUser = null;
     });
   }
 
-  // Winrate: win / (win + lose) * 100, BE excluded
+  // Winrate: win / (win + lose) * 100, BE ve FR hariç
   function calcWinPct(win, lose) {
     const denominator = win + lose;
     if (denominator === 0) return win > 0 ? 100 : 0;
@@ -1782,15 +2229,16 @@ let currentUser = null;
     trades.forEach(t => {
       if (!t.setup) return;
       if (!setupMap[t.setup]) {
-        setupMap[t.setup] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
+        setupMap[t.setup] = { total:0, win:0, be:0, fr:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
         confNames.forEach(c => setupMap[t.setup].confCounts[c] = 0);
       }
       const s = setupMap[t.setup];
       s.total++;
       if (t.result === 'Win') s.win++;
       else if (t.result === 'BE') s.be++;
+      else if (t.result === 'FR') s.fr++;
       else if (t.result === 'Lose') s.lose++;
-      if (t.rr != null && t.rr !== '') {
+      if (t.result === 'Win' && t.rr != null && t.rr !== '') {
         s.rrSum += Number(t.rr);
         s.rrCount++;
       }
@@ -1805,9 +2253,10 @@ let currentUser = null;
       const winRate = calcWinPct(s.win, s.lose);
       const winPct = s.total ? (s.win / s.total * 100) : 0;
       const bePct = s.total ? (s.be / s.total * 100) : 0;
+      const frPct = s.total ? (s.fr / s.total * 100) : 0;
       const losePct = s.total ? (s.lose / s.total * 100) : 0;
       const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
-      return { name, ...s, winRate, winPct, bePct, losePct, avgRr };
+      return { name, ...s, winRate, winPct, bePct, frPct, losePct, avgRr };
     });
     arr.sort((a,b) => b.winPct - a.winPct || b.total - a.total);
 
@@ -1822,15 +2271,16 @@ let currentUser = null;
       filtered.forEach(t => {
         const p = t.pair;
         if (!pairMap[p]) {
-          pairMap[p] = { total:0, win:0, be:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
+          pairMap[p] = { total:0, win:0, be:0, fr:0, lose:0, rrSum:0, rrCount:0, confCounts: {} };
           confNames.forEach(c => pairMap[p].confCounts[c] = 0);
         }
         const s = pairMap[p];
         s.total++;
         if (t.result === 'Win') s.win++;
         else if (t.result === 'BE') s.be++;
+        else if (t.result === 'FR') s.fr++;
         else if (t.result === 'Lose') s.lose++;
-        if (t.rr != null && t.rr !== '') { s.rrSum += Number(t.rr); s.rrCount++; }
+        if (t.result === 'Win' && t.rr != null && t.rr !== '') { s.rrSum += Number(t.rr); s.rrCount++; }
         if (t.confirmations) {
           t.confirmations.forEach(c => { if (s.confCounts[c] !== undefined) s.confCounts[c]++; });
         }
@@ -1840,8 +2290,9 @@ let currentUser = null;
         const winPct = s.total ? (s.win / s.total * 100) : 0;
         const losePct = s.total ? (s.lose / s.total * 100) : 0;
         const bePct = s.total ? (s.be / s.total * 100) : 0;
+        const frPct = s.total ? (s.fr / s.total * 100) : 0;
         const avgRr = s.rrCount ? (s.rrSum / s.rrCount) : 0;
-        return { name, ...s, winRate, winPct, losePct, bePct, avgRr };
+        return { name, ...s, winRate, winPct, losePct, bePct, frPct, avgRr };
       }).sort((a,b) => b.winRate - a.winRate || b.total - a.total);
     }
 
@@ -1869,10 +2320,11 @@ let currentUser = null;
                 <div class="stat-sub-card">
                   <div class="stat-sub-name">${escapeHtml(p.name)}</div>
                   <div class="stat-sub-row">Winrate <b>${p.winRate.toFixed(1)}%</b> | Ort. RR: <b>${p.avgRr.toFixed(2)}</b></div>
-                  <div class="stat-sub-row"><b>${p.total}</b> trade | Win <b>${p.win}</b> | Lose <b>${p.lose}</b> | BE <b>${p.be}</b></div>
+                  <div class="stat-sub-row"><b>${p.total}</b> trade | Win <b>${p.win}</b> | Lose <b>${p.lose}</b> | BE <b>${p.be}</b> | FR <b>${p.fr}</b></div>
                   <div class="stat-sub-bar">
                     <div class="bar-win" style="flex:${p.winPct}"></div>
                     <div class="bar-be" style="flex:${p.bePct}"></div>
+                    <div class="bar-fr" style="flex:${p.frPct}"></div>
                     <div class="bar-lose" style="flex:${p.losePct}"></div>
                   </div>
                   ${pConf ? `<div class="stat-conf-row">${pConf}</div>` : ''}
@@ -1886,10 +2338,11 @@ let currentUser = null;
       <div class="stat-card" data-setup="${escapeAttr(s.name)}">
         <div class="stat-title">${escapeHtml(s.name)}</div>
         <div class="stat-row">Winrate <b>${s.winRate.toFixed(1)}%</b> | Ort. RR: <b>${s.avgRr.toFixed(2)}</b></div>
-        <div class="stat-row"><b>${s.total}</b> trade | Win <b>${s.win}</b> | Lose <b>${s.lose}</b> | BE <b>${s.be}</b></div>
+        <div class="stat-row"><b>${s.total}</b> trade | Win <b>${s.win}</b> | Lose <b>${s.lose}</b> | BE <b>${s.be}</b> | FR <b>${s.fr}</b></div>
         <div class="stat-bar">
           <div class="bar-win" style="flex:${s.winPct}"></div>
           <div class="bar-be" style="flex:${s.bePct}"></div>
+          <div class="bar-fr" style="flex:${s.frPct}"></div>
           <div class="bar-lose" style="flex:${s.losePct}"></div>
         </div>
         ${confHtml ? `<div class="stat-conf-row">${confHtml}</div>` : ''}
@@ -1908,6 +2361,8 @@ let currentUser = null;
       if (filters.Tf && t.tf !== filters.Tf) return false;
       if (filters.Setup && t.setup !== filters.Setup) return false;
       if (filters.Result && t.result !== filters.Result) return false;
+      if (!isTradeInDateRange(t, filters.DateRange)) return false;
+      if (!isTradeInHourRange(t, filters.HourFrom, filters.HourTo)) return false;
       // Conf filter: show trades that have ALL selected confirmations
       if (confFilterSelection.length > 0) {
         if (!t.confirmations || t.confirmations.length === 0) return false;
@@ -1922,12 +2377,13 @@ let currentUser = null;
     const wins = filtered.filter(t => t.result === 'Win').length;
     const loses = filtered.filter(t => t.result === 'Lose').length;
     const bes = filtered.filter(t => t.result === 'BE').length;
+    const frs = filtered.filter(t => t.result === 'FR').length;
     const winDenom = wins + loses;
     const winPct = winDenom > 0 ? (wins / winDenom * 100) : (wins > 0 ? 100 : 0);
-    const rrVals = filtered.map(t => t.rr).filter(v => v != null && v !== '').map(Number);
+    const rrVals = filtered.filter(t => t.result === 'Win').map(t => t.rr).filter(v => v != null && v !== '').map(Number);
     const avgRr = rrVals.length > 0 ? (rrVals.reduce((a, b) => a + b, 0) / rrVals.length) : 0;
     summary.textContent =
-      `→ Winrate ${winPct.toFixed(1)}% | Ort. RR: ${avgRr.toFixed(2)} | ${total} trade | Win ${wins} | Lose ${loses} | BE ${bes}`;
+      `→ Winrate ${winPct.toFixed(1)}% | Ort. RR: ${avgRr.toFixed(2)} | ${total} trade | Win ${wins} | Lose ${loses} | BE ${bes} | FR ${frs}`;
 
     if (filtered.length === 0) {
       tbody.innerHTML = '';
@@ -1939,7 +2395,7 @@ let currentUser = null;
     // Build dynamic thead
     const thead = $('tradesHead');
     thead.innerHTML = '<tr>'
-      + ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR']
+      + ['Tarih','Parite','TF','Setup','Saat','Konfirmasyonlar','Sonuç','RR']
         .map(h => `<th>${h}</th>`).join('')
       + linkList.map(h => `<th>${escapeHtml(h)}</th>`).join('')
       + ['Not', ''].map(h => `<th>${h}</th>`).join('')
@@ -1949,7 +2405,7 @@ let currentUser = null;
       const confStr = t.confirmations && t.confirmations.length
         ? t.confirmations.map(c => `<span class="conf-chip">${escapeHtml(c)}</span>`).join('')
         : '<span style="color:var(--text-secondary);font-size:10px">-</span>';
-      const safeResult = ['Win','BE','Lose'].includes(t.result) ? t.result.toLowerCase() : 'unknown';
+      const safeResult = ['Win','BE','FR','Lose'].includes(t.result) ? t.result.toLowerCase() : 'unknown';
       const resultBadge = `badge-${safeResult}`;
       const linkCells = linkList.map(title => {
         const url = t.links && t.links[title];
@@ -1960,6 +2416,7 @@ let currentUser = null;
         <td><b>${escapeHtml(t.pair) || '-'}</b></td>
         <td>${escapeHtml(t.tf) || '-'}</td>
         <td><span class="badge badge-setup">${escapeHtml(t.setup) || '-'}</span></td>
+        <td style="white-space:nowrap">${escapeHtml(t.saat) || '-'}</td>
         <td>${confStr}</td>
         <td><span class="badge ${resultBadge}">${escapeHtml(t.result) || '-'}</span></td>
         <td>${t.rr != null && t.rr !== '' ? Number(t.rr).toFixed(2) : '-'}</td>
@@ -1968,6 +2425,7 @@ let currentUser = null;
         <td class="actions">
           <button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
           <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>
+          <button class="btn btn-sm" data-share="${t.id}" title="Bu trade'i .csv olarak indir">📤</button>
         </td>
       </tr>`;
     }).join('');
@@ -1977,6 +2435,9 @@ let currentUser = null;
     });
     tbody.querySelectorAll('[data-del]').forEach(b => {
       b.addEventListener('click', () => deleteTrade(b.getAttribute('data-del')));
+    });
+    tbody.querySelectorAll('[data-share]').forEach(b => {
+      b.addEventListener('click', () => exportSingleTradeCsv(b.getAttribute('data-share')));
     });
     tbody.querySelectorAll('.preview-link').forEach(el => {
       el.addEventListener('mouseenter', () => { previewEnter(el); });
@@ -2073,6 +2534,13 @@ let currentUser = null;
     }
     fTf.value = t.tf || '';
     fSetup.value = t.setup || '';
+    fSaat.value = t.saat && HOUR_SLOTS.includes(t.saat) ? t.saat : getCurrentHourSlot();
+    saatManuallySet = true;
+    formTradeDate = null;
+    applyTradeDateLabel();
+    fTradeDateBtn.disabled = true;
+    fTradeDateBtn.title = 'Düzenlemede işlem tarihi değişmez';
+    fTradeDateClearBtn.style.display = 'none';
     fResult.value = t.result || '';
     fRr.value = t.rr != null ? t.rr : '';
     renderLinkFields();
@@ -2100,6 +2568,8 @@ let currentUser = null;
     if (!pair) { await showAlert('Parite girin.'); submitBtn.disabled = false; return; }
     const tf = fTf.value;
     const setup = fSetup.value;
+    if (!editingId && !saatManuallySet) fSaat.value = getCurrentHourSlot();
+    const saat = fSaat.value;
     const result = fResult.value;
     const rr = fRr.value !== '' ? fRr.value : null;
     if (result === 'Win' && (rr === null || rr === '')) {
@@ -2121,13 +2591,24 @@ let currentUser = null;
     }
     const not = fNote.value.trim() || '';
     const confirmations = getConf();
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    // Manuel İşlem Tarihi seçilmişse (yeni kayıt için), otomatik "şu an" tarihini ezer.
+    // Saat kısmı her zaman İşlem Saati alanından (manuel ya da otomatik) alınır, böylece
+    // kayıt tarihi ile saati tutarlı kalır ve tarih/saat filtreleri doğru çalışır.
+    let effectiveDate;
+    if (!editingId && formTradeDate) {
+      effectiveDate = new Date(formTradeDate.getFullYear(), formTradeDate.getMonth(), formTradeDate.getDate());
+      const m = /^(\d{2}):(\d{2})/.exec(saat || '');
+      if (m) effectiveDate.setHours(+m[1], +m[2], 0, 0);
+      else { const n = new Date(); effectiveDate.setHours(n.getHours(), n.getMinutes(), 0, 0); }
+    } else {
+      effectiveDate = new Date();
+    }
+    const dateStr = effectiveDate.toLocaleDateString('tr-TR') + ' ' + effectiveDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
     if (editingId) {
       const idx = trades.findIndex(t => String(t.id) === String(editingId));
       if (idx !== -1) {
-        trades[idx] = { ...trades[idx], pair, tf, setup, result, rr, links, not, confirmations, updatedAt: Date.now() };
+        trades[idx] = { ...trades[idx], pair, tf, setup, saat, result, rr, links, not, confirmations, updatedAt: Date.now() };
         syncTradeToFirestore(trades[idx]);
       }
     } else {
@@ -2136,7 +2617,7 @@ let currentUser = null;
         id: newId,
         _new: true,
         date: dateStr,
-        pair, tf, setup, result, rr, links, not,
+        pair, tf, setup, saat, result, rr, links, not,
         confirmations,
         updatedAt: Date.now()
       };
@@ -2178,12 +2659,25 @@ let currentUser = null;
   form.addEventListener('submit', handleSubmit);
   cancelBtn.addEventListener('click', resetForm);
 
-  document.querySelectorAll('#filterPair,#filterTf,#filterSetup,#filterResult').forEach(el => {
+  document.querySelectorAll('#filterPair,#filterTf,#filterSetup,#filterResult,#filterDateRange,#filterHourFrom,#filterHourTo').forEach(el => {
     el.addEventListener('change', renderTrades);
   });
 
+  (function populateHourFilterSelects() {
+    const fromSel = $('filterHourFrom');
+    const toSel = $('filterHourTo');
+    const marks = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
+    marks.push('24:00');
+    marks.forEach(m => {
+      if (m !== '24:00') fromSel.innerHTML += `<option value="${m}">${m}</option>`;
+      toSel.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+  })();
+
   $('clearFilterBtn').addEventListener('click', () => {
-    ['filterPair','filterTf','filterSetup','filterResult'].forEach(id => $(id).value = '');
+    ['filterPair','filterTf','filterSetup','filterResult','filterDateRange','filterHourFrom','filterHourTo'].forEach(id => $(id).value = '');
+    filterRefDate = new Date();
+    applyDateRangeLabel();
     confFilterSelection = [];
     saveConfFilterSelection();
     buildConfFilterDropdown();
@@ -2257,19 +2751,42 @@ let currentUser = null;
     return s;
   }
 
-  function tradesToCsv() {
-    const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList, confFilterSelection });
-    const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
-    const headers = [...fixedHeaders, ...linkList, 'Not'];
-    const rows = trades.map(t => [
-      t.date || '', t.pair || '', t.tf || '', t.setup || '',
+  function tradeCsvHeaders() {
+    return ['Tarih','Parite','TF','Setup','Saat','Konfirmasyonlar','Sonuç','RR', ...linkList, 'Not'];
+  }
+
+  function tradeToCsvRow(t) {
+    return [
+      t.date || '', t.pair || '', t.tf || '', t.setup || '', t.saat || '',
       (t.confirmations || []).join(', '),
       t.result || '',
       t.rr != null ? Number(t.rr).toFixed(2) : '',
       ...linkList.map(title => (t.links && t.links[title]) || ''),
       t.not || ''
-    ]);
+    ];
+  }
+
+  function tradesToCsv() {
+    const panelJson = JSON.stringify({ pairList, tfList, setupList, confList, linkList, confFilterSelection });
+    const headers = tradeCsvHeaders();
+    const rows = trades.map(t => tradeToCsvRow(t));
     return '#PANEL ' + panelJson + '\n' + [headers.join(','), ...rows.map(r => r.map(v => `"${sanitizeCsvVal(v)}"`).join(','))].join('\n');
+  }
+
+  function exportSingleTradeCsv(id) {
+    const t = trades.find(x => String(x.id) === String(id));
+    if (!t) return;
+    const headers = tradeCsvHeaders();
+    const row = tradeToCsvRow(t);
+    const csv = [headers.join(','), row.map(v => `"${sanitizeCsvVal(v)}"`).join(',')].join('\n');
+    const blob = new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
+    const safePair = (t.pair || 'trade').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeDate = (t.date || '').replace(/[^0-9]/g, '_');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `trade_${safePair}_${safeDate || t.id}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   // --- CSV parse utilities ---
@@ -2291,7 +2808,7 @@ let currentUser = null;
     });
     if (lines.length < 2) return [];
     const hdrs = parseCsvLine(lines[0]).map(h => h.trim());
-    const fixedExpected = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR','Not'];
+    const fixedExpected = ['Tarih','Parite','TF','Setup','Saat','Konfirmasyonlar','Sonuç','RR','Not'];
     const idx = {};
     const linkHeaders = [];
     hdrs.forEach((h, i) => {
@@ -2311,7 +2828,7 @@ let currentUser = null;
       const trade = {
         id: Date.now() + result.length,
         date: get('Tarih'), pair: get('Parite'), tf: get('TF'),
-        setup: get('Setup'), result: get('Sonuç'),
+        setup: get('Setup'), saat: get('Saat'), result: get('Sonuç'),
         rr: !isNaN(rr) ? rr : null,
         links: Object.keys(links).length > 0 ? links : undefined,
         not: get('Not'),
@@ -2566,11 +3083,11 @@ let currentUser = null;
             linkList: settings.linkList || [],
             confFilterSelection: settings.confFilterSelection || []
           });
-          const fixedHeaders = ['Tarih','Parite','TF','Setup','Konfirmasyonlar','Sonuç','RR'];
+          const fixedHeaders = ['Tarih','Parite','TF','Setup','Saat','Konfirmasyonlar','Sonuç','RR'];
           const allLinkTitles = settings.linkList || [];
           const headers = [...fixedHeaders, ...allLinkTitles, 'Not'];
           const rows = validTrades.map(t => [
-            t.date || '', t.pair || '', t.tf || '', t.setup || '',
+            t.date || '', t.pair || '', t.tf || '', t.setup || '', t.saat || '',
             (t.confirmations || []).join(', '),
             t.result || '',
             t.rr != null ? Number(t.rr).toFixed(2) : '',
@@ -2702,18 +3219,7 @@ let currentUser = null;
     openPanel.classList.add('open');
     openTgl.classList.add('active');
     if (type === 'chat') {
-      const nickname = localStorage.getItem(getNicknameKey());
-      const nicknameWrap = $('chatNicknameWrap');
-      const chatBody = $('chatBody');
-      const chatFooter = $('chatFooter');
-      if (!nickname) {
-        nicknameWrap.style.display = 'flex';
-        chatBody.style.display = 'none';
-        chatFooter.style.display = 'none';
-      } else {
-        nicknameWrap.style.display = 'none';
-        chatBody.style.display = 'flex';
-        chatFooter.style.display = 'flex';
+      if (ensureNickname('chat')) {
         if (chatUnsub) chatUnsub();
         initChat();
       }
@@ -2726,8 +3232,10 @@ let currentUser = null;
       restoreCsvPosition();
       restoreCsvSize();
       csvToggle.classList.remove('has-unread');
-      loadCsvMeta();
-      loadMyCsvFiles();
+      if (ensureNickname('csv')) {
+        loadCsvMeta();
+        loadMyCsvFiles();
+      }
     } else if (type === 'admin') {
       restoreAdminPosition();
       restoreAdminSize();
@@ -3012,36 +3520,14 @@ let currentUser = null;
   $('chatSendBtn').addEventListener('click', sendChatMessage);
   $('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
-  $('chatNicknameBtn').addEventListener('click', async () => {
-    const inp = $('chatNicknameInput');
-    const val = inp.value.trim();
-    if (!val) { await showAlert('Lütfen bir rumuz girin.'); return; }
-    if (val.length > 20) { await showAlert('Rumuz en fazla 20 karakter olabilir.'); return; }
-    // Benzersizlik kontrolü
-    try {
-      const nickSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname', '==', val)));
-      const adminSnap = await getDocs(query(collection(db, 'csv_storage'), where('nickname_admin', '==', val)));
-      const takenBy = [];
-      nickSnap.forEach(d => { if (d.id !== currentUser.uid) takenBy.push(d.id); });
-      adminSnap.forEach(d => { if (d.id !== currentUser.uid && !takenBy.includes(d.id)) takenBy.push(d.id); });
-      if (takenBy.length > 0) { await showAlert('Bu rumuz zaten başka bir kullanıcı tarafından kullanılıyor.'); return; }
-    } catch(e) { /* skip check on error */ }
-    localStorage.setItem(getNicknameKey(), val);
-    if (currentUser) {
-      setDoc(doc(db, 'csv_storage', currentUser.uid), { nickname: val }, { merge: true }).catch(() => {});
-    }
-    inp.value = '';
-    const nicknameWrap = $('chatNicknameWrap');
-    const chatBody = $('chatBody');
-    const chatFooter = $('chatFooter');
-    nicknameWrap.style.display = 'none';
-    chatBody.style.display = 'flex';
-    chatFooter.style.display = 'flex';
-    if (!chatUnsub) initChat();
-  });
-
+  $('chatNicknameBtn').addEventListener('click', () => confirmNickname('chat'));
   $('chatNicknameInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') $('chatNicknameBtn').click();
+  });
+
+  $('csvNicknameBtn').addEventListener('click', () => confirmNickname('csv'));
+  $('csvNicknameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('csvNicknameBtn').click();
   });
 
   function saveChatSize() {
@@ -3843,7 +4329,7 @@ let currentUser = null;
       <div class="chat-empty" id="chatEmpty">Henüz mesaj yok.</div>
     </div>
     <div class="pp-body" id="chatNicknameWrap" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;font-size:13px">
-      <div style="color:var(--text)">Sohbette görünecek rumuzunuzu girin:</div>
+      <div style="color:var(--text)">Sohbette/Bulutta görünecek rumuzunuzu girin:</div>
       <div style="color:var(--text-secondary);font-size:11px">Sohbette görünen rumuzunuz.</div>
       <input type="text" id="chatNicknameInput" maxlength="20" placeholder="Rumuz..." style="width:100%;max-width:200px;background:var(--bg-surface);border:1px solid var(--border-light);color:var(--text);padding:6px 8px;border-radius:4px;font-size:12px;text-align:center">
       <button class="btn btn-sm btn-primary" id="chatNicknameBtn">Onayla</button>
@@ -3863,9 +4349,16 @@ let currentUser = null;
     </div>
     
     <!-- Tab navigation -->
-    <div class="csv-tabs">
+    <div class="csv-tabs" id="csvTabsNav">
       <button class="csv-tab active" id="csvTabMy">CSV Listem</button>
       <button class="csv-tab" id="csvTabPublic">Buluttan İzle</button>
+    </div>
+
+    <div class="pp-body" id="csvNicknameWrap" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;font-size:13px">
+      <div style="color:var(--text)">Sohbette/Bulutta görünecek rumuzunuzu girin:</div>
+      <div style="color:var(--text-secondary);font-size:11px">Buluta kayıt yaparken görünen rumuzunuz.</div>
+      <input type="text" id="csvNicknameInput" maxlength="20" placeholder="Rumuz..." style="width:100%;max-width:200px;background:var(--bg-surface);border:1px solid var(--border-light);color:var(--text);padding:6px 8px;border-radius:4px;font-size:12px;text-align:center">
+      <button class="btn btn-sm btn-primary" id="csvNicknameBtn">Onayla</button>
     </div>
 
     <!-- Tab: My CSV List -->
@@ -3917,6 +4410,26 @@ let currentUser = null;
     <div class="modal-title" id="modalTitle"></div>
     <div class="modal-msg" id="modalMsg"></div>
     <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<!-- Tarih Aralığı için mini takvim seçici (calender.html'den uyarlanmıştır) -->
+<div class="modal-overlay" id="miniCalOverlay">
+  <div class="modal-box mini-cal-box">
+    <div class="mini-cal-header">
+      <button type="button" class="mini-cal-nav" id="miniCalPrev">‹</button>
+      <div class="mini-cal-selects">
+        <select id="miniCalMonth"></select>
+        <select id="miniCalYear"></select>
+      </div>
+      <button type="button" class="mini-cal-nav" id="miniCalNext">›</button>
+    </div>
+    <div class="mini-cal-daynames" id="miniCalDayNames"></div>
+    <div class="mini-cal-days" id="miniCalDays"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn btn-sm" id="miniCalCancel">İptal</button>
+      <button type="button" class="btn btn-sm btn-primary" id="miniCalApply">Uygula</button>
+    </div>
   </div>
 </div>
 </body>
