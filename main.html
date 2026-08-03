@@ -1315,8 +1315,6 @@ let currentUser = null;
   const fTf = $('fTf');
   const fSetup = $('fSetup');
   const fSaat = $('fSaat');
-  let saatManuallySet = false;
-  fSaat.addEventListener('change', () => { saatManuallySet = true; });
   function getCurrentHourSlot() { return HOUR_SLOTS[new Date().getHours()]; }
   const noteTooltip = (() => { const e = document.createElement('div'); e.id = 'noteTooltip'; document.body.appendChild(e); return e; })();
   const fResult = $('fResult');
@@ -1421,9 +1419,10 @@ let currentUser = null;
     populateSelect(fSetup, setupList, curSetup);
     populatePairOptions();
     if (!fSaat.options.length) {
-      fSaat.innerHTML = HOUR_SLOTS.map(v => `<option value="${v}">${v}</option>`).join('');
+      fSaat.innerHTML = '<option value="">Otomatik (şu an)</option>' + HOUR_SLOTS.map(v => `<option value="${v}">${v}</option>`).join('');
     }
     if (curSaat && HOUR_SLOTS.includes(curSaat)) fSaat.value = curSaat;
+    else if (curSaat === '') fSaat.value = '';
   }
 
   // Conf checkboxes
@@ -1934,8 +1933,7 @@ let currentUser = null;
     fPair.value = pairList[0] || '';
     fTf.value = tfList.includes('15m') ? '15m' : (tfList[0] || '');
     fSetup.value = setupList.includes('Senkron') ? 'Senkron' : (setupList[0] || '');
-    fSaat.value = getCurrentHourSlot();
-    saatManuallySet = false;
+    fSaat.value = '';
     formTradeDate = null;
     fTradeDateBtn.disabled = false;
     fTradeDateBtn.title = 'Geçmiş bir tarih seçmek için tıklayın';
@@ -1958,6 +1956,17 @@ let currentUser = null;
     return v;
   }
 
+  // Trade'in gerçek işlem tarihi/saatini (ms) döndürür. Öncelik t.date alanındadır
+  // (manuel İşlem Tarihi seçilmiş olabilir); t.date okunamazsa t.id'ye (kayıt anahtarı,
+  // genelde oluşturulma anı) geri dönülür. Hiçbiri yoksa null döner.
+  function getTradeTs(t) {
+    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})/.exec(t.date || '');
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime();
+    const idTs = Number(t.id);
+    if (idTs && !isNaN(idTs)) return idTs;
+    return null;
+  }
+
   // Trade tarihi (t.date, "D.M.YYYY HH:MM" tr-TR biçimi) belirtilen aralığın içinde mi?
   // Aralık, kullanıcının mini takvimden seçtiği filterRefDate'e göre hesaplanır
   // (Gün/Hafta/Ay/Yıl her zaman "bugün" değil, seçilen tarihe göre çalışır).
@@ -1966,14 +1975,7 @@ let currentUser = null;
   // önce t.date ayrıştırılır, t.id'ye sadece t.date okunamazsa geri dönülür.
   function isTradeInDateRange(t, range) {
     if (!range) return true;
-    let ts = null;
-    const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})/.exec(t.date || '');
-    if (m) {
-      ts = new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]).getTime();
-    } else {
-      const idTs = Number(t.id);
-      if (idTs && !isNaN(idTs)) ts = idTs;
-    }
+    const ts = getTradeTs(t);
     if (ts == null) return true;
     const d = new Date(ts);
     const ref = filterRefDate;
@@ -2370,7 +2372,8 @@ let currentUser = null;
       }
       return true;
     });
-    filtered = [...filtered].reverse();
+    // Kayıtlar her zaman gerçek işlem tarihine göre sıralanır (eklenme sırasına göre değil)
+    filtered = [...filtered].sort((a, b) => (getTradeTs(b) ?? 0) - (getTradeTs(a) ?? 0));
 
     const summary = $('filterSummary');
     const total = filtered.length;
@@ -2423,8 +2426,8 @@ let currentUser = null;
         ${linkCells}
         <td class="note-cell"><span class="note-display ${t.not ? 'has-note' : ''}" data-id="${t.id}">${escapeHtml(t.not) || 'Not...'}</span></td>
         <td class="actions">
-          <button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
-          <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>
+          ${isPreviewMode ? '' : `<button class="btn btn-sm" data-edit="${t.id}">Düz.</button>
+          <button class="btn btn-sm btn-danger" data-del="${t.id}">Sil</button>`}
           <button class="btn btn-sm" data-share="${t.id}" title="Bu trade'i .csv olarak indir">📤</button>
         </td>
       </tr>`;
@@ -2479,6 +2482,7 @@ let currentUser = null;
   }
 
   function startNoteEdit(el) {
+    if (isPreviewMode) { showAlert('Önizleme modunda not düzenlenemez.'); return; }
     const id = el.getAttribute('data-id');
     const t = trades.find(x => String(x.id) === String(id));
     if (!t) return;
@@ -2517,6 +2521,7 @@ let currentUser = null;
   }
 
   function startEdit(id) {
+    if (isPreviewMode) { showAlert('Önizleme modunda düzenleme yapılamaz.'); return; }
     const t = trades.find(x => String(x.id) === String(id));
     if (!t) return;
     editingId = id;
@@ -2534,8 +2539,7 @@ let currentUser = null;
     }
     fTf.value = t.tf || '';
     fSetup.value = t.setup || '';
-    fSaat.value = t.saat && HOUR_SLOTS.includes(t.saat) ? t.saat : getCurrentHourSlot();
-    saatManuallySet = true;
+    fSaat.value = t.saat && HOUR_SLOTS.includes(t.saat) ? t.saat : '';
     formTradeDate = null;
     applyTradeDateLabel();
     fTradeDateBtn.disabled = true;
@@ -2568,8 +2572,8 @@ let currentUser = null;
     if (!pair) { await showAlert('Parite girin.'); submitBtn.disabled = false; return; }
     const tf = fTf.value;
     const setup = fSetup.value;
-    if (!editingId && !saatManuallySet) fSaat.value = getCurrentHourSlot();
-    const saat = fSaat.value;
+    // "Otomatik" seçiliyse (fSaat.value boş), tam bu anki saat dilimini kullan.
+    const saat = fSaat.value || getCurrentHourSlot();
     const result = fResult.value;
     const rr = fRr.value !== '' ? fRr.value : null;
     if (result === 'Win' && (rr === null || rr === '')) {
@@ -2850,6 +2854,93 @@ let currentUser = null;
     return null;
   }
 
+  // Eski (özellikle #PANEL header'ı hiç olmayan ya da confList/linkList alanları
+  // henüz eklenmemişken kaydedilmiş) CSV dosyalarında bile, link SÜTUNLARININ adı
+  // (o sütuna ait hücreler boş olsa bile) CSV başlık satırından doğrudan çıkarılabilir.
+  // Böylece bir link tipi hiçbir kayıtta doldurulmamış olsa bile panelde kaybolmaz.
+  function extractLinkTitlesFromCsvHeader(csv) {
+    const lines = csv.replace(/\r\n/g, '\n').split('\n').filter(l => {
+      const t = l.trim();
+      return t && !t.startsWith('#');
+    });
+    if (lines.length < 1) return [];
+    const hdrs = parseCsvLine(lines[0]).map(h => h.trim());
+    const fixedExpected = ['Tarih','Parite','TF','Setup','Saat','Konfirmasyonlar','Sonuç','RR','Not'];
+    return hdrs.filter(h => h && h !== 'id' && !fixedExpected.includes(h));
+  }
+
+  // Bir kullanıcının panelini (Parite/TF/Setup/Konf./Link listeleri) kayıtlı olan
+  // HER kaynaktan birleştirerek yeniden inşa eder: kullanıcının tüm CSV dosyaları
+  // (hem Firestore'daki yapılandırılmış alanlar hem de dosya içeriğindeki #PANEL
+  // satırı hem de CSV başlık satırından çıkarılan link adları), trades koleksiyonunda
+  // fiilen kullanılmış konfirmasyon/link tipleri, ve erişilebiliyorsa user_settings.
+  // Tek bir dosyanın (özellikle eski bir uygulama sürümüyle üretilmiş olabilecek)
+  // eksik/boş panel verisi, başka hiçbir kaynakta iz bırakmışsa artık paneli eksik
+  // bırakmaz.
+  async function buildFullPanelFallback(uid, filesSnapDocs) {
+    const out = { pairList: [], tfList: [], setupList: [], confList: [], linkList: [] };
+    const addAll = (src) => {
+      if (!src) return;
+      out.pairList = mergePanelList(out.pairList, src.pairList);
+      out.tfList = mergePanelList(out.tfList, src.tfList);
+      out.setupList = mergePanelList(out.setupList, src.setupList);
+      out.confList = mergePanelList(out.confList, src.confList);
+      out.linkList = mergePanelList(out.linkList, src.linkList);
+    };
+    let confFilterSelection = [];
+
+    (filesSnapDocs || []).forEach(fdoc => {
+      const fd = fdoc.data ? fdoc.data() : fdoc;
+      // 1) Dosyanın kendi yapılandırılmış Firestore alanları
+      addAll(fd);
+      if (fd.confFilterSelection && fd.confFilterSelection.length > 0) confFilterSelection = fd.confFilterSelection;
+      const content = fd.content || '';
+      if (!content) return;
+      // 2) Dosya içeriğindeki #PANEL satırı (Firestore alanları eksik olsa bile
+      //    ham CSV metninde panel verisi kalmış olabilir)
+      try {
+        const fromHeader = extractPanelDataFromCsv(content);
+        if (fromHeader) addAll(fromHeader);
+      } catch(e) {}
+      // 3) CSV başlık satırından link tipi adları (hiç doldurulmamış olsalar bile)
+      try {
+        const headerLinks = extractLinkTitlesFromCsvHeader(content);
+        if (headerLinks.length > 0) out.linkList = mergePanelList(out.linkList, headerLinks);
+      } catch(e) {}
+      // 4) Bu dosyadaki kayıtlarda fiilen kullanılmış konfirmasyon/link tipleri
+      try {
+        const fileTrades = csvContentToTrades(content);
+        out.confList = mergePanelList(out.confList, fileTrades.flatMap(t => t.confirmations || []));
+        out.linkList = mergePanelList(out.linkList, fileTrades.flatMap(t => Object.keys(t.links || {})));
+      } catch(e) {}
+    });
+
+    // 5) trades koleksiyonunda (canlı kayıtlarda) fiilen kullanılmış olanlar
+    try {
+      const tradeSnap = await getDocs(collection(db, 'trades', uid, 'items'));
+      const liveTrades = tradeSnap.docs.map(d => d.data());
+      out.pairList = mergePanelList(out.pairList, liveTrades.map(t => t.pair).filter(Boolean));
+      out.tfList = mergePanelList(out.tfList, liveTrades.map(t => t.tf).filter(Boolean));
+      out.setupList = mergePanelList(out.setupList, liveTrades.map(t => t.setup).filter(Boolean));
+      out.confList = mergePanelList(out.confList, liveTrades.flatMap(t => t.confirmations || []));
+      out.linkList = mergePanelList(out.linkList, liveTrades.flatMap(t => Object.keys(t.links || {})));
+    } catch(e) { console.warn('trades koleksiyonu okunamadı (' + uid + '):', e); }
+
+    // 6) user_settings erişilebiliyorsa ekstra bir kaynak olarak eklenir (izin
+    //    kısıtı varsa hata konsola yazılır ve sessizce atlanır)
+    try {
+      const ownerSnap = await getDoc(doc(db, 'user_settings', uid));
+      if (ownerSnap.exists()) {
+        const us = ownerSnap.data();
+        addAll(us);
+        if (us.confFilterSelection && us.confFilterSelection.length > 0) confFilterSelection = us.confFilterSelection;
+      }
+    } catch(e) { console.warn('user_settings okunamadı, izin kısıtı olabilir (' + uid + '):', e); }
+
+    out.confFilterSelection = confFilterSelection;
+    return out;
+  }
+
   // --- Preview / Fullscreen ---
   const previewPopup = $('previewPopup');
   const previewImg = $('previewImg');
@@ -3068,12 +3159,9 @@ let currentUser = null;
             await showAlert('Bu kullanıcının geçerli trade verisi yok.');
             return;
           }
-          // Read user's panel settings for full #PANEL data (includes unused list items)
-          let settings = {};
-          try {
-            const sSnap = await getDoc(doc(db, 'user_settings', uid));
-            if (sSnap.exists()) settings = sSnap.data();
-          } catch(e) {}
+          // Kullanıcının panelini (yalnızca user_settings değil) tüm erişilebilir
+          // kaynaklardan birleştirerek yeniden inşa et.
+          const settings = await buildFullPanelFallback(uid, []);
           // Build CSV content with #PANEL header (same format as tradesToCsv)
           const panelJson = JSON.stringify({
             pairList: settings.pairList || [],
@@ -3110,10 +3198,28 @@ let currentUser = null;
         const d = latest.data();
         const csvContent = d.content || '';
         if (!csvContent) { await showAlert('CSV içeriği boş.'); return; }
+        // Tek bir dosyanın (en son kaydedilenin) panel anlık görüntüsü eski/eksik
+        // olabilir — özellikle eski bir uygulama sürümüyle üretilmiş bir CSV ise
+        // #PANEL satırı hiç yok ya da confList/linkList alanları boş olabilir.
+        // Bu durumda paneli kullanıcının TÜM erişilebilir kaynaklarından
+        // (diğer dosyaların hem Firestore alanları hem ham içeriği/başlıkları,
+        // trades koleksiyonu, ve erişilebiliyorsa user_settings) yeniden inşa
+        // ederek hiçbir kalemin kaybolmamasını sağlıyoruz.
+        const rebuilt = await buildFullPanelFallback(uid, filesSnap.docs);
+        const fallbackData = {
+          pairList: mergePanelList(d.pairList, rebuilt.pairList),
+          tfList: mergePanelList(d.tfList, rebuilt.tfList),
+          setupList: mergePanelList(d.setupList, rebuilt.setupList),
+          confList: mergePanelList(d.confList, rebuilt.confList),
+          linkList: mergePanelList(d.linkList, rebuilt.linkList),
+          confFilterSelection: (d.confFilterSelection && d.confFilterSelection.length > 0)
+            ? d.confFilterSelection
+            : (rebuilt.confFilterSelection || [])
+        };
         // Close admin panel before preview
         adminPanel.classList.remove('open');
         adminToggle.classList.remove('active');
-        startPreview(csvContent, d);
+        startPreview(csvContent, fallbackData);
       } catch(e) { await showAlert('CSV yüklenemedi: ' + e.message); }
     } else if (action === 'view-info') {
       await showAlert('UID: ' + uid);
@@ -4044,7 +4150,27 @@ let currentUser = null;
     let items = [];
     await Promise.all(publicUsers.map(async ({ uid, meta }) => {
       try {
+        // Dosya seviyesindeki panel verisi (pairList/confList/linkList vb.) eski bir
+        // CSV versiyonundan kalma olabilir ve eksik/boş olabilir. user_settings başka
+        // bir kullanıcı tarafından okunamayabileceğinden (izin kısıtı), zaten okuma
+        // izni olan bu kullanıcının TÜM CSV dosyalarındaki panel listelerini
+        // birleştirerek (union) daha güvenilir bir fallback oluşturuyoruz. user_settings
+        // erişilebiliyorsa o da ekstra bir kaynak olarak eklenir.
+        let ownerSettings = {};
+        try {
+          const ownerSnap = await getDoc(doc(db, 'user_settings', uid));
+          if (ownerSnap.exists()) ownerSettings = ownerSnap.data();
+        } catch(e) {}
         const filesSnap = await getDocs(collection(db, 'csv_storage', uid, 'files'));
+        const unionAcrossFiles = { pairList: [], tfList: [], setupList: [], confList: [], linkList: [] };
+        filesSnap.forEach(fd0 => {
+          const fdData = fd0.data();
+          unionAcrossFiles.pairList = mergePanelList(unionAcrossFiles.pairList, fdData.pairList);
+          unionAcrossFiles.tfList = mergePanelList(unionAcrossFiles.tfList, fdData.tfList);
+          unionAcrossFiles.setupList = mergePanelList(unionAcrossFiles.setupList, fdData.setupList);
+          unionAcrossFiles.confList = mergePanelList(unionAcrossFiles.confList, fdData.confList);
+          unionAcrossFiles.linkList = mergePanelList(unionAcrossFiles.linkList, fdData.linkList);
+        });
         filesSnap.forEach(fd => {
           const d = fd.data();
           const key = uid + '_' + fd.id;
@@ -4052,12 +4178,14 @@ let currentUser = null;
             uid, fileId: fd.id,
             content: d.content || '',
             name: d.name || '',
-            pairList: d.pairList || [],
-            tfList: d.tfList || [],
-            setupList: d.setupList || [],
-            confList: d.confList || [],
-            linkList: d.linkList || [],
-            confFilterSelection: d.confFilterSelection || []
+            pairList: mergePanelList(d.pairList, unionAcrossFiles.pairList, ownerSettings.pairList),
+            tfList: mergePanelList(d.tfList, unionAcrossFiles.tfList, ownerSettings.tfList),
+            setupList: mergePanelList(d.setupList, unionAcrossFiles.setupList, ownerSettings.setupList),
+            confList: mergePanelList(d.confList, unionAcrossFiles.confList, ownerSettings.confList),
+            linkList: mergePanelList(d.linkList, unionAcrossFiles.linkList, ownerSettings.linkList),
+            confFilterSelection: (d.confFilterSelection && d.confFilterSelection.length > 0)
+              ? d.confFilterSelection
+              : (ownerSettings.confFilterSelection || [])
           });
           const fileTime = d.updatedAt || d.createdAt || null;
           items.push({
@@ -4205,33 +4333,51 @@ let currentUser = null;
     else if (btn.classList.contains('csv-delete')) deleteCsvFile(id);
   });
 
-  function startPreview(csvContent, fallbackPanelData) {
-    if (isPreviewMode) return;
+  // Birden fazla kaynaktan (öncelik sırasıyla) gelen liste öğelerini kaybetmeden birleştirir.
+  // Böylece bir kategori (örn. hiç kullanılmamış bir link tipi) tek bir kaynakta eksik olsa
+  // bile, başka bir kaynakta (örn. #PANEL header) varsa panelden düşmez.
+  function mergePanelList(...lists) {
+    const seen = new Set();
+    const out = [];
+    lists.forEach(l => (l || []).forEach(v => {
+      if (v && !seen.has(v)) { seen.add(v); out.push(v); }
+    }));
+    return out;
+  }
 
-    // Backup current state
-    previewBackup = {
-      trades: JSON.parse(JSON.stringify(trades)),
-      pairList: [...pairList], tfList: [...tfList],
-      setupList: [...setupList], confList: [...confList],
-      linkList: [...linkList],
-      confFilterSelection: [...confFilterSelection]
-    };
+  function startPreview(csvContent, fallbackPanelData) {
+    // Gerçek (önizleme öncesi) durumu sadece ilk önizlemeye girerken yedekle.
+    // Önizleme modundayken başka bir CSV'ye geçilirse, yedek olarak önizleme
+    // verisi değil, orijinal gerçek veri korunmalı.
+    if (!isPreviewMode) {
+      previewBackup = {
+        trades: JSON.parse(JSON.stringify(trades)),
+        pairList: [...pairList], tfList: [...tfList],
+        setupList: [...setupList], confList: [...confList],
+        linkList: [...linkList],
+        confFilterSelection: [...confFilterSelection]
+      };
+    }
 
     // Parse CSV and load trades
     const previewTrades = csvContentToTrades(csvContent);
-    if (previewTrades.length === 0) return;
+    if (previewTrades.length === 0) { showAlert('CSV içeriği okunamadı veya geçerli trade içermiyor.'); return; }
     trades = previewTrades;
 
-    // Load panel settings: #PANEL header (non-empty) > Firestore fallback > derive from trades
-    const csvPanelData = extractPanelDataFromCsv(csvContent);
-    const csvHasPanel = csvPanelData && (csvPanelData.pairList?.length || csvPanelData.tfList?.length || csvPanelData.setupList?.length || csvPanelData.confList?.length || csvPanelData.linkList?.length);
-    const panelSrc = csvHasPanel ? csvPanelData : (fallbackPanelData || {});
-    pairList = panelSrc.pairList && panelSrc.pairList.length > 0 ? [...panelSrc.pairList] : [...new Set(trades.map(t => t.pair).filter(Boolean))];
-    tfList = panelSrc.tfList && panelSrc.tfList.length > 0 ? [...panelSrc.tfList] : [...new Set(trades.map(t => t.tf).filter(Boolean))];
-    setupList = panelSrc.setupList && panelSrc.setupList.length > 0 ? [...panelSrc.setupList] : [...new Set(trades.map(t => t.setup).filter(Boolean))];
-    confList = panelSrc.confList && panelSrc.confList.length > 0 ? [...panelSrc.confList] : [...new Set(trades.flatMap(t => t.confirmations || []))];
-    linkList = panelSrc.linkList && panelSrc.linkList.length > 0 ? [...panelSrc.linkList] : [...new Set(trades.flatMap(t => Object.keys(t.links || {})))];
-    confFilterSelection = panelSrc.confFilterSelection && panelSrc.confFilterSelection.length > 0 ? [...panelSrc.confFilterSelection] : [];
+    // Panel özellikleri (Parite/TF/Setup/Konf./Link listeleri): #PANEL header, Firestore
+    // fallback ve trade verilerinden türetilen listeler BİRLEŞTİRİLİR (union). Hiçbir
+    // kaynak tek başına yeterli sayılmaz — henüz hiçbir kayıtta kullanılmamış bir öğe
+    // (örn. "htf" linki) bile, herhangi bir kaynakta varsa panelde eksiksiz gösterilir.
+    const csvPanelData = extractPanelDataFromCsv(csvContent) || {};
+    const fb = fallbackPanelData || {};
+    pairList = mergePanelList(csvPanelData.pairList, fb.pairList, trades.map(t => t.pair).filter(Boolean));
+    tfList = mergePanelList(csvPanelData.tfList, fb.tfList, trades.map(t => t.tf).filter(Boolean));
+    setupList = mergePanelList(csvPanelData.setupList, fb.setupList, trades.map(t => t.setup).filter(Boolean));
+    confList = mergePanelList(csvPanelData.confList, fb.confList, trades.flatMap(t => t.confirmations || []));
+    linkList = mergePanelList(csvPanelData.linkList, fb.linkList, trades.flatMap(t => Object.keys(t.links || {})));
+    confFilterSelection = (csvPanelData.confFilterSelection && csvPanelData.confFilterSelection.length > 0)
+      ? [...csvPanelData.confFilterSelection]
+      : (fb.confFilterSelection && fb.confFilterSelection.length > 0 ? [...fb.confFilterSelection] : []);
 
     renderAll();
     buildConfGrid();
@@ -4255,15 +4401,37 @@ let currentUser = null;
   csvPublicList.addEventListener('click', async (e) => {
     const btn = e.target.closest('button');
     if (!btn) return;
-    if (isPreviewMode) return;
 
     if (btn.classList.contains('csv-pub-view')) {
+      // Önizleme modundayken bile başka bir CSV'ye önizleme geçişine izin ver
+      // (startPreview zaten orijinal yedeği koruyarak sadece görüntülenen veriyi değiştirir).
       const key = btn.getAttribute('data-key');
       const data = csvPublicContentMap.get(key);
       if (!data) return;
       const csvContent = data.content || '';
-      startPreview(csvContent, data);
+      // Bu tek dosyanın panel verisi eski bir uygulama sürümünden kalma ve eksik
+      // olabilir. Önizlemeye geçmeden önce kullanıcının TÜM erişilebilir
+      // kaynaklarından (diğer dosyalar, trades koleksiyonu, user_settings) paneli
+      // yeniden inşa edip fallback olarak kullanıyoruz.
+      let fallbackData = data;
+      try {
+        const filesSnap = await getDocs(collection(db, 'csv_storage', data.uid, 'files'));
+        const rebuilt = await buildFullPanelFallback(data.uid, filesSnap.docs);
+        fallbackData = {
+          ...data,
+          pairList: mergePanelList(data.pairList, rebuilt.pairList),
+          tfList: mergePanelList(data.tfList, rebuilt.tfList),
+          setupList: mergePanelList(data.setupList, rebuilt.setupList),
+          confList: mergePanelList(data.confList, rebuilt.confList),
+          linkList: mergePanelList(data.linkList, rebuilt.linkList),
+          confFilterSelection: (data.confFilterSelection && data.confFilterSelection.length > 0)
+            ? data.confFilterSelection
+            : (rebuilt.confFilterSelection || [])
+        };
+      } catch(e) { console.warn('Panel yeniden inşa edilemedi, dosyanın kendi verisi kullanılıyor:', e); }
+      startPreview(csvContent, fallbackData);
     } else if (btn.classList.contains('csv-pub-delete')) {
+      if (isPreviewMode) return;
       const key = btn.getAttribute('data-key');
       const data = csvPublicContentMap.get(key);
       if (!data) return;
